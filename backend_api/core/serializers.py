@@ -1,42 +1,55 @@
-# from rest_framework import serializers
-# from . import models
-#
-#
-# class VendorSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = models.Vendor
-#         fields = ['user', 'address']
-#
-#     def __init__(self, *args, **kwargs):
-#         super(VendorSerializer, self).__init__(*args, **kwargs)
-#         self.Meta.depth = 1
-#
-#
-# class VendorDetailSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = models.Vendor
-#         fields = ['id', 'user', 'address']
-#
-#     def __init__(self, *args, **kwargs):
-#         super(VendorDetailSerializer, self).__init__(*args, **kwargs)
-#         self.Meta.depth = 1
-#
-#
-# class ProductListSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = models.Product
-#         fields = '__all__'
-#
-#     def __init__(self, *args, **kwargs):
-#         super(ProductListSerializer, self).__init__(*args, **kwargs)
-#         self.Meta.depth = 1
-#
-#
-# class ProductDetailSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = models.Product
-#         fields = '__all__'
-#
-#     def __init__(self, *args, **kwargs):
-#         super(ProductDetailSerializer, self).__init__(*args, **kwargs)
-#         self.Meta.depth = 1
+from rest_framework import serializers
+from django.contrib.auth import get_user_model
+from .models import Product, ProductImage, Order, OrderItem
+
+User = get_user_model()
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'role']
+
+
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'image_url']
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    vendor = UserSerializer(read_only=True)
+    images = ProductImageSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Product
+        fields = ['id', 'vendor', 'category', 'name', 'description',
+                  'sale_type', 'price', 'start_price', 'auction_end_time',
+                  'stock', 'created_at', 'images']
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            validated_data['vendor'] = request.user
+        return super().create(validated_data)
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'product', 'quantity', 'price']
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    customer = UserSerializer(read_only=True)
+    items = OrderItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ['id', 'customer', 'total_amount', 'status', 'created_at', 'items']
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            validated_data['customer'] = request.user
+        return super().create(validated_data)
