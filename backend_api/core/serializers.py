@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Product, ProductImage, Order, OrderItem
+from .models import Product, ProductImage, Order, OrderItem, Category
 
 User = get_user_model()
 
@@ -10,7 +10,15 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'role']
 
+#Category
+class CategorySerializer(serializers.ModelSerializers):
+    products = ProductSelializer(many = True, read__only = True)
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'parent', 'product']
 
+
+    
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
