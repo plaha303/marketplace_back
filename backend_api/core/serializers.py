@@ -12,7 +12,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 #Category
 class CategorySerializer(serializers.ModelSerializers):
-    products = ProductSelializer(many = True, read__only = True)
     class Meta:
         model = Category
         fields = ['id', 'name', 'parent', 'product']
