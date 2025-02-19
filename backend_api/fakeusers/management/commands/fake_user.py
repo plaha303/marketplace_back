@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from django.contrib.auth.models import User
+from core.models import User  # Імпортуємо свою модель користувача
 from faker import Faker
 
 class Command(BaseCommand):
