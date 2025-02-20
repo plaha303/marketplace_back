@@ -1,0 +1,11 @@
+.dropdownContent__item.active a {
+  background-color: oklch(0.321785 0.02476 255.702);
+  color: #fff;
+}
+
+.arrow__down {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  background: url("/img/icons/arrow_down.svg") no-repeat;
+}
