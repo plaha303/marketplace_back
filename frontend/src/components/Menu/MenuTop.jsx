@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import styled from '../Menu/Menu.module.css';
 import DropDown from '../../UI/dropdown/dropdown';
+import LogIn from '../LogIn/LogIn';
 
 const currencies = [
 	{ id: '1', name: '₴' },
@@ -14,6 +15,7 @@ const languages = [
 ];
 
 function MenuTop() {
+	const [isOpenLogIn, setIsOpenLogIn] = useState(false);
 	const [selectedDropdown, setSelectedDropdown] = useState({
 		currencies: '₴',
 		languages: 'ua',
@@ -26,10 +28,14 @@ function MenuTop() {
 		}));
 	}
 
+	function handleOpenLogin() {
+		setIsOpenLogIn(true);
+	}
+
 	return (
 		<div>
 			<label className="input input-bordered flex items-center gap-2">
-				<input type="text" className="grow" placeholder="Search" />
+				<input type="text" className="grow" placeholder="Шукаю..." />
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					viewBox="0 0 16 16"
@@ -47,13 +53,30 @@ function MenuTop() {
 			<DropDown
 				current={selectedDropdown.currencies}
 				list={currencies}
-				selectItem={(itemName) => selectItem(itemName, 'currencies')}
+				selectItem={(itemName) => selectItem(itemName, "currencies")}
 			/>
 			<DropDown
 				current={selectedDropdown.languages}
 				list={languages}
-				selectItem={(itemName) => selectItem(itemName, 'languages')}
+				selectItem={(itemName) => selectItem(itemName, "languages")}
 			/>
+
+			<button type="button" onClick={handleOpenLogin} className={`flex items-center ${styled.headerBtn__action}`}>
+				<span className={`icon me-2 ${styled.iconUser} ${styled.headerBtn__action}`}></span>
+				Увійти
+			</button>
+
+			<button type="button" className={`flex items-center ${styled.headerBtn__action}`}>
+				<span className={`icon me-2 ${styled.iconFavorite}`}></span>
+				Обране
+			</button>
+
+			<button type="button" className={`flex items-center ${styled.headerBtn__action}`}>
+				<span className={`icon me-2 ${styled.iconBasket}`}></span>
+				Кошик
+			</button>
+
+			{isOpenLogIn && <LogIn/>}
 		</div>
 	);
 }
