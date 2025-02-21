@@ -1,1 +1,22 @@
+.iconUser {
+  width: 30px;
+  height: 30px;
+  background: url('/img/icons/account_circle.svg') no-repeat;
 
+}
+.iconFavorite {
+  width: 30px;
+  height: 30px;
+  background: url('/img/icons/favorite.svg') no-repeat;
+}
+.iconBasket {
+  width: 30px;
+  height: 30px;
+  background: url('/img/icons/shopping_basket.svg') no-repeat;
+}
+
+.headerBtn__action {
+  border: 1px solid #041C4F;
+  border-radius: 8px;
+  padding: 8px;
+}
