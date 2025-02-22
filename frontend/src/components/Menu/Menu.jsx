@@ -3,7 +3,7 @@ import MenuTop from "./MenuTop";
 
 function Menu() {
 	return (
-		<div className="menu-block flex flex-col gap-y-[24px] pt-[16px] pb-[16px]">
+		<div className="menu-block flex flex-col grow gap-y-[24px] pt-[16px] pb-[16px] text-[20px]">
 			<MenuTop />
 			<MenuBottom />
 		</div>
@@ -11,3 +11,5 @@ function Menu() {
 }
 
 export default Menu;
+
+
