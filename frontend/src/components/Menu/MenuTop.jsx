@@ -71,10 +71,10 @@ function MenuTop() {
 						selectItem={(itemName) => selectItem(itemName, "currencies")}
 					/>
 				
-					<button type="button" onClick={handleOpenLogin} className={`flex items-center ${styled.headerBtn__action}`}>
-						<span className={`icon me-2 ${styled.iconUser} ${styled.headerBtn__action}`}></span>
-						Увійти
-					</button>
+				<button type="button" onClick={handleOpenLogin} className={`flex items-center ${styled.headerBtn__action}`}>
+					<span className={`icon me-2 ${styled.iconUser}`}></span>
+					Увійти
+				</button>
 
 					<button type="button" className={`flex items-center ${styled.headerBtn__action}`}>
 						<span className={`icon me-2 ${styled.iconFavorite}`}></span>
