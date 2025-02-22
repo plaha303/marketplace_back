@@ -31,7 +31,9 @@ jobs:
           pip install -r reqirements.txt
         
       - name: Run migrations
+        working-directory: ./backend_api
         run: python manage.py migrate
         
       - name: Run tests
+        working-directory: ./backend_api
         run: coverage run manage.py test
