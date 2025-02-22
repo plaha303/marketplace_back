@@ -33,7 +33,7 @@ function MenuTop() {
 	}
 
 	return (
-		<div className={`h-[54px] flex justify-center items-center mt-[16px] ${styled.menuTopItems}`}>
+		<div className={`h-[56px] flex justify-center items-center ${styled.menuTopItems}`}>
 			<div className={`h-full flex grow justify-between items-center ${styled.leftSideMenu}`}>
 				<div className={`w-[90px] h-[56px] flex justify-center items-center bg-[#D9D9D9] ${styled.logo}`}>logo</div>
 				<button type="button" className={`w-[96px] h-[34px] flex justify-center items-center 
@@ -73,17 +73,17 @@ function MenuTop() {
 					selectItem={(itemName) => selectItem(itemName, "languages")}
 				/>
 				
-				<button type="button" onClick={handleOpenLogin} className={`flex flex-col items-center ${styled.headerBtn__action}`}>
+				<button type="button" onClick={handleOpenLogin} className={`flex items-center ${styled.headerBtn__action}`}>
 					<span className={`icon me-2 ${styled.iconUser} ${styled.headerBtn__action}`}></span>
 					Увійти
 				</button>
 
-				<button type="button" className={`flex flex-col items-center ${styled.headerBtn__action}`}>
+				<button type="button" className={`flex items-center ${styled.headerBtn__action}`}>
 					<span className={`icon me-2 ${styled.iconFavorite}`}></span>
 					Обране
 				</button>
 
-				<button type="button" className={`flex flex-col items-center ${styled.headerBtn__action}`}>
+				<button type="button" className={`flex items-center ${styled.headerBtn__action}`}>
 					<span className={`icon me-2 ${styled.iconBasket}`}></span>
 					Кошик
 				</button>
