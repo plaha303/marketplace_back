@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r reqirements.txt
       - name: Check code style
         run: flake8
       - name: Run migrations
