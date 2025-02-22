@@ -3,7 +3,7 @@ import styled from '../Menu/Menu.module.css';
 function MenuBottom() {
 	return (
 		<nav>
-			<ul className={`liist-none flex justify-center gap-x-[40px]`}>
+			<ul className={`liist-none hidden md:flex justify-center gap-x-[40px]`}>
 				<li><a href="#">Головна</a></li>
 				<li><a href="#">Про нас</a></li>
 				<li><a href="#">Послуги</a></li>
