@@ -1,3 +1,13 @@
+.catalog {
+	font-size: 12px;
+	color: white
+}
+.iconCatalog {
+	width: 16px;
+	height: 16px;
+	background: url("/img/icons/chevron-double-down.svg") no-repeat;
+}
+
 .iconUser {
   width: 30px;
   height: 30px;
@@ -20,3 +30,4 @@
   border-radius: 8px;
   padding: 8px;
 }
+
