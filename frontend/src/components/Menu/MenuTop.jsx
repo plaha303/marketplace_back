@@ -33,18 +33,18 @@ function MenuTop() {
 	}
 
 	return (
-		<div style={menuTopItems}>
-			<div style={leftSideMenu}>
-				<div style={logo}>logo</div>
-				<button type="button" style={catalog}> 
-					<span style={iconCatalog}></span>
+		<div className={`h-[54px] flex justify-center items-center mt-[16px] ${styled.menuTopItems}`}>
+			<div className={`h-full flex grow justify-between items-center ${styled.leftSideMenu}`}>
+				<div className={`w-[90px] h-[56px] flex justify-center items-center bg-[#D9D9D9] ${styled.logo}`}>logo</div>
+				<button type="button" className={`w-[96px] h-[34px] flex justify-center items-center 
+					gap-x-[8px] m-auto rounded-[8px] bg-gray-800 border-solid-gray-600  ${styled.catalog}`}> 
+					<span className={`${styled.iconCatalog}`}></span>
 					Каталог
 				</button>
-				{/* <DropDown
-					нужно ли создавтаь отдельный компнонет для выпадающего каталога? 
+				{/* <DropDown  
 				/> */}
 			</div>
-			<div style={middleSideMenu}>
+			<div className={`w-[569px] pr-[40px] ${styled.middleSideMenu}`}>
 				<label className="input input-bordered flex items-center gap-2">
 					<input type="text" className="grow" placeholder="Шукаю..." />
 					<svg
@@ -61,7 +61,7 @@ function MenuTop() {
 					</svg>
 				</label>
 			</div>
-			<div style={rightSideMenu}>
+			<div className={`flex gap-x-[16px] items-center${styled.rightSideMenu}`}>
 				<DropDown
 					current={selectedDropdown.currencies}
 					list={currencies}
@@ -92,57 +92,6 @@ function MenuTop() {
 			{isOpenLogIn && <LogIn/>}
 		</div>
 	);
-}
-
-const menuTopItems = {
-	height: '56px',
-	display: 'flex',
-	justifyContent: 'center',
-	alignItems: 'center',
-	marginTop: '16px'
-}
-const logo = {
-	width: '90px',
-	height: '56px',
-	display: 'flex',
-	justifyContent: 'center',
-	alignItems: 'center',
-	backgroundColor: 'gray'
-}
-const catalog = {
-	width: '96px',
-	height: '34px',
-	display: 'flex',
-	justifyContent: 'center',
-	alignItems: 'center',
-	columnGap: '8px',
-	margin: '0 auto',
-	borderRadius: '8px',
-	backgroundColor: 'black',
-	border: '1px solid gray',
-	fontSize: '12px',
-	color: 'white'
-}
-const iconCatalog = {
-	width: '16px',
-	height: '16px',
-	background: 'url("/img/icons/chevron-double-down.svg") no-repeat'
-  }
-const leftSideMenu = {
-	height: "100%",
-	flexGrow: '1',
-	display: 'flex',
-	justifyContent: 'space-between',
-	alignItems: 'center'
-}
-const middleSideMenu = {
-	width: '569px',
-	paddingRight: '40px'
-}
-const rightSideMenu ={
-	display: 'flex',
-	columnGap: '16px',
-	alignItems: 'center'
 }
 
 export default MenuTop;
