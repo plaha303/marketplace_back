@@ -74,7 +74,7 @@ function MenuTop() {
 				/>
 				
 				<button type="button" onClick={handleOpenLogin} className={`flex items-center ${styled.headerBtn__action}`}>
-					<span className={`icon me-2 ${styled.iconUser} ${styled.headerBtn__action}`}></span>
+					<span className={`icon me-2 ${styled.iconUser}`}></span>
 					Увійти
 				</button>
 
