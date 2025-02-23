@@ -43,20 +43,13 @@ function MenuTop() {
 					/> */}
 				</div>
 				<div className={`px-[24px] flex justify-center items-center grow`}>
-					<label className="w-full input input-bordered flex justify-center items-center gap-2 rounded-[50px] p-none">
-						<input type="text" className="bg-none" placeholder="Шукаю..." />
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							viewBox="0 0 16 16"
-							fill="currentColor"
-							className="h-4 w-4 opacity-70"
-						>
-							<path
-								fillRule="evenodd"
-								d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
-								clipRule="evenodd"
-							/>
-						</svg>
+					<label className={`w-full input flex justify-between items-center gap-2 rounded-[50px] bg-transparent ${styled.searchBlock}`}>
+						<input type="text" className="w-full" placeholder="Шукаю..." />
+						<div className="h-[18px] w-[18px]">
+							<svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M16.6 18L10.3 11.7C9.8 12.1 9.225 12.4167 8.575 12.65C7.925 12.8833 7.23333 13 6.5 13C4.68333 13 3.14583 12.3708 1.8875 11.1125C0.629167 9.85417 0 8.31667 0 6.5C0 4.68333 0.629167 3.14583 1.8875 1.8875C3.14583 0.629167 4.68333 0 6.5 0C8.31667 0 9.85417 0.629167 11.1125 1.8875C12.3708 3.14583 13 4.68333 13 6.5C13 7.23333 12.8833 7.925 12.65 8.575C12.4167 9.225 12.1 9.8 11.7 10.3L18 16.6L16.6 18ZM6.5 11C7.75 11 8.8125 10.5625 9.6875 9.6875C10.5625 8.8125 11 7.75 11 6.5C11 5.25 10.5625 4.1875 9.6875 3.3125C8.8125 2.4375 7.75 2 6.5 2C5.25 2 4.1875 2.4375 3.3125 3.3125C2.4375 4.1875 2 5.25 2 6.5C2 7.75 2.4375 8.8125 3.3125 9.6875C4.1875 10.5625 5.25 11 6.5 11Z" fill="#01060B" />
+							</svg>
+						</div>
 					</label>
 				</div>
 				<div className={`flex gap-x-[16px] items-center`}>
@@ -64,11 +57,13 @@ function MenuTop() {
 						current={selectedDropdown.languages}
 						list={languages}
 						selectItem={(itemName) => selectItem(itemName, "languages")}
+						classBlock={`${styled.dropDownBtn} ${styled.languagesBtn}`}
 					/>
 					<DropDown
 						current={selectedDropdown.currencies}
 						list={currencies}
 						selectItem={(itemName) => selectItem(itemName, "currencies")}
+						classBlock={`${styled.dropDownBtn} ${styled.currenciesBtn}`}
 					/>
 				
 				<button type="button" onClick={handleOpenLogin} className={`flex items-center ${styled.headerBtn__action}`}>

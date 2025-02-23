@@ -1,13 +1,8 @@
-@font-face {
-  font-family: "Montserrat";
-  src: url("./fonts/Montserrat/Montserrat-VariableFont_wght.ttf");
-}
 .iconCatalog {
 	width: 30px;
 	height: 30px;
 	background: url('./img/icons/keyboard_double_arrow_down.svg') no-repeat;
 }
-
 .iconUser {
   width: 30px;
   height: 30px;
@@ -28,24 +23,62 @@
 .headerBtn__action {
   border: 1px solid #041C4F;
   border-radius: 8px;
-  padding: 8px;
+  padding: 7px 8px;
+  font-weight: 500;
+  line-height: 30px;
+  transition: 0.5s;
 }
-ul li a{
-  font-family: 'Montserrat';
-  font-style: normal;
+.headerBtn__action:hover {
+  border-color: rgb(229, 231, 235);
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.15);
+  transition: 0.5s;
+}
+.headerNav__link {
+  display: block;
   font-weight: 600;
   font-size: 16px;
   line-height: 24px;
-  
-  color: #000000;
+  padding: 4px;
+  transition: 0.5s;
 }
-ul li a:hover{
+.headerNav__link:hover{
   text-decoration:underline;
   color: #041C4F;
+  transition: 0.5s;
 }
-button{
-  font-family: 'Montserrat';
-  font-style: normal;
+.searchBlock {
+  border: 1px solid #041c4f;
+  height: 46px;
+  transition: 0.5s;
+}
+.searchBlock:focus,
+.searchBlock:focus-within {
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.15);
+  transition: 0.5s;
+}
+.dropDownBtn {
+  background: transparent;
+  border: 1px solid #041c4f;
+  border-radius: 8px;
+  padding: 8px 2px;
   font-weight: 500;
-  line-height: 30px;
+  font-size: 20px;
+  gap: 3px;
+  height: 46px;
+  min-height: auto;
+  transition: 0.5s;
+}
+.dropDownBtn:hover,
+.dropDownBtn:active:focus,
+.dropDownBtn:focus {
+  border-color: rgb(229, 231, 235);
+  background: transparent;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.15);
+  transition: 0.5s;
+}
+.languagesBtn {
+  width: 65px;
+}
+.currenciesBtn {
+  width: 50px;
 }
