@@ -29,7 +29,7 @@
   transition: 0.5s;
 }
 .headerBtn__action:hover {
-  border-color: rgb(229, 231, 235);
+  border-color: rgba(73, 71, 91, 0.2);
   box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.15);
   transition: 0.5s;
 }
@@ -71,7 +71,7 @@
 .dropDownBtn:hover,
 .dropDownBtn:active:focus,
 .dropDownBtn:focus {
-  border-color: rgb(229, 231, 235);
+  border-color: rgba(73, 71, 91, 0.2);
   background: transparent;
   box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.15);
   transition: 0.5s;
