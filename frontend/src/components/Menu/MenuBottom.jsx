@@ -1,15 +1,21 @@
 import styled from '../Menu/Menu.module.css';
 
+
+const siteLinks = [
+	{name: 'Головна'},
+	{name: 'Про нас'},
+	{name: 'Послуги'},
+	{name: 'Аукціони'},
+	{name: 'Відгуки'},
+	{name: 'Центр допомоги'}
+] 
 function MenuBottom() {
 	return (
-		<nav>
-			<ul className={`liist-none hidden md:flex justify-center gap-x-[40px]`}>
-				<li><a href="#">Головна</a></li>
-				<li><a href="#">Про нас</a></li>
-				<li><a href="#">Послуги</a></li>
-				<li><a href="#">Аукціони</a></li>
-				<li><a href="#">Відгуки</a></li>
-				<li><a href="#">Центр допомоги</a></li>
+		<nav className="headerNav">
+			<ul className="list-none hidden md:flex justify-center gap-x-[40px]">
+				{siteLinks.map(link => (
+					<li className="headerNav__item" key={link.name}><a href="#" className={`${styled.headerNav__link}`}>{link.name}</a></li>
+				))}
 			</ul>
 		</nav>
 	);

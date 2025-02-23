@@ -1,12 +1,12 @@
+import {Link} from "react-router"
+
 function Logo() {
 	return (
-		<div className={`min-w-[200px] min-h-[90px] flex justify-center items-center`}>
-             <img
-                src="/img/Logo.svg"
-                alt="Logo"
-                className="size-full"
-            />
-        </div>
+		<Link to="/"
+			className={`max-w-[200px] flex justify-center items-center`}
+		>
+			<img src="/img/Logo.svg" alt="Logo" className="size-full" />
+		</Link>
 	);
 }
 
