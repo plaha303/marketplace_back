@@ -42,7 +42,7 @@ function MenuTop() {
 					{/* <DropDown  
 					/> */}
 				</div>
-				<div className={`px-[24px] flex justify-center items-center grow`}>
+				<div className={`mx-[24px] flex justify-center items-center grow`}>
 					<label className={`w-full input flex justify-between items-center gap-2 rounded-[50px] bg-transparent ${styled.searchBlock}`}>
 						<input type="text" className="w-full" placeholder="Шукаю..." />
 						<div className="h-[18px] w-[18px]">
