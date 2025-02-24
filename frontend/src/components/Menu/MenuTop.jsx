@@ -14,8 +14,7 @@ const languages = [
 	{ id: '2', name: 'us' },
 ];
 
-function MenuTop() {
-	const [isOpenLogIn, setIsOpenLogIn] = useState(false);
+function MenuTop({setIsOpenModal, setModalType}) {
 	const [selectedDropdown, setSelectedDropdown] = useState({
 		currencies: '₴',
 		languages: 'ua',
@@ -28,8 +27,9 @@ function MenuTop() {
 		}));
 	}
 
-	function handleOpenLogin() {
-		setIsOpenLogIn(true);
+	function handleModalShow(typeModal) {
+		setIsOpenModal(true)
+		setModalType(typeModal)
 	}
 
 	return (
@@ -66,7 +66,7 @@ function MenuTop() {
 						classBlock={`${styled.dropDownBtn} ${styled.currenciesBtn}`}
 					/>
 				
-				<button type="button" onClick={handleOpenLogin} className={`flex items-center ${styled.headerBtn__action}`}>
+				<button type="button" onClick={() => handleModalShow('LogIn')} className={`flex items-center ${styled.headerBtn__action}`}>
 					<span className={`icon me-2 ${styled.iconUser}`}></span>
 					Увійти
 				</button>
@@ -81,7 +81,6 @@ function MenuTop() {
 						Кошик
 					</button>
 				</div>
-			{isOpenLogIn && <LogIn/>}
 		</div>
 	);
 }
