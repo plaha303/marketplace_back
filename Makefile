@@ -12,6 +12,7 @@ else
 endif
 
 up: ## Start all containers (no interact) for development
-    -$(docker_compose_old) up --no-recreate -d || $(docker_compose_new) up --no-recreate -d
+	-$(docker_compose_old) up --no-recreate -d || $(docker_compose_new) up --no-recreate -d
+
 down: ## Stop all started for development containers
-    -$(docker_compose_old) down || $(docker_compose_new) down
+	-$(docker_compose_old) down || $(docker_compose_new) down
