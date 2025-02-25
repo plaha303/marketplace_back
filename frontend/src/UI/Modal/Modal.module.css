@@ -1,0 +1,35 @@
+.closeModal {
+  display: inline-block;
+  position: absolute;
+  right: 40px;
+  background: url("/img/icons/close.svg") no-repeat;
+  background-size: 20px;
+  width: 32px;
+  height: 32px;
+  background-position: center center;
+  transition: 0.5s;
+  cursor: pointer;
+}
+.closeModal:hover {
+  opacity: 0.5;
+  transition: 0.5s;
+}
+.modalTypeModalBox {
+  max-width: 530px;
+}
+.separateBlock:after {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: block;
+  content: "";
+  width: 100%;
+  height: 1px;
+  background: #01060b;
+}
+
+@media(max-width: 991px) {
+  .closeModal {
+   right: 20px; 
+  }
+}
