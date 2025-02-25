@@ -1,65 +1,63 @@
 import Logo from "../../components/Logo/Logo";
-import VisaImage from "../../../public/img/visa_method_card_payment_icon.svg";
-import MasterImage from "../../../public/img/master_method_card_payment_icon.svg";
 
 function FooterTop(){ 
     return (
-        <div className="w-full flex lg:flex-row md:flex-row sm:flex-row flex-col justify-between border-b border-white pb-[24px]">
-            <div className="min-w-[160px] mr-[24px] flex items-start"> 
+        <div className="w-full flex lg:flex-row md:flex-col sm:flex-col flex-col justify-between">
+            <div className="md:min-w-[160px] sm:min-w-full mr-[24px] flex items-start mb-4"> 
                 <Logo/>
             </div>
-            <div className="flex lg:flex-nowrap flex-wrap grow justify-between lg:gap-y-[116px] md:gap-y-[116px] text-left gap-4">
-                <div className="w-[180px] flex flex-col gap-y-[16px]">
-                    <div className="text-[24px] font-semibold leading-[36px]">
+            <div className="flex lg:flex-nowrap flex-wrap grow justify-between text-left">
+                <div className="md:w-[180px] w-full flex flex-col md:gap-y-[16px] gap-y-[10px] mb-5">
+                    <div className="lg:text-[24px] text-[19px] font-semibold md:leading-[36px] leading-1">
                         Компанія
                     </div>
                     <div className=" ">
                         <ul className="space-y-[8px]">
-                            <li><a href="#">Головна</a></li>
-                            <li><a href="#">Про нас</a></li>
-                            <li><a href="#">Послуги</a></li>
-                            <li><a href="#">Аукціони</a></li>
-                            <li><a href="#">Відгуки</a></li>
-                            <li><a href="#">Центр допомоги</a></li>
+                            <li><a href="#" className="hover:underline block">Головна</a></li>
+                            <li><a href="#" className="hover:underline block">Про нас</a></li>
+                            <li><a href="#" className="hover:underline block">Послуги</a></li>
+                            <li><a href="#" className="hover:underline block">Аукціони</a></li>
+                            <li><a href="#" className="hover:underline block">Відгуки</a></li>
+                            <li><a href="#" className="hover:underline block">Центр допомоги</a></li>
                         </ul>
                     </div>
                 </div>
-                <div className="w-[180px] flex flex-col gap-y-[16px]">
-                    <div className="text-[24px] font-semibold leading-[36px]">
+                <div className="md:w-[180px] w-full flex flex-col md:gap-y-[16px] gap-y-[10px] mb-5">
+                    <div className="lg:text-[24px] text-[19px] font-semibold md:leading-[36px] leading-1">
                         Купити
                     </div>
                     <div>
                         <ul className="space-y-[8px]">
-                            <li><a href="#">Оформлення заказу</a></li>
-                            <li><a href="#">Оплата</a></li>
-                            <li><a href="#">Доставка</a></li>
-                            <li><a href="#">Взяти участь у аукціоні</a></li>
+                            <li><a href="#" className="hover:underline">Оформлення заказу</a></li>
+                            <li><a href="#" className="hover:underline">Оплата</a></li>
+                            <li><a href="#" className="hover:underline">Доставка</a></li>
+                            <li><a href="#" className="hover:underline">Взяти участь у аукціоні</a></li>
                         </ul>
                     </div>
                 </div>
-                <div className="w-[180px] flex flex-col gap-y-[16px]">
-                    <div className="text-[24px] font-semibold leading-[36px]">
+                <div className="md:w-[180px] w-full flex flex-col md:gap-y-[16px] gap-y-[10px] mb-5">
+                    <div className="lg:text-[24px] text-[19px] font-semibold md:leading-[36px] leading-1">
                         Продати
                     </div>
                     <div>
                         <ul className="space-y-[8px]">
-                            <li><a href="#">Реєстрація</a></li>
-                            <li><a href="#">Оформлення особистого кабінета</a></li>
-                            <li><a href="#">Рахунки</a></li>
-                            <li><a href="#">Взяти участь у аукціоні</a></li>
+                            <li><a href="#" className="hover:underline">Реєстрація</a></li>
+                            <li><a href="#" className="hover:underline">Оформлення особистого кабінета</a></li>
+                            <li><a href="#" className="hover:underline">Рахунки</a></li>
+                            <li><a href="#" className="hover:underline">Взяти участь у аукціоні</a></li>
                         </ul>
                     </div>
                 </div>
-                <div className="w-[232px] flex flex-col gap-y-[24px] ">
-                    <div className="text-[24px] font-semibold leading-[36px]">
+                <div className="md:w-[232px] w-full flex flex-col md:gap-y-[24px] gap-y-[10px] mb-5">
+                    <div className="lg:text-[24px] text-[19px] font-semibold md:leading-[36px] leading-1">
                         Форма оплати
                     </div>
-                    <div className="flex flex-row justify-between">
-                        <div>
-                            <img src={MasterImage} width={100} height={62}/>
+                    <div className="flex flex-row lg:justify-between md:justify-start">
+                        <div className="lg:mr-0 mr-4">
+                            <img src="/img/master.svg" width={100} height={62}/>
                         </div>
                         <div>
-                            <img src={VisaImage} width={100} height={62}/>
+                            <img src="/img/visa.svg" width={100} height={62}/>
                         </div>
                     </div>
                 </div>

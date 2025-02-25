@@ -7,6 +7,20 @@
   src: url("./fonts/Montserrat/Montserrat-VariableFont_wght.ttf");
 }
 
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex-grow: 1;
+}
 
 body {
   font-family: "Montserrat", serif;
@@ -46,3 +60,4 @@ body {
   0% { background: linear-gradient(45deg, #0b2354 1000%, #043392 0%); }
   100% { background: linear-gradient(45deg, #0b2354 0%, #043392 100%); }
 }
+
