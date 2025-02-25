@@ -1,10 +1,14 @@
+import Logo from "../../components/Logo/Logo";
 import Menu from "../../components/Menu/Menu";
 
 function Header() {
 	return (
-		<div className="header">
-			<div className="container mx-auto">
-				<Menu/>
+		<div className="header bg-[#f1e4ff]">
+			<div className="container mx-auto px-[15px]">
+				<div className="flex flex-row justofy-center items-center gap-x-[24px] pt-[16px] pb-[16px]">
+					<Logo/>
+					<Menu/>
+				</div>	
 			</div>
 		</div>
 	);
