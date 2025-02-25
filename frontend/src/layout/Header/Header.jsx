@@ -1,6 +1,6 @@
 import Logo from "../../components/Logo/Logo";
 import Menu from "../../components/Menu/Menu";
-import Logo from "../../components/Logo/Logo"
+
 
 function Header() {
 	return (
