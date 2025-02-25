@@ -28,6 +28,7 @@
   background: #01060b;
 }
 
+
 @media(max-width: 991px) {
   .closeModal {
    right: 20px; 

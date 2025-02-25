@@ -7,7 +7,6 @@ function LogIn({setModalType}) {
   function onSubmit(data) {
     console.log(data)
   }
-
   return (
 		<>
 			<div className="modal-header mb-[36px]">
