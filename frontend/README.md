@@ -13,7 +13,7 @@
 6. @tanstack/react-query-devtools
 7. Axios
 8. @reduxjs/toolkit
-9. 
+9. react-hook-form
 
 
 
