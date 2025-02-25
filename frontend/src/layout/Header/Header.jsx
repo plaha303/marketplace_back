@@ -1,7 +1,6 @@
 import Logo from "../../components/Logo/Logo";
 import Menu from "../../components/Menu/Menu";
 
-
 function Header() {
 	return (
 		<div className="header bg-[#f1e4ff]">
