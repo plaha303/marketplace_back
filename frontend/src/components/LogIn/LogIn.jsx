@@ -6,6 +6,7 @@ function LogIn({setModalType}) {
   const {handleSubmit, register, formState: {errors}, watch} = useForm();
   function onSubmit(data) {
     console.log(data)
+    
   }
   return (
 		<>
@@ -19,78 +20,80 @@ function LogIn({setModalType}) {
 
 			<div className="modal-body">
 				<form autoComplete="false" onSubmit={handleSubmit(onSubmit)}>
-					<div className="mb-4">
-						<div className="mb-2">Email</div>
-						<input
-              {...register("email", {required: true})}
-							name="email"
-							type="email"
-							autoComplete="off"
-							placeholder="ivan.kosak@gmail.com"
-							className={`block w-full rounded-lg bg-white 
-                placeholder:text-gray-400 input h-[37px] ps-4 pe-4 pt-2 pb-2 
-                focus:border-grey-600 duration-500 border-[#616163] border
-                shadow-[0_2px_4px_0_rgba(0,0,0,0.15);]
-                ${errors.email ? '!input-error' : '' }
-              `}
-						/>
-            {errors.email &&
-              <div className="flex items-center text-red-600 font-medium mt-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 shrink-0 stroke-current"
-                  fill="none"
-                  viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                This field is required
+          <div className="mb-[32px]">
+            <div className="mb-4">
+              <div className="mb-2">Email</div>
+              <input
+                {...register("email", {required: true})}
+                name="email"
+                type="email"
+                autoComplete="off"
+                placeholder="ivan.kosak@gmail.com"
+                className={`block w-full rounded-lg bg-white 
+                  placeholder:text-gray-400 input h-[37px] ps-4 pe-4 pt-2 pb-2 
+                  focus:border-grey-600 duration-500 border-[#616163] border
+                  shadow-[0_2px_4px_0_rgba(0,0,0,0.15);]
+                  ${errors.email ? '!input-error' : '' }
+                `}
+              />
+              {errors.email &&
+                <div className="flex items-center text-red-600 font-medium mt-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 shrink-0 stroke-current"
+                    fill="none"
+                    viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  This field is required
+                </div>
+              }
+            </div>
+            <div className="mb-4">
+              <div className="mb-2 flex justify-between">
+                <div>Пароль</div>
+                <button
+                  type="button"
+                  className="hover:text-blue-600 duration-500"
+                >
+                  Забули пароль?
+                </button>
               </div>
-            }
-					</div>
-					<div className="mb-[36px]">
-						<div className="mb-2 flex justify-between">
-							<div>Пароль</div>
-							<button
-								type="button"
-								className="hover:text-blue-600 duration-500"
-							>
-								Забули пароль?
-							</button>
-						</div>
-						<input
-              {...register("password", {required: true})}
-							name="password"
-							type="password"
-							autoComplete="off"
-							placeholder="Ввести пароль"
-							className={`block w-full rounded-lg bg-white 
-                placeholder:text-gray-400 input h-[37px] ps-4 pe-4 pt-2 pb-2 
-                focus:border-grey-600 duration-500 border-[#616163] border
-                shadow-[0_2px_4px_0_rgba(0,0,0,0.15);]
-                ${errors.password ? '!input-error' : ''}
-              `}
-						/>
-            {errors.password &&
-              <div className="flex items-center text-red-600 font-medium mt-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 shrink-0 stroke-current"
-                  fill="none"
-                  viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                This field is required
-              </div>
-            }
-					</div>
+              <input
+                {...register("password", {required: true})}
+                name="password"
+                type="password"
+                autoComplete="off"
+                placeholder="Ввести пароль"
+                className={`block w-full rounded-lg bg-white 
+                  placeholder:text-gray-400 input h-[37px] ps-4 pe-4 pt-2 pb-2 
+                  focus:border-grey-600 duration-500 border-[#616163] border
+                  shadow-[0_2px_4px_0_rgba(0,0,0,0.15);]
+                  ${errors.password ? '!input-error' : ''}
+                `}
+              />
+              {errors.password &&
+                <div className="flex items-center text-red-600 font-medium mt-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 shrink-0 stroke-current"
+                    fill="none"
+                    viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  This field is required
+                </div>
+              }
+            </div>
+          </div>
 
 					<button
 						type="submit"

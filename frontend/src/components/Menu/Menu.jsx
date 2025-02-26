@@ -4,6 +4,7 @@ import LogIn from "../LogIn/LogIn";
 import Modal from "../../UI/Modal/Modal";
 import SingUp from "../SingUp/SingUp";
 import { useState } from "react";
+import EmailConfirm from "../EmailConfirm/EmailConfirm";
 
 function Menu() {
 	const [isOpenModal, setIsOpenModal] = useState(false);
@@ -19,6 +20,7 @@ function Menu() {
 				<Modal setIsOpenModal={setIsOpenModal} onClose={() => setModalType(null)} modalType={modalType}>
 					{modalType == 'LogIn' &&  <LogIn setModalType={setModalType} />}
 					{modalType == 'SingUp' && <SingUp setModalType={setModalType} />}
+					{modalType == 'EmailConfirm' && <EmailConfirm setModalType={setModalType} />}
 				</Modal>
 			}
 		</>
