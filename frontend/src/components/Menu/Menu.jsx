@@ -5,6 +5,7 @@ import Modal from "../../UI/Modal/Modal";
 import SingUp from "../SingUp/SingUp";
 import { useState } from "react";
 import EmailConfirm from "../EmailConfirm/EmailConfirm";
+import ForgotPassword from "../ForgotPassword/ForgotPassword";
 
 function Menu() {
 	const [isOpenModal, setIsOpenModal] = useState(false);
@@ -21,6 +22,7 @@ function Menu() {
 					{modalType == 'LogIn' &&  <LogIn setModalType={setModalType} />}
 					{modalType == 'SingUp' && <SingUp setModalType={setModalType} />}
 					{modalType == 'EmailConfirm' && <EmailConfirm setModalType={setModalType} />}
+					{modalType == 'ForgotPassword' && <ForgotPassword />}
 				</Modal>
 			}
 		</>

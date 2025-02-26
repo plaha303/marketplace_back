@@ -59,6 +59,7 @@ function LogIn({setModalType}) {
                 <button
                   type="button"
                   className="hover:text-blue-600 duration-500"
+                  onClick={() => setModalType('ForgotPassword')}
                 >
                   Забули пароль?
                 </button>
