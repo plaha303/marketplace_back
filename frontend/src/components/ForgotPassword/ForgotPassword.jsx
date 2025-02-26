@@ -13,7 +13,7 @@ function ForgotPassword() {
 				<h2 className="text-2xl font-semibold mb-2 pe-[40px]">Забули пароль?</h2>
 				<div className="modalSubtitle font-medium text-base">
           Ви забули свій пароль? Не хвилюйтеся, це трапляється з кожним! 
-          Для відновлення доступу до Вашого облікового запису введіть Вашу почта.
+          Для відновлення доступу до Вашого облікового запису введіть Вашу пошту.
 				</div>
 			</div> 
 
