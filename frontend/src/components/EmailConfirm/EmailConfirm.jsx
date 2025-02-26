@@ -43,7 +43,7 @@ function EmailConfirm({setModalType}) {
         <form onSubmit={handleSubmit(onSubmitPassword)}>
           <div className="md:p-[40px] p-[20px]">
             <div className="font-medium lg:leading-[1.5] leading lg:text-2xl text-[19px] text-center lg:mb-[40px] mb-[20px]">
-              Введіть шестизначний код підтвердження
+              Введіть код підтвердження
             </div>
             <div className="flex justify-center lg:mb-[40px] mb-[20px]">
               <div className="flex justify-center gap-x-[20px]  max-w-[245px]">
