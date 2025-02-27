@@ -8,6 +8,7 @@ function SingUp({setModalType}) {
   const {handleSubmit, register, formState: {errors}, watch} = useForm();
   function onSubmit(data) {
     console.log(data)
+    setModalType('EmailConfirm')
   }
 
   return (
@@ -22,7 +23,7 @@ function SingUp({setModalType}) {
 
       <div className="modal-body">
         <form autoComplete="false" onSubmit={handleSubmit(onSubmit)}>
-          <div className="mt-[32px]">
+          <div className="mb-[32px]">
             <div className="mb-4">
               <div className="mb-2">Ім’я та прізвище</div>
               <input
