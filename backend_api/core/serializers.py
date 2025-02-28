@@ -1,8 +1,16 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import Product, ProductImage, Order, OrderItem, Category
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.urls import reverse
+import os
+import certifi
 
 User = get_user_model()
+os.environ['SSL_CERT_FILE'] = certifi.where()
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -15,7 +23,6 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ['id', 'name', 'parent']
-
 
     
 class ProductImageSerializer(serializers.ModelSerializer):
@@ -60,3 +67,38 @@ class OrderSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             validated_data['customer'] = request.user
         return super().create(validated_data)
+
+
+class RegisterSerializer(serializers.ModelSerializer):
+    password2 = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password', 'password2']
+
+    def validate(self, data):
+        if data['password'] != data['password2']:
+            raise serializers.ValidationError('Паролі не співпадають')
+        return data
+
+    def create(self, validated_data):
+        validated_data.pop('password2')
+        user = User.objects.create_user(**validated_data)
+        user.is_active = False
+        user.save()
+
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        verification_link = f"http://localhost:8000/api/auth/verify-email/{uid}/{token}/"
+
+        send_mail(
+            'Верифікація пошти',
+            f'Для верифікації пошти перейдіть будьласка за посиланням:'
+            f'{verification_link}',
+            'artlance.ua@gmail.com',
+            [user.email],
+            fail_silently=False,
+        )
+
+        return user
+
