@@ -126,7 +126,7 @@ function SingUp({setModalType}) {
                 <div>Підтвердити пароль</div>
               </div>
               <input
-                {...register("password2", { required: true, validate: value => value != watch("password") ? "The passwords do not match" : ''})}
+                {...register("password2", { required: true, validate: value => value === watch("password") || "The passwords do not match"})}
                 name="password2"
                 type="password"
                 autoComplete="off"
