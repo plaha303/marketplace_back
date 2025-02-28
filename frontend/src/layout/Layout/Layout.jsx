@@ -7,9 +7,7 @@ function Layout() {
     <>
       <Header />
         <main className="main">
-          <div className="container mx-auto">
-            <Outlet />
-          </div>
+          <Outlet />
         </main>
       <Footer />
     </>

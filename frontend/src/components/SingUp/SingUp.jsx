@@ -161,7 +161,7 @@ function SingUp({setModalType}) {
 
           <button
             type="submit"
-            className="w-full rounded-lg text-white font-semibold text-2xl p-2 leading-[1.5] formBtn"
+            className="w-full rounded-lg text-white font-semibold text-2xl p-2 leading-[1.5] baseBtn__blue"
           >
             Зареєструватися
           </button>

@@ -62,7 +62,7 @@ function EmailConfirm({setModalType}) {
               </div>
             </div>
             <div className="lg:w-[240px] w-full mx-auto">
-              <button type="button" className="w-full rounded-lg text-white font-semibold text-2xl p-2 leading-[1.5] formBtn">Відправити</button>
+              <button type="button" className="w-full rounded-lg text-white font-semibold text-2xl p-2 leading-[1.5] baseBtn__blue">Відправити</button>
             </div>
           </div>
         </form>

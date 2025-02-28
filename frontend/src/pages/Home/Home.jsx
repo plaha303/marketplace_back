@@ -1,8 +1,10 @@
+import HomeSlider from "../../components/HomeSlider/HomeSlider";
+
 function Home() {
 	return (
-		<div>
-      Home
-		</div>
+		<>
+      <HomeSlider />
+		</>
 	);
 }
 
