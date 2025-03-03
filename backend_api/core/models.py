@@ -1,6 +1,8 @@
+import random
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.utils.timezone import now
+from django.utils.timezone import now, timedelta
 
 
 class User(AbstractUser):
@@ -11,6 +13,9 @@ class User(AbstractUser):
     ]
     email = models.EmailField(unique=True)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='customer')
+    is_verified = models.BooleanField(default=False)
+    verification_code = models.CharField(max_length=6, blank=True, null=True)
+    verification_expires_at = models.DateTimeField(null=True, blank=True)
     groups = models.ManyToManyField(
         'auth.Group',
         related_name='core_users',
@@ -21,6 +26,11 @@ class User(AbstractUser):
         related_name='core_users_permissions',
         blank=True
     )
+
+    def generate_verification_code(self):
+        self.verification_code = str(random.randint(100000, 999999))
+        self.verification_expires_at = now() + timedelta(hours=1)
+        self.save()
 
     def __str__(self):
         return self.username
