@@ -1,3 +1,4 @@
+from django.utils.timezone import now
 from rest_framework import viewsets, permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -48,16 +49,26 @@ class RegisterView(generics.CreateAPIView):
 
 
 class VerifyEmailView(APIView):
-    def get(self, request, uidb64, token):
+    def post(self, request):
+        email = request.data.get("email")
+        code = request.data.get("code")
+
         try:
-            uid = force_str(urlsafe_base64_decode(uidb64))
-            user = User.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            return Response({"error": "Invalid verification link"}, status=status.HTTP_400_BAD_REQUEST)
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({"error": "Користувача не знайдено"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if user and default_token_generator.check_token(user, token):
-            user.is_active = True
-            user.save()
-            return Response({"message": "Email successfully verified"}, status=status.HTTP_200_OK)
+        if user.verification_code != code:
+            return Response({"error": "Невірний код"}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
+        if user.verification_expires_at and now() > user.verification_expires_at:
+            user.delete()
+            return Response({"error": "Код прострочений, зареєструйтеся знову"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.is_verified = True
+        user.is_active = True
+        user.verification_code = None
+        user.verification_expires_at = None
+        user.save()
+
+        return Response({"message": "Електронна пошта підтверджена"}, status=status.HTTP_200_OK)
