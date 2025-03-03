@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from .models import Product, ProductImage, Order, OrderItem, Category
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -17,6 +19,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'role']
+
 
 #Category
 class CategorySerializer(serializers.ModelSerializer):
@@ -85,16 +88,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         validated_data.pop('password2')
         user = User.objects.create_user(**validated_data)
         user.is_active = False
-        user.save()
-
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = default_token_generator.make_token(user)
-        verification_link = f"http://localhost:8000/api/auth/verify-email/{uid}/{token}/"
+        user.is_verified = False
+        user.generate_verification_code()
 
         send_mail(
-            'Верифікація пошти',
-            f'Для верифікації пошти перейдіть будьласка за посиланням:'
-            f'{verification_link}',
+            'Код підтвердження реєстрації',
+            f'Ваш код підтвердження: {user.verification_code}. Він дійсний протягом 1 години.',
             'artlance.ua@gmail.com',
             [user.email],
             fail_silently=False,
