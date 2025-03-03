@@ -6,20 +6,58 @@ function EmailConfirm({setModalType}) {
   const [codeValue, setCodeValue] = useState(["", "", "", "", "", ""]);
 
   function handlePutCode(e, index) {
-    const newCodeValue = [...codeValue]
-    const value = e.target.value;
-
-    if(value === "" || (value.length === 1 && /^[0-9]$/.test(value))) {
-      newCodeValue[index] = value
-      setCodeValue(newCodeValue)
-    }
-
-    if(value.length === 1 && index <  codeValue.length-1) {
-      const nextInput = document.getElementById(`input-${index + 1}`);
-      if (nextInput) {
-        nextInput.focus();
+    const newCodeValue = [...codeValue];
+    
+    if (e.type === 'paste') {
+      e.preventDefault();
+      const pastedData = e.clipboardData.getData('text');
+      const digits = pastedData.match(/\d/g);
+      
+      if (digits) {
+        for (let i = 0; i < digits.length && i + index < codeValue.length; i++) {
+          newCodeValue[i + index] = digits[i];
+        }
+        setCodeValue(newCodeValue);
+        
+        const nextIndex = Math.min(index + digits.length, codeValue.length - 1);
+        const nextInput = document.getElementById(`input-${nextIndex}`);
+        if (nextInput) {
+          nextInput.focus();
+        }
       }
-    }    
+      return;
+    }
+    
+    if (e.key === 'Backspace') {
+      if (newCodeValue[index] === '') {
+        if (index > 0) {
+          newCodeValue[index - 1] = '';
+          setCodeValue(newCodeValue);
+          
+          const prevInput = document.getElementById(`input-${index - 1}`);
+          if (prevInput) {
+            prevInput.focus();
+          }
+        }
+      } else {
+        newCodeValue[index] = '';
+        setCodeValue(newCodeValue);
+      }
+      return;
+    }
+    
+    const value = e.target.value;
+    if (value === '' || (value.length === 1 && /^[0-9]$/.test(value))) {
+      newCodeValue[index] = value;
+      setCodeValue(newCodeValue);
+      
+      if (value.length === 1 && index < codeValue.length - 1) {
+        const nextInput = document.getElementById(`input-${index + 1}`);
+        if (nextInput) {
+          nextInput.focus();
+        }
+      }
+    }
   }
 
   const {handleSubmit} = useForm();
@@ -55,6 +93,8 @@ function EmailConfirm({setModalType}) {
                       value={codeNumber}
                       maxLength={1}
                       onChange={(e) => handlePutCode(e, index)}
+                      onKeyDown={(e) => handlePutCode(e, index)}
+                      onPaste={(e) => handlePutCode(e, index)}
 											className="bg-[#f9fafb] border border-[#01060b] rounded-xs w-full h-full text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-medium"
 										/>
 									</div>
