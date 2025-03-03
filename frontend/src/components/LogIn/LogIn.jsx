@@ -24,7 +24,16 @@ function LogIn({setModalType}) {
             <div className="mb-4">
               <div className="mb-2">Email</div>
               <input
-                {...register("email", {required: true})}
+                {...register("email", {
+                  required: "Це поле обов'язкове для заповнення",
+                  validate: {
+                    notEmpty: (value) =>
+                      value.trim() !== "" || "Пошта не може бути пустою",
+                    validEmail: (value) =>
+                      /\S+@\S+\.\S+/.test(value) ||
+                      "Будь-ласка, введіть коректну пошту",
+                  },
+                })}
                 name="email"
                 type="email"
                 autoComplete="off"
@@ -49,7 +58,7 @@ function LogIn({setModalType}) {
                       strokeWidth="2"
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
-                  This field is required
+                  {errors.email.message}
                 </div>
               }
             </div>
@@ -65,7 +74,13 @@ function LogIn({setModalType}) {
                 </button>
               </div>
               <input
-                {...register("password", {required: true})}
+                {...register("password", {
+                  required: "Це поле обов'язкове для заповнення",
+                  validate: {
+                    notEmpty: (value) =>
+                      value.trim() !== "" || "Пошта не може бути пустою",
+                  },
+                })}
                 name="password"
                 type="password"
                 autoComplete="off"
@@ -90,7 +105,7 @@ function LogIn({setModalType}) {
                       strokeWidth="2"
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
-                  This field is required
+                  {errors.password.message}
                 </div>
               }
             </div>

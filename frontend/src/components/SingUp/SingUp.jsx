@@ -27,7 +27,13 @@ function SingUp({setModalType}) {
             <div className="mb-4">
               <div className="mb-2">Ім’я та прізвище</div>
               <input
-                {...register("firstName", { required: true})}
+                {...register("firstName", { 
+                  required: "Це поле обов'язкове для заповнення",
+                  validate: {
+                    notEmpty: (value) =>
+                      value.trim() !== "" || "Пошта не може бути пустою",
+                  },
+                })}
                 name="firstName"
                 type="text"
                 autoComplete="off"
@@ -51,14 +57,23 @@ function SingUp({setModalType}) {
                       strokeWidth="2"
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
-                  This field is required
+                  {errors.firstName.message}
                 </div>
               }
             </div>
             <div className="mb-4">
               <div className="mb-2">Email</div>
               <input
-                {...register("email", { required: true})}
+                {...register("email", { 
+                  required: "Це поле обов'язкове для заповнення", 
+                  validate: {
+                    notEmpty: (value) =>
+                      value.trim() !== "" || "Пошта не може бути пустою",
+                    validEmail: (value) =>
+                      /\S+@\S+\.\S+/.test(value) ||
+                      "Будь-ласка, введіть коректну пошту",
+                  },
+                })}
                 name="email"
                 type="email"
                 autoComplete="off"
@@ -83,7 +98,7 @@ function SingUp({setModalType}) {
                       strokeWidth="2"
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
-                  This field is required
+                  {errors.email.message}
                 </div>
               }
             </div>
@@ -92,7 +107,23 @@ function SingUp({setModalType}) {
                 <div>Пароль</div>
               </div>
               <input
-                {...register("password", { required: true })}
+                {...register("password", { 
+                  required: "Це поле обов'язкове для заповнення",
+                  minLength: {
+                    value: 8,
+                    message: "Пароль повинен містити не менше 8 символів",
+                  },
+                  validate: {
+                    notEmpty: (value) =>
+                      value.trim() !== "" || "Пароль не може бути пустим",
+                    hasUppercase: (value) =>
+                      /[A-Z]/.test(value) || "Пароль повинен містити хоча б одну велику літеру",
+                    hasLowercase: (value) =>
+                      /[a-z]/.test(value) || "Пароль повинен містити хоча б одну малу літеру",
+                    hasDigit: (value) =>
+                      /[0-9]/.test(value) || "Пароль повинен містити хоча б одну цифру",
+                  }
+                })}
                 name="password"
                 type="password"
                 autoComplete="off"
@@ -117,7 +148,7 @@ function SingUp({setModalType}) {
                       strokeWidth="2"
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
-                  This field is required
+                  {errors.password.message}
                 </div>
               }
             </div>
@@ -126,7 +157,24 @@ function SingUp({setModalType}) {
                 <div>Підтвердити пароль</div>
               </div>
               <input
-                {...register("password2", { required: true, validate: value => value === watch("password") || "The passwords do not match"})}
+                {...register("password2", { 
+                  required: "Це поле обов'язкове для заповнення",
+                  minLength: {
+                    value: 8,
+                    message: "Пароль повинен містити не менше 8 символів",
+                  },
+                  validate: {
+                    notMatch: (value) => value === watch("password") || "Паролі не співпадають",
+                    notEmpty: (value) =>
+                      value.trim() !== "" || "Пароль не може бути пустим",
+                    hasUppercase: (value) =>
+                      /[A-Z]/.test(value) || "Пароль повинен містити хоча б одну велику літеру",
+                    hasLowercase: (value) =>
+                      /[a-z]/.test(value) || "Пароль повинен містити хоча б одну малу літеру",
+                    hasDigit: (value) =>
+                      /[0-9]/.test(value) || "Пароль повинен містити хоча б одну цифру",
+                  }
+                })}
                 name="password2"
                 type="password"
                 autoComplete="off"
@@ -151,7 +199,7 @@ function SingUp({setModalType}) {
                       strokeWidth="2"
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
-                  {errors.password2.type === "validate" ? errors.password2.message : 'This field is required'}
+                  {errors.password2.message}
                   
                 </div>
               }
