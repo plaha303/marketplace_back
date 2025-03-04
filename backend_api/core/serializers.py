@@ -7,7 +7,6 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.urls import reverse
 import os
 import certifi
 
@@ -21,7 +20,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'role']
 
 
-#Category
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
@@ -94,10 +92,57 @@ class RegisterSerializer(serializers.ModelSerializer):
         send_mail(
             'Код підтвердження реєстрації',
             f'Ваш код підтвердження: {user.verification_code}. Він дійсний протягом 1 години.',
-            'artlance.ua@gmail.com',
+            settings.DEFAULT_FROM_EMAIL,
             [user.email],
             fail_silently=False,
         )
 
         return user
 
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        if not User.objects.filter(email=value).exists():
+            raise ValidationError('Користувача з таким email не знайдено.')
+        return value
+
+    def save(self):
+        email = self.validated_data['email']
+        user = User.objects.get(email=email)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        # url need change before production
+        reset_url = f"localhost:8000/api/auth/password-reset-confirm/{uid}/{token}"
+
+        send_mail(
+            subject="Скидання пароля",
+            message=f"Щоб скинути пароль, перейдіть за посиланням: {reset_url}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=False,
+        )
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    new_password = serializers.CharField(write_only=True, min_length=8)
+    confirm_password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            raise ValidationError("Паролі не співпадають.")
+        return data
+
+    def save(self, uidb64, token):
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (User.DoesNotExist, ValueError, TypeError):
+            raise ValidationError("Невірне посилання для скидання пароля.")
+
+        if not default_token_generator.check_token(user, token):
+            raise ValidationError("Посилання для скидання пароля недійсне.")
+
+        user.set_password(self.validated_data['new_password'])
+        user.save()
