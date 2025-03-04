@@ -1,17 +1,23 @@
+import { useDispatch } from "react-redux";
 import styled from "./Modal.module.css"
+import { closeAuthModal } from "../../store/authModalSlice";
+import { useRef } from "react";
 
-function Modal({children, setIsOpenModal, modalType, onClose}) {
+function Modal({children, modalType}) {
+  const dispatch = useDispatch()
+  const dialogRef = useRef(null);
+
   function handleModalClick(e) {
     if(e.target === e.currentTarget) {
-      setIsOpenModal(false);
-      onClose();
+      dispatch(closeAuthModal())
+      dialogRef.current?.close();
     }
     
   }
   return (
-    <dialog id={modalType} className="modal modal-open bg-[#fbfcf3] " onMouseDown={handleModalClick}>
-      <div className="modal-box max-w-[530px] lg:p-[40px] md:p-[20px] relative" onMouseDown={(e) => e.stopPropagation()}>
-        <span className={`${styled.closeModal}`} onClick={handleModalClick}></span>
+    <dialog ref={dialogRef}  id={modalType} className="modal modal-open bg-[#fbfcf3] " onMouseDown={(e) => handleModalClick(e)}>
+      <div className="modal-box max-w-[530px] lg:p-[40px] md:p-[20px] relative" onClick={(e) => e.stopPropagation()}>
+        <span className={`${styled.closeModal}`} onMouseDown={(e) => handleModalClick(e)}></span>
         {children}
       </div>
     </dialog>
