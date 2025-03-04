@@ -1,15 +1,15 @@
 from django.utils.timezone import now
 from rest_framework import viewsets, permissions, status, generics
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from django.contrib.auth import get_user_model
-from django.utils.http import urlsafe_base64_decode
-from django.utils.encoding import force_str
-from django.contrib.auth.tokens import default_token_generator
 
 from .models import Product, Order
-from .serializers import ProductSerializer, OrderSerializer, UserSerializer, RegisterSerializer
+from .serializers import (ProductSerializer, OrderSerializer, UserSerializer,
+                          RegisterSerializer, PasswordResetRequestSerializer,
+                          PasswordResetConfirmSerializer)
 
 User = get_user_model()
 
@@ -72,3 +72,23 @@ class VerifyEmailView(APIView):
         user.save()
 
         return Response({"message": "Електронна пошта підтверджена"}, status=status.HTTP_200_OK)
+
+
+class PasswordResetRequestView(GenericAPIView):
+    serializer_class = PasswordResetRequestSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "Лист для скидання пароля відправлено на email."}, status=status.HTTP_200_OK)
+
+
+class PasswordResetConfirmView(GenericAPIView):
+    serializer_class = PasswordResetConfirmSerializer
+
+    def post(self, request, uidb64, token, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(uidb64=uidb64, token=token)
+        return Response({"message": "Пароль успішно змінено."}, status=status.HTTP_200_OK)
