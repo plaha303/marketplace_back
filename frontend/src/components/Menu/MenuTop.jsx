@@ -1,7 +1,10 @@
 import { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { openAuthModal } from '../../store/authModalSlice';
+
 import styled from '../Menu/Menu.module.css';
 import DropDown from '../../UI/dropdown/dropdown';
-import LogIn from '../LogIn/LogIn';
+
 
 const currencies = [
 	{ id: '1', name: '₴' },
@@ -14,7 +17,8 @@ const languages = [
 	{ id: '2', name: 'us' },
 ];
 
-function MenuTop({setIsOpenModal, setModalType}) {
+function MenuTop() {
+	const dispatch = useDispatch();
 	const [selectedDropdown, setSelectedDropdown] = useState({
 		currencies: '₴',
 		languages: 'ua',
@@ -28,8 +32,7 @@ function MenuTop({setIsOpenModal, setModalType}) {
 	}
 
 	function handleModalShow(typeModal) {
-		setIsOpenModal(true)
-		setModalType(typeModal)
+		dispatch(openAuthModal(typeModal))
 	}
 
 	return (
