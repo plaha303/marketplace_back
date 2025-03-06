@@ -19,7 +19,11 @@
   height: 30px;
   background: url('/img/icons/shopping_basket.svg') no-repeat;
 }
-
+.iconBurger {
+  width: 24px;
+  height: 24px;
+  background: url('/img/icons/burger_menu_icon.svg') no-repeat;
+}
 .headerBtn__action {
   border: 1px solid #041C4F;
   border-radius: 8px;
@@ -81,4 +85,10 @@
 }
 .currenciesBtn {
   width: 50px;
+}
+.zIndexHigh{
+  z-index: 4;
+}
+.zIndexLow{
+  z-index: -1;
 }

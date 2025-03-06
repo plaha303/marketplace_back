@@ -11,8 +11,8 @@ const siteLinks = [
 ] 
 function MenuBottom() {
 	return (
-		<nav className="headerNav hidden lg:flex justify-center">
-			<ul className="list-none flex  gap-x-[40px]">
+		<nav className="headerNav flex lg:hidden">
+			<ul className="list-none flex flex-col justify-center gap-y-[10px]">
 				{siteLinks.map(link => (
 					<li className="headerNav__item" key={link.name}><a href="#" className={`${styled.headerNav__link}`}>{link.name}</a></li>
 				))}

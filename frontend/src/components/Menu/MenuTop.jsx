@@ -3,6 +3,7 @@ import styled from '../Menu/Menu.module.css';
 import DropDown from '../../UI/dropdown/dropdown';
 import LogIn from '../LogIn/LogIn';
 
+
 const currencies = [
 	{ id: '1', name: '₴' },
 	{ id: '2', name: '$' },
@@ -34,7 +35,7 @@ function MenuTop({setIsOpenModal, setModalType}) {
 
 	return (
 		<div className={`h-[46px] flex justify-between items-center `}>
-				<div className={`flex justify-center items-center`}>
+				<div className={`hidden lg:flex justify-center items-center`}>
 					<button type="button" className={`flex items-center ${styled.headerBtn__action}`}> 
 						<span className={`icon me-2 ${styled.iconCatalog}`}></span>
 						Каталог
@@ -42,7 +43,7 @@ function MenuTop({setIsOpenModal, setModalType}) {
 					{/* <DropDown  
 					/> */}
 				</div>
-				<div className={`mx-[24px] flex justify-center items-center grow`}>
+				<div className={`mx-[24px] hidden xl:flex lg:flex md:flex  justify-center items-center grow`}>
 					<label className={`w-full input flex justify-between items-center gap-2 rounded-[50px] bg-transparent ${styled.searchBlock}`}>
 						<input type="text" className="w-full" placeholder="Шукаю..." />
 						<div className="h-[18px] w-[18px]">
@@ -52,7 +53,7 @@ function MenuTop({setIsOpenModal, setModalType}) {
 						</div>
 					</label>
 				</div>
-				<div className={`flex gap-x-[16px] items-center`}>
+				<div className={`flex lg:gap-x-[16px] md:gap-x-[12px] sm:gap-x-[8px] gap-x-[4px] justify-center items-center grow`}>
 					<DropDown
 						current={selectedDropdown.languages}
 						list={languages}
@@ -67,18 +68,18 @@ function MenuTop({setIsOpenModal, setModalType}) {
 					/>
 				
 				<button type="button" onClick={() => handleModalShow('LogIn')} className={`flex items-center ${styled.headerBtn__action}`}>
-					<span className={`icon me-2 ${styled.iconUser}`}></span>
-					Увійти
+					<span className={`icon xl:me-2 ${styled.iconUser}`}></span>
+					<p className="hidden xl:block">Увійти</p>
 				</button>
 
 					<button type="button" className={`flex items-center ${styled.headerBtn__action}`}>
-						<span className={`icon me-2 ${styled.iconFavorite}`}></span>
-						Обране
+						<span className={`icon xl:me-2 ${styled.iconFavorite}`}></span>
+						<p className="hidden xl:block">Обране</p>
 					</button>
 
 					<button type="button" className={`flex items-center ${styled.headerBtn__action}`}>
-						<span className={`icon me-2 ${styled.iconBasket}`}></span>
-						Кошик
+						<span className={`icon xl:me-2 ${styled.iconBasket}`}></span>
+						<p className="hidden xl:block" >Кошик</p>
 					</button>
 				</div>
 		</div>
