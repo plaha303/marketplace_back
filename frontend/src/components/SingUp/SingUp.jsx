@@ -4,14 +4,17 @@ import styled from "../../UI/Modal/Modal.module.css"
 import PlatformsButtons from "../platformsButtons/platformsButtons";
 import { useDispatch } from "react-redux";
 import { openAuthModal } from "../../store/authModalSlice";
+import useSingUpMutation from "../../hooks/Auth/useSingUpMutation";
 
 
 function SingUp() {
   const dispatch = useDispatch();
+	const {mutateSingUp, mutateSingUpPenging} = useSingUpMutation();
   const {handleSubmit, register, formState: {errors}, watch} = useForm();
+
   function onSubmit(data) {
-    console.log(data)
-    dispatch(openAuthModal('EmailConfirm'))
+		const {username, email, password, password2} = data;
+		mutateSingUp(username, email, password, password2);
   }
 
   return (
@@ -27,29 +30,29 @@ function SingUp() {
 			</div>
 
 			<div className="modal-body">
-				<form autoComplete="false" onSubmit={handleSubmit(onSubmit)}>
+				<form autoComplete="off" onSubmit={handleSubmit(onSubmit)}>
 					<div className="mb-[32px]">
 						<div className="mb-4">
 							<div className="mb-2">Ім’я та прізвище</div>
 							<input
-								{...register('firstName', {
+								{...register('username', {
 									required: "Це поле обов'язкове для заповнення",
 									validate: {
 										notEmpty: (value) =>
-											value.trim() !== '' || 'Пошта не може бути пустою',
+											value.trim() !== '' || 'Ім’я та прізвище не може бути пустим',
 									},
 								})}
-								name="firstName"
+								name="username"
 								type="text"
-								autoComplete="off"
+								autoComplete="username"
 								placeholder="Іван  Козак"
 								className={`block w-full rounded-lg bg-white 
                 placeholder:text-gray-400 input h-[37px] ps-4 pe-4 pt-2 pb-2 
                 focus:border-grey-600 duration-500 border-[#616163] border
                 shadow-[0_2px_4px_0_rgba(0,0,0,0.15);]
-                ${errors.firstName ? '!input-error' : ''}`}
+                ${errors.username ? '!input-error' : ''}`}
 							/>
-							{errors?.firstName && (
+							{errors?.username && (
 								<div className="flex items-center text-red-600 font-medium mt-2">
 									<svg
 										xmlns="http://www.w3.org/2000/svg"
@@ -64,7 +67,7 @@ function SingUp() {
 											d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
 										/>
 									</svg>
-									{errors.firstName.message}
+									{errors.username.message}
 								</div>
 							)}
 						</div>
@@ -83,7 +86,7 @@ function SingUp() {
 								})}
 								name="email"
 								type="email"
-								autoComplete="off"
+								autoComplete="email"
 								placeholder="ivan.kosak@gmail.com"
 								className={`block w-full rounded-lg bg-white 
                   placeholder:text-gray-400 input h-[37px] ps-4 pe-4 pt-2 pb-2 
