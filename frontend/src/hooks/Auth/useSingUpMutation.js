@@ -13,7 +13,9 @@ function useSingUpMutation() {
       dispatch(openAuthModal());
     },
     onError: (error, variables, context) => {
-      console.log(`rolling back optimistic update with id ${context.id}`)
+      if (error.response?.data?.errors) {
+        return error.response.errors;
+      }
     },
   })
 
