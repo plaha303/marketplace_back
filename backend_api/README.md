@@ -8,7 +8,7 @@ In command line:
 1. cd backend_api
 2. pip install -r requirements.txt
 3. cd ..
-4. make up
+4. make up  (docker-compose --env-file backend_api/.env up)
 5. cd backend_api
 6. python manage.py makemigrations
 7. python manage.py migrate

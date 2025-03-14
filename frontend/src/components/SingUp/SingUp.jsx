@@ -9,7 +9,7 @@ import useSingUpMutation from "../../hooks/Auth/useSingUpMutation";
 
 function SingUp() {
   const dispatch = useDispatch();
-	const {mutateSingUp, mutateSingUpPenging} = useSingUpMutation();
+	const {mutateSingUp, mutateSingUpPenging, isError, error} = useSingUpMutation();
   const {handleSubmit, register, formState: {errors}, watch, setError} = useForm();
 
   function onSubmit(data) {
@@ -237,8 +237,8 @@ function SingUp() {
 						<div className="error-block text-red-600"></div>
 					</div>
 
-					{mutation.isError && (
-						<p style={{ color: "red" }}>{mutation.error?.response?.data?.message || "Произошла ошибка"}</p>
+					{isError && (
+						<p style={{ color: "red" }}>{error?.response?.data?.message || "Виникла помилка"}</p>
 					)}
 
 					<button
