@@ -13,11 +13,11 @@ function SingUp() {
   const {handleSubmit, register, formState: {errors}, watch, setError} = useForm();
 
   function onSubmit(data) {
-		// const {username, email, password, password2} = data;
 		mutateSingUp(data, {
 			onError: (error) => {
 				if(error.errors) {
 					Object.entries(error.errors).forEach(([field, message]) => {
+						console.log('message', message)
 						setError(field, {type: "server", message})
 					})
 				}
@@ -238,7 +238,7 @@ function SingUp() {
 					</div>
 
 					{isError && (
-						<p style={{ color: "red" }}>{error?.response?.data?.message || "Виникла помилка"}</p>
+						<p style={{ color: "red", marginBottom: '15px' }}>{error.message}</p>
 					)}
 
 					<button

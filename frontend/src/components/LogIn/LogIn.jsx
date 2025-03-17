@@ -13,11 +13,8 @@ function LogIn() {
 
   const {handleSubmit, register, formState: {errors}, watch, setError} = useForm();
   function onSubmit(data) {
-    console.log(data)
 		mutateLogIn(data, {
 			onError: (error) => {
-				// console.log(error)
-				// error.response?.data
 				if(error.errors) {
 					Object.entries(error.errors).forEach(([field, message]) => {
 						setError(field, {type: 'server', message})
@@ -137,7 +134,7 @@ function LogIn() {
 
 					{isError && (
 						<p style={{ color: "red" }} className="mb-4">
-							{error?.response?.data?.message || "Виникла помилка"}
+							{error?.message}
 						</p>
 					)}
 
