@@ -10,7 +10,7 @@ function useSingUpMutation() {
     mutationFn: SingUp,
     onSuccess: () => {
       console.log('useSingUpMutation work');
-      dispatch(openAuthModal());
+      dispatch(openAuthModal('EmailConfirm'));
     },
     onError: (error, variables, context) => {
       console.log('error: ', error)
