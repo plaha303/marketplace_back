@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema, OpenApiExample
 from django.utils.timezone import now
 from rest_framework import viewsets, permissions, status, generics
 from rest_framework.generics import GenericAPIView
@@ -9,7 +10,7 @@ from django.contrib.auth import get_user_model
 from .models import Product, Order
 from .serializers import (ProductSerializer, OrderSerializer, UserSerializer,
                           RegisterSerializer, PasswordResetRequestSerializer,
-                          PasswordResetConfirmSerializer)
+                          PasswordResetConfirmSerializer, VerifyEmailSerializer)
 
 User = get_user_model()
 
@@ -55,10 +56,27 @@ class RegisterView(generics.CreateAPIView):
         return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class VerifyEmailView(APIView):
+class VerifyEmailView(GenericAPIView):
+    serializer_class = VerifyEmailSerializer
+
+    # @extend_schema(
+    #     request=VerifyEmailSerializer,
+    #     responses={200: {"message": "Електронна пошта підтверджена"}},
+    #     examples=[
+    #         OpenApiExample(
+    #             name="Приклад успішного запиту",
+    #             value={"email": "user@example.com", "code": "123456"},
+    #             request_only=True,
+    #         )
+    #     ],
+    # )
     def post(self, request):
-        email = request.data.get("email")
-        code = request.data.get("code")
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        email = serializer.validated_data.get("email")
+        code = serializer.validated_data.get("code")
 
         try:
             user = User.objects.get(email=email)
