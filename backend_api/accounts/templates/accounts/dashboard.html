@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+    <h1>Вітаємо, {{ user.first_name }}!</h1>
+    <p>Email: {{ user.email }}</p>
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Вийти</button>
+    </form>
+</body>
+</html>
