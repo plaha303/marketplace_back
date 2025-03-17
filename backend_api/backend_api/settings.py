@@ -119,8 +119,8 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend', # Стандартний бекенд Django
 )
 # Налаштування Google OAuth
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = config('GOOGLE_OAUTH2_KEY')
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config('GOOGLE_OAUTH2_SECRET')
+# SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = config('GOOGLE_OAUTH2_KEY')
+# SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config('GOOGLE_OAUTH2_SECRET')
 
 
 SOCIAL_AUTH_GOOGLE_OAUTH2_AUTH_EXTRA_ARGUMENTS = {
@@ -133,7 +133,7 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
 ]
 
 # URL для перенаправлення після входу
-LOGIN_REDIRECT_URL = '/dashboard/'  # Куди перенаправляти після входу
+# LOGIN_REDIRECT_URL = '/dashboard/'  # Куди перенаправляти після входу
 #LOGOUT_REDIRECT_URL = '/'          # Куди перенаправляти після виходу
 
 # Шляхи для Social Auth
@@ -207,3 +207,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_PORT = 587
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
+
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
