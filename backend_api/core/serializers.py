@@ -2,6 +2,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth import authenticate
 from .models import Product, ProductImage, Order, OrderItem, Category
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
@@ -151,3 +152,27 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
         user.set_password(self.validated_data['new_password'])
         user.save()
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, data):
+        email = data.get('email')
+        password = data.get('password')
+        User = get_user_model()
+
+        if email and password:
+            try:
+                user = User.objects.get(email=email)
+                if not user.check_password(password):
+                    raise serializers.ValidationError({'email': ['Невірний email або пароль'], 'password': ['Невірний email або пароль']})
+                if not user.is_active or not user.is_verified:
+                    raise serializers.ValidationError({'email': ['Обліковий запис не активний або не підтверджений']})
+            except User.DoesNotExist:
+                raise serializers.ValidationError({'email': ['Невірний email або пароль'], 'password': ['Невірний email або пароль']})
+        else:
+            raise serializers.ValidationError({'email': ['Це поле обов’язкове'], 'password': ['Це поле обов’язкове']})
+
+        data['user'] = user
+        return data
