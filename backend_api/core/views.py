@@ -1,6 +1,7 @@
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from django.utils.timezone import now
 from rest_framework import viewsets, permissions, status, generics
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -8,10 +9,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from django.contrib.auth import get_user_model
 
-from .models import Product, Order
+from .models import Product, Order, Cart
 from .serializers import (ProductSerializer, OrderSerializer, UserSerializer,
                           RegisterSerializer, PasswordResetRequestSerializer,
-                          PasswordResetConfirmSerializer, VerifyEmailSerializer, LoginSerializer)
+                          PasswordResetConfirmSerializer, VerifyEmailSerializer, LoginSerializer,
+                          CartSerializer)
 
 User = get_user_model()
 
@@ -136,3 +138,39 @@ class LoginView(generics.GenericAPIView):
             'success': False,
             'errors': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
+        
+class CartAddView(generics.GenericAPIView):
+    serializer_class = CartSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            product = serializer.validated_data['product']
+            quantity = serializer.validated_data['quantity']
+
+            # Перевіряємо, чи товар уже в кошику
+            cart_item, created = Cart.objects.get_or_create(
+                user=request.user,
+                product=product,
+                defaults={'quantity': quantity}
+            )
+            if not created:
+                # Якщо товар уже є, додаємо кількість (якщо дозволяє stock)
+                new_quantity = cart_item.quantity + quantity
+                if product.stock < new_quantity:
+                    return Response(
+                        {'success': False, 'errors': {'quantity': ['Недостатньо товару в наявності']}},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                cart_item.quantity = new_quantity
+                cart_item.save()
+
+            return Response(
+                {'success': True, 'message': 'Товар додано до кошика'},
+                status=status.HTTP_201_CREATED
+            )
+        return Response(
+            {'success': False, 'errors': serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )

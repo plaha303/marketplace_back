@@ -170,3 +170,8 @@ class Favorite(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s favorite for {self.product.name}"
+        
+class Cart(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cart_items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
