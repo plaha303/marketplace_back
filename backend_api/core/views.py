@@ -4,13 +4,14 @@ from rest_framework import viewsets, permissions, status, generics
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from django.contrib.auth import get_user_model
 
 from .models import Product, Order
 from .serializers import (ProductSerializer, OrderSerializer, UserSerializer,
                           RegisterSerializer, PasswordResetRequestSerializer,
-                          PasswordResetConfirmSerializer, VerifyEmailSerializer)
+                          PasswordResetConfirmSerializer, VerifyEmailSerializer, LoginSerializer)
 
 User = get_user_model()
 
@@ -117,3 +118,21 @@ class PasswordResetConfirmView(GenericAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save(uidb64=uidb64, token=token)
         return Response({"message": "Пароль успішно змінено."}, status=status.HTTP_200_OK)
+        
+class LoginView(generics.GenericAPIView):
+    serializer_class = LoginSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.validated_data['user']
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'success': True,
+                'access': str(refresh.access_token),
+                'refresh': str(refresh)
+            }, status=status.HTTP_200_OK)
+        return Response({
+            'success': False,
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
