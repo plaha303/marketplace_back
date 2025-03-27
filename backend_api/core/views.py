@@ -13,7 +13,7 @@ from .models import Product, Order, Cart
 from .serializers import (ProductSerializer, OrderSerializer, UserSerializer,
                           RegisterSerializer, PasswordResetRequestSerializer,
                           PasswordResetConfirmSerializer, VerifyEmailSerializer, LoginSerializer,
-                          CartSerializer)
+                          CartSerializer, CartRemoveSerializer)
 
 User = get_user_model()
 
@@ -148,29 +148,74 @@ class CartAddView(generics.GenericAPIView):
         if serializer.is_valid():
             product = serializer.validated_data['product']
             quantity = serializer.validated_data['quantity']
-
-            # Перевіряємо, чи товар уже в кошику
+            # Перевірка запасу
+            if product.stock < quantity:
+                return Response(
+                    {"success": False, "errors": {"quantity": ["Недостатньо товару на складі"]}},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             cart_item, created = Cart.objects.get_or_create(
                 user=request.user,
                 product=product,
                 defaults={'quantity': quantity}
             )
             if not created:
-                # Якщо товар уже є, додаємо кількість (якщо дозволяє stock)
                 new_quantity = cart_item.quantity + quantity
                 if product.stock < new_quantity:
                     return Response(
-                        {'success': False, 'errors': {'quantity': ['Недостатньо товару в наявності']}},
+                        {"success": False, "errors": {"quantity": ["Недостатньо товару на складі"]}},
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 cart_item.quantity = new_quantity
                 cart_item.save()
-
             return Response(
-                {'success': True, 'message': 'Товар додано до кошика'},
-                status=status.HTTP_201_CREATED
+                {"success": True, "message": "Товар додано до кошика"},
+                status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
             )
         return Response(
-            {'success': False, 'errors': serializer.errors},
+            {"success": False, "errors": serializer.errors},
             status=status.HTTP_400_BAD_REQUEST
         )
+        
+class CartRemoveView(generics.GenericAPIView):
+    serializer_class = CartRemoveSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            product = serializer.validated_data['product']
+            quantity_to_remove = serializer.validated_data.get('quantity', 1)  # За замовчуванням 1
+            try:
+                cart_item = Cart.objects.get(user=request.user, product=product)
+                if cart_item.quantity > quantity_to_remove:
+                    cart_item.quantity -= quantity_to_remove
+                    cart_item.save()
+                    return Response(
+                        {"success": True, "message": f"Кількість товару зменшено на {quantity_to_remove}"},
+                        status=status.HTTP_200_OK
+                    )
+                else:
+                    cart_item.delete()
+                    return Response(
+                        {"success": True, "message": "Товар видалено з кошика"},
+                        status=status.HTTP_200_OK
+                    )
+            except Cart.DoesNotExist:
+                return Response(
+                    {"success": False, "errors": {"product": ["Товар не знайдено в кошику"]}},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        return Response(
+            {"success": False, "errors": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
+class CartListView(generics.GenericAPIView):
+    serializer_class = CartSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        cart_items = Cart.objects.filter(user=request.user)
+        serializer = self.get_serializer(cart_items, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
