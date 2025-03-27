@@ -14,4 +14,5 @@ urlpatterns = [
     path('auth/password-reset/', views.PasswordResetRequestView.as_view(), name='password_reset'),
     path('auth/password-reset-confirm/<str:uidb64>/<str:token>/', views.PasswordResetConfirmView.as_view(),
          name='password_reset_confirm'),
+    path('cart/add/', views.CartAddView.as_view(), name='cart-add'),
 ]

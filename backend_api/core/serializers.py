@@ -3,7 +3,7 @@ from rest_framework.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
-from .models import Product, ProductImage, Order, OrderItem, Category
+from .models import Product, ProductImage, Order, OrderItem, Category, Cart
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
@@ -175,4 +175,23 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError({'email': ['Це поле обов’язкове'], 'password': ['Це поле обов’язкове']})
 
         data['user'] = user
+        return data
+        
+class CartSerializer(serializers.ModelSerializer):
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+
+    class Meta:
+        model = Cart
+        fields = ['product', 'quantity']
+
+    def validate_quantity(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Кількість повинна бути більшою за 0.")
+        return value
+
+    def validate(self, data):
+        product = data['product']
+        quantity = data['quantity']
+        if product.stock < quantity:
+            raise serializers.ValidationError({"quantity": "Недостатньо товару в наявності."})
         return data
