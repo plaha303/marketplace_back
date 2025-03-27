@@ -148,28 +148,16 @@ class CartAddView(generics.GenericAPIView):
         if serializer.is_valid():
             product = serializer.validated_data['product']
             quantity = serializer.validated_data['quantity']
-            # Перевірка запасу
-            if product.stock < quantity:
-                return Response(
-                    {"success": False, "errors": {"quantity": ["Недостатньо товару на складі"]}},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
             cart_item, created = Cart.objects.get_or_create(
                 user=request.user,
                 product=product,
                 defaults={'quantity': quantity}
             )
             if not created:
-                new_quantity = cart_item.quantity + quantity
-                if product.stock < new_quantity:
-                    return Response(
-                        {"success": False, "errors": {"quantity": ["Недостатньо товару на складі"]}},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-                cart_item.quantity = new_quantity
+                cart_item.quantity += quantity
                 cart_item.save()
             return Response(
-                {"success": True, "message": "Товар додано до кошика"},
+                {"success": True, "message": "Товар додано до кошика", "quantity": cart_item.quantity},
                 status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
             )
         return Response(
@@ -185,20 +173,20 @@ class CartRemoveView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             product = serializer.validated_data['product']
-            quantity_to_remove = serializer.validated_data.get('quantity', 1)  # За замовчуванням 1
+            quantity_to_remove = serializer.validated_data['quantity']
             try:
                 cart_item = Cart.objects.get(user=request.user, product=product)
                 if cart_item.quantity > quantity_to_remove:
                     cart_item.quantity -= quantity_to_remove
                     cart_item.save()
                     return Response(
-                        {"success": True, "message": f"Кількість товару зменшено на {quantity_to_remove}"},
+                        {"success": True, "message": f"Кількість товару зменшено на {quantity_to_remove}", "quantity": cart_item.quantity},
                         status=status.HTTP_200_OK
                     )
                 else:
                     cart_item.delete()
                     return Response(
-                        {"success": True, "message": "Товар видалено з кошика"},
+                        {"success": True, "message": "Товар видалено з кошика", "quantity": 0},
                         status=status.HTTP_200_OK
                     )
             except Cart.DoesNotExist:
