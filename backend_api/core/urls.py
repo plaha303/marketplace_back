@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from .views import CartListView
 
 
 urlpatterns = [
@@ -15,4 +16,6 @@ urlpatterns = [
     path('auth/password-reset-confirm/<str:uidb64>/<str:token>/', views.PasswordResetConfirmView.as_view(),
          name='password_reset_confirm'),
     path('cart/add/', views.CartAddView.as_view(), name='cart-add'),
+    path('cart/remove/', views.CartRemoveView.as_view(), name='cart-remove'),
+    path('cart/', CartListView.as_view(), name='cart-list'),
 ]

@@ -195,3 +195,6 @@ class CartSerializer(serializers.ModelSerializer):
         if product.stock < quantity:
             raise serializers.ValidationError({"quantity": "Недостатньо товару в наявності."})
         return data
+        
+class CartRemoveSerializer(serializers.Serializer):
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
