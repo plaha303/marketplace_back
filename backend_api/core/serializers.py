@@ -198,3 +198,9 @@ class CartSerializer(serializers.ModelSerializer):
         
 class CartRemoveSerializer(serializers.Serializer):
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+    quantity = serializers.IntegerField(required=False, default=1)
+
+    def validate_quantity(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Кількість для видалення повинна бути більшою за 0")
+        return value
