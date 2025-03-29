@@ -9,13 +9,23 @@ import useSingUpMutation from "../../hooks/Auth/useSingUpMutation";
 
 function SingUp() {
   const dispatch = useDispatch();
-	const {mutateSingUp, mutateSingUpPenging} = useSingUpMutation();
-  const {handleSubmit, register, formState: {errors}, watch} = useForm();
+	const {mutateSingUp, mutateSingUpPenging, isError, error} = useSingUpMutation();
+  const {handleSubmit, register, formState: {errors}, watch, setError} = useForm();
 
   function onSubmit(data) {
-		const {username, email, password, password2} = data;
-		mutateSingUp(username, email, password, password2);
+		mutateSingUp(data, {
+			onError: (error) => {
+				if(error.errors) {
+					Object.entries(error.errors).forEach(([field, message]) => {
+						console.log('message', message)
+						setError(field, {type: "server", message})
+					})
+				}
+			}
+		});
   }
+
+	console.log('errorSingUo', errorSingUo)
 
   return (
 		<>
@@ -228,6 +238,10 @@ function SingUp() {
 						</div>
 						<div className="error-block text-red-600"></div>
 					</div>
+
+					{isError && (
+						<p style={{ color: "red", marginBottom: '15px' }}>{error.message}</p>
+					)}
 
 					<button
 						type="submit"
