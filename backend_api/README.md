@@ -21,3 +21,4 @@ In command line:
 
 5. make down :
    stop and delete docker containers
+

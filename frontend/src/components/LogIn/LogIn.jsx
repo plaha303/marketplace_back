@@ -3,15 +3,27 @@ import styled from "../../UI/Modal/Modal.module.css"
 import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { openAuthModal } from "../../store/authModalSlice";
+import useLogInQuery from "../../hooks/Auth/useLogInMutation";
+import useLogInMutation from "../../hooks/Auth/useLogInMutation";
 
 function LogIn() {
   const dispatch = useDispatch();
 
-  const {handleSubmit, register, formState: {errors}, watch} = useForm();
+	const {mutateLogIn, mutateLoginPending, isError, error} = useLogInMutation();
+
+  const {handleSubmit, register, formState: {errors}, watch, setError} = useForm();
   function onSubmit(data) {
-    console.log(data)
-    
+		mutateLogIn(data, {
+			onError: (error) => {
+				if(error.errors) {
+					Object.entries(error.errors).forEach(([field, message]) => {
+						setError(field, {type: 'server', message})
+					})
+				}
+			}
+		})
   }
+
   return (
 		<>
 			<div className="modal-header mb-[36px]">
@@ -118,6 +130,13 @@ function LogIn() {
 							)}
 						</div>
 					</div>
+
+
+					{isError && (
+						<p style={{ color: "red" }} className="mb-4">
+							{error?.message}
+						</p>
+					)}
 
 					<button
 						type="submit"
