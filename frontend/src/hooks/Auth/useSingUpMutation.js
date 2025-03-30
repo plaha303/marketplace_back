@@ -6,18 +6,18 @@ import { openAuthModal } from "../../store/authModalSlice";
 function useSingUpMutation() {
   const dispatch = useDispatch();
 
-  const {mutate: mutateSingUp, isPending: mutateSingUpPenging} = useMutation({
+  const {mutate: mutateSingUp, isPending: mutateSingUpPenging, isError, error} = useMutation({
     mutationFn: SingUp,
     onSuccess: () => {
       console.log('useSingUpMutation work');
-      dispatch(openAuthModal());
+      dispatch(openAuthModal('EmailConfirm'));
     },
     onError: (error, variables, context) => {
-      console.log(`rolling back optimistic update with id ${context.id}`)
+      console.log('error: ', error)
     },
   })
 
-  return {mutateSingUp, mutateSingUpPenging}
+  return {mutateSingUp, mutateSingUpPenging, isError, error}
 }
 
 export default useSingUpMutation;
