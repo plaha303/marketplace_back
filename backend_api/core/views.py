@@ -76,7 +76,7 @@ class VerifyEmailView(GenericAPIView):
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success": false}, status=status.HTTP_400_BAD_REQUEST)
 
         email = serializer.validated_data.get("email")
         code = serializer.validated_data.get("code")
@@ -84,14 +84,14 @@ class VerifyEmailView(GenericAPIView):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            return Response({"error": "Користувача не знайдено"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success": false}, status=status.HTTP_400_BAD_REQUEST)
 
         if user.verification_code != code:
-            return Response({"error": "Невірний код"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success": false}, status=status.HTTP_400_BAD_REQUEST)
 
         if user.verification_expires_at and now() > user.verification_expires_at:
             user.delete()
-            return Response({"error": "Код прострочений, зареєструйтеся знову"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success": false}, status=status.HTTP_400_BAD_REQUEST)
 
         user.is_verified = True
         user.is_active = True
@@ -99,7 +99,7 @@ class VerifyEmailView(GenericAPIView):
         user.verification_expires_at = None
         user.save()
 
-        return Response({"message": "Електронна пошта підтверджена"}, status=status.HTTP_200_OK)
+        return Response({"success": true}, status=status.HTTP_200_OK)
 
 
 class PasswordResetRequestView(GenericAPIView):
