@@ -1,9 +1,8 @@
-import PlatformsButtons from "../platformsButtons/platformsButtons";
+import PlatformsButtons from "../PlatformsButtons/PlatformsButtons";
 import styled from "../../UI/Modal/Modal.module.css"
-import { useForm } from "react-hook-form";
+import { SubmitHandler, useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { openAuthModal } from "../../store/authModalSlice";
-import useLogInQuery from "../../hooks/Auth/useLogInMutation";
 import useLogInMutation from "../../hooks/Auth/useLogInMutation";
 
 function LogIn() {
@@ -11,18 +10,30 @@ function LogIn() {
 
 	const {mutateLogIn, mutateLoginPending, isError, error} = useLogInMutation();
 
-  const {handleSubmit, register, formState: {errors}, watch, setError} = useForm();
-  function onSubmit(data) {
+  const {handleSubmit, register, formState: {errors}, watch, setError} = useForm<onSubmitProps>();
+
+	interface onSubmitProps {
+		email: string,
+		password: string
+	}
+	interface CustomError {
+		errors?: Record<string, string>
+	}
+
+  function onSubmit(data: onSubmitProps) {
 		mutateLogIn(data, {
-			onError: (error) => {
-				if(error.errors) {
-					Object.entries(error.errors).forEach(([field, message]) => {
-						setError(field, {type: 'server', message})
+			onError: (error: Error) => {
+				const customError = error as CustomError;
+
+				if(customError.errors) {
+					Object.entries(customError.errors).forEach(([field, message]) => {
+						setError(field as keyof onSubmitProps, {type: 'server', message})
 					})
 				}
 			}
 		})
   }
+
 
   return (
 		<>
@@ -140,7 +151,7 @@ function LogIn() {
 
 					<button
 						type="submit"
-						className="w-full rounded-lg text-white font-semibold text-2xl p-2 leading-[1.5] formBtn"
+						className="w-full rounded-lg text-white font-semibold text-2xl p-2 leading-[1.5] btn-blue"
 					>
 						Увійти
 					</button>
