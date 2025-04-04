@@ -13,7 +13,7 @@ function useEmailConfirmMutation() {
       dispatch(closeAuthModal())
     },
     onError: (error, variables, context) => {
-      cconsole.log('error: ', error)
+      console.log('error: ', error)
     }
   })
 
