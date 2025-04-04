@@ -153,7 +153,7 @@ function EmailConfirm() {
               {isError && error && <div className="error-message">{error.message || 'An unknown error occurred'}</div>}
             </div>
             <div className="lg:w-[240px] w-full mx-auto">
-              <button type="submit" disabled={emailConfirmPending} className="w-full rounded-lg text-white font-semibold text-2xl p-2 leading-[1.5] formBtn">Відправити</button>
+              <button type="submit" disabled={emailConfirmPending} className="w-full rounded-lg text-white font-semibold text-2xl p-2 leading-[1.5] btn-blue">Відправити</button>
             </div>
           </div>
         </form>
