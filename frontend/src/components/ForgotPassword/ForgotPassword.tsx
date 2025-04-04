@@ -2,9 +2,13 @@ import { useForm } from "react-hook-form";
 
 function ForgotPassword() {
 
-  const {register, handleSubmit, formState: {errors}} = useForm();
+  const {register, handleSubmit, formState: {errors}} = useForm<ForgotPassProps>();
 
-  function handleSubmitForgotPass(data) {
+
+  type ForgotPassProps = {
+    email: string
+  }
+  function handleSubmitForgotPass(data: ForgotPassProps) {
     console.log('data', data)
   }
   return (
@@ -55,7 +59,7 @@ function ForgotPassword() {
           </div>
           <button
 						type="submit"
-						className="w-full rounded-lg text-white font-semibold text-2xl p-2 leading-[1.5] formBtn"
+						className="w-full rounded-lg text-white font-semibold text-2xl p-2 leading-[1.5] btn-blue"
 					>
 						Відправити
 					</button>

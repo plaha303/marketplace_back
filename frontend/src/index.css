@@ -46,12 +46,12 @@ body {
 .icon {
   display: block;
 }
-.formBtn {
+.btn-blue {
   box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
   background: linear-gradient(45deg, #0b2354 0%, #043392 100%);
   animation: gradientAnimation 0.9s forwards;
 }
-.formBtn:hover {
+.btn-blue:hover {
   background: linear-gradient(45deg, #0b2354 100%, #043392 0%);
   animation: gradientAnimation 0.9s reverse forwards;
 }
@@ -61,3 +61,9 @@ body {
   100% { background: linear-gradient(45deg, #0b2354 0%, #043392 100%); }
 }
 
+.custom-boxShadow {
+  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+}
+.slick-list {
+  overflow: hidden;
+}

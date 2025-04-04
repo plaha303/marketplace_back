@@ -1,10 +1,11 @@
 import { useForm } from "react-hook-form"
 
 import styled from "../../UI/Modal/Modal.module.css"
-import PlatformsButtons from "../platformsButtons/platformsButtons";
+
 import { useDispatch } from "react-redux";
 import { openAuthModal } from "../../store/authModalSlice";
 import useSingUpMutation from "../../hooks/Auth/useSingUpMutation";
+import PlatformsButtons from "../PlatformsButtons/PlatformsButtons";
 
 
 function SingUp() {
@@ -24,6 +25,7 @@ function SingUp() {
 			}
 		});
   }
+
 
   return (
 		<>
@@ -243,7 +245,7 @@ function SingUp() {
 
 					<button
 						type="submit"
-						className="w-full rounded-lg text-white font-semibold text-2xl p-2 leading-[1.5] formBtn"
+						className="w-full rounded-lg text-white font-semibold text-2xl p-2 leading-[1.5] btn-blue"
 					>
 						Зареєструватися
 					</button>
