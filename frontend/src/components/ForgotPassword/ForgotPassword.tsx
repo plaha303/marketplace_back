@@ -2,9 +2,13 @@ import { useForm } from "react-hook-form";
 
 function ForgotPassword() {
 
-  const {register, handleSubmit, formState: {errors}} = useForm();
+  const {register, handleSubmit, formState: {errors}} = useForm<ForgotPassProps>();
 
-  function handleSubmitForgotPass(data) {
+
+  type ForgotPassProps = {
+    email: string
+  }
+  function handleSubmitForgotPass(data: ForgotPassProps) {
     console.log('data', data)
   }
   return (

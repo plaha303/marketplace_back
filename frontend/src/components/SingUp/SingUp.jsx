@@ -25,7 +25,6 @@ function SingUp() {
 		});
   }
 
-	console.log('errorSingUo', errorSingUo)
 
   return (
 		<>

@@ -3,7 +3,7 @@ import { Provider } from "react-redux"
 import Layout from "./layout/Layout/Layout";
 import Home from "./pages/Home/Home";
 import Support from "./pages/Support/Support";
-import { store } from "./store/store";
+import store from "./store/store";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 
