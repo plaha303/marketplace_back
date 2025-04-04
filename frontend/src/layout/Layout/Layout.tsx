@@ -1,5 +1,6 @@
 import { Outlet } from "react-router";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
+import {useSelector} from "../../hooks/hooks"
 
 import Header from "../Header/Header";
 import Footer from "../Footer/Footer";
@@ -9,11 +10,13 @@ import SingUp from "../../components/SingUp/SingUp";
 import EmailConfirm from "../../components/EmailConfirm/EmailConfirm";
 import ForgotPassword from "../../components/ForgotPassword/ForgotPassword";
 import Modal from "../../UI/Modal/Modal";
+import { closeAuthModal } from "../../store/authModalSlice";
 
 function Layout() {
   const dispatch = useDispatch();
 	const isModalOpen = useSelector(state => state.authModal.isOpen);
-	const modalType = useSelector(state => state.authModal.modalType)
+	const modalType = useSelector(state => state.authModal.modalType);
+
   return (
     <>
       <Header />

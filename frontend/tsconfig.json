@@ -11,7 +11,8 @@
     "moduleResolution": "node", 
     "module": "ESNext", 
     "forceConsistentCasingInFileNames": true,
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "types": ["vite/client"]
   },
   "include": [
     "src/**/*"
