@@ -14,12 +14,15 @@
     "@tailwindcss/vite": "^4.0.7",
     "@tanstack/react-query": "^5.66.8",
     "@tanstack/react-query-devtools": "^5.66.8",
+    "@types/react-slick": "^0.23.13",
     "axios": "^1.8.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.2",
     "react-redux": "^9.2.0",
-    "react-router": "^7.2.0"
+    "react-router": "^7.2.0",
+    "react-slick": "^0.30.3",
+    "slick-carousel": "^1.8.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
