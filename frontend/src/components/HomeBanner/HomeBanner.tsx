@@ -30,7 +30,7 @@ const sliders = [
 function HomeBanner() {
   return (
     <>
-      <ImageSlider sliders={sliders} dots={false} arrows={true} slidesToShow={1} slidesToScroll={1} />
+      <ImageSlider sliders={sliders} dots={false} arrows={true} slidesToShow={1} slidesToScroll={1} infinite={true} titleClass="homaBanner__title" descriptionClass="homaBanner__description" />
     </>
   );
 }

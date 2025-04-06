@@ -1,0 +1,23 @@
+.arrowBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid #041C4F;
+  background: rgb(245, 245, 245, 0.5);
+  &:hover {
+    border: 1px solid #043392;
+    background: rgb(233, 233, 233, 0.5);
+  }
+  &__left {
+    left: -45px;
+  }
+  &__right {
+    right: -45px;
+  }
+}

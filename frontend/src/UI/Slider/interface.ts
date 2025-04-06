@@ -7,7 +7,9 @@ export interface SliderProps {
   centerMode?: boolean,
   centerPadding?: string,
   infinite?: boolean,
-  sliders: Slide[]
+  sliders: Slide[],
+  titleClass?: string,
+  descriptionClass?: string
 }
 
 export interface Slide { 
@@ -20,5 +22,19 @@ export interface Slide {
 }
 
 export interface SliderItemProps {
-  slide: Slide;
+  slide: Slide,
+  titleClass?: string,
+  descriptionClass?: string
+}
+
+export interface SliderButton {
+  onClick?: () => void,
+  className?: string,
+  style?: string,
+}
+
+export interface SliderIconProps {
+  color: string,
+  size?: string,
+  className?: string
 }

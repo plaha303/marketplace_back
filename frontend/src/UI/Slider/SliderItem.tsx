@@ -1,23 +1,23 @@
-import { Link } from "react-router";
 import {SliderItemProps} from "./interface"
 import styles from "./SliderItem.module.scss"
+import Button from "../Button/Button"
 
 
-function SliderItem({slide}: SliderItemProps) {
+function SliderItem({slide, descriptionClass, titleClass}: SliderItemProps) {
 
   return (
-    <div className={`${styles.slideBlock} block`}>
-      <div className={`${styles.slideBlock__inner} flex items-center`}>
-        <div className={`${styles.slideBlock__left} flex-1 pr-5`}>
-          <div className={`${styles.slideBlock__title}`}>{slide.title}</div>
-          <div>{slide.description}</div>
-          <Link to={slide.link} className="d-block rounded-lg text-white font-semibold text-2xl custom-boxShadow py-4 px-[36px] leading-[36px] btn-blue">
+    <div className={`${styles.slideBlock__inner || ''} flex items-center`}>
+      <div className={`${styles.slideBlock__left || ''} flex-1 pr-5`}>
+        <div className={`${titleClass} lg:mb-[32px]`}>{slide.title}</div>
+        <div className={`${descriptionClass} font-medium text-xl`}>{slide.description}</div>
+        <div className="mt-6">
+          <Button type="button" className="inline-block text-2xl py-4 px-[36px] leading-[36px] btn-blue">
             {slide.textBtn}
-          </Link>
+          </Button>
         </div>
-        <div className={`${styles.slideBlock__right} max-w-[640px]`}>
-          <img src={slide.imgSrc} alt={slide.title} className="rounded-3xl w-full" />
-        </div>
+      </div>
+      <div className={`${styles.slideBlock__right || ''} max-w-[640px]`}>
+        <img src={slide.imgSrc} alt={slide.title} className="rounded-3xl w-full" />
       </div>
     </div>
   );

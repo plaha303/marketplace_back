@@ -21,18 +21,16 @@ function Layout() {
     <>
       <Header />
         <main className="main">
-          <div className="container mx-auto">
-            <Outlet />
-          </div>
+          <Outlet />
         </main>
         {isModalOpen &&
-				<Modal setIsOpenModal={isModalOpen} onClose={() => dispatch(closeAuthModal())} modalType={modalType}>
-					{modalType == 'LogIn' &&  <LogIn />}
-					{modalType == 'SingUp' && <SingUp />}
-					{modalType == 'EmailConfirm' && <EmailConfirm />}
-					{modalType == 'ForgotPassword' && <ForgotPassword />}
-				</Modal>
-			}
+          <Modal setIsOpenModal={isModalOpen} onClose={() => dispatch(closeAuthModal())} modalType={modalType}>
+            {modalType == 'LogIn' &&  <LogIn />}
+            {modalType == 'SingUp' && <SingUp />}
+            {modalType == 'EmailConfirm' && <EmailConfirm />}
+            {modalType == 'ForgotPassword' && <ForgotPassword />}
+          </Modal>
+        }
       <Footer />
     </>
   );
