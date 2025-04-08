@@ -76,7 +76,7 @@ class VerifyEmailView(GenericAPIView):
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
-            return Response({"success": false}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
         email = serializer.validated_data.get("email")
         code = serializer.validated_data.get("code")
@@ -84,14 +84,14 @@ class VerifyEmailView(GenericAPIView):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            return Response({"success": false}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success": False, "errors": {"email": ["Користувача не знайдено"]}}, status=status.HTTP_400_BAD_REQUEST)
 
         if user.verification_code != code:
-            return Response({"success": false}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success": False, "errors": {"code": ["Невірний код"]}}, status=status.HTTP_400_BAD_REQUEST)
 
         if user.verification_expires_at and now() > user.verification_expires_at:
             user.delete()
-            return Response({"success": false}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success": False, "errors": {"code": ["Код прострочений"]}}, status=status.HTTP_400_BAD_REQUEST)
 
         user.is_verified = True
         user.is_active = True
@@ -107,9 +107,10 @@ class PasswordResetRequestView(GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         serializer.save()
-        return Response({"message": "Лист для скидання пароля відправлено на email."}, status=status.HTTP_200_OK)
+        return Response({"success": True, "message": "Лист для скидання пароля відправлено на email."}, status=status.HTTP_200_OK)
 
 
 class PasswordResetConfirmView(GenericAPIView):
@@ -117,9 +118,13 @@ class PasswordResetConfirmView(GenericAPIView):
 
     def post(self, request, uidb64, token, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(uidb64=uidb64, token=token)
-        return Response({"message": "Пароль успішно змінено."}, status=status.HTTP_200_OK)
+        if not serializer.is_valid():
+            return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            serializer.save(uidb64=uidb64, token=token)
+            return Response({"success": True, "message": "Пароль успішно змінено."}, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({"success": False, "errors": {"detail": [str(e)]}}, status=status.HTTP_400_BAD_REQUEST)
         
 class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
@@ -216,6 +221,9 @@ class CartListView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        cart_items = Cart.objects.filter(user=request.user)
-        serializer = self.get_serializer(cart_items, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        try:
+            cart_items = Cart.objects.filter(user=request.user)
+            serializer = self.get_serializer(cart_items, many=True)
+            return Response({"success": True, "data": serializer.data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"success": False, "errors": {"detail": [str(e)]}}, status=status.HTTP_400_BAD_REQUEST)
