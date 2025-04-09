@@ -18,4 +18,10 @@ urlpatterns = [
     path('cart/add/', views.CartAddView.as_view(), name='cart-add'),
     path('cart/remove/', views.CartRemoveView.as_view(), name='cart-remove'),
     path('cart/', CartListView.as_view(), name='cart-list'),
+    path('reviews/', views.ReviewViewSet.as_view({'get': 'list', 'post': 'create'}), name='review-list'),
+    path('auction-bids/', views.AuctionBidViewSet.as_view({'get': 'list', 'post': 'create'}), name='auction-bid-list'),
+    path('favorites/', views.FavoriteViewSet.as_view({'get': 'list', 'post': 'create'}), name='favorite-list'),
+    path('categories/', views.CategoryViewSet.as_view({'get': 'list', 'post': 'create'}), name='category-list'),
+    path('payments/', views.PaymentViewSet.as_view({'get': 'list', 'post': 'create'}), name='payment-list'),
+    path('shipping/', views.ShippingViewSet.as_view({'get': 'list', 'post': 'create'}), name='shipping-list'),
 ]
