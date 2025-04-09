@@ -3,7 +3,7 @@ from rest_framework.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
-from .models import Product, ProductImage, Order, OrderItem, Category, Cart
+from .models import Product, ProductImage, Order, OrderItem, Category, Cart, Review, AuctionBid, Favorite, Payment, Shipping
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
@@ -198,3 +198,28 @@ class CartSerializer(serializers.ModelSerializer):
         
 class CartRemoveSerializer(serializers.Serializer):
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+    
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ['id', 'product', 'user', 'rating', 'comment', 'created_at']
+        
+class AuctionBidSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AuctionBid
+        fields = ['id', 'product', 'user', 'amount', 'created_at']
+        
+class FavoriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Favorite
+        fields = ['id', 'user', 'product']
+        
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = ['id', 'order', 'user', 'amount', 'payment_method', 'status', 'created_at']
+        
+class ShippingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Shipping
+        fields = ['id', 'order', 'recipient_name', 'address', 'city', 'postal_code', 'country', 'tracking_number', 'shipped_at']
