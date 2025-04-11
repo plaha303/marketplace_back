@@ -7,6 +7,7 @@ from .views import CartListView
 urlpatterns = [
     path('users/', views.UserViewSet.as_view({'get': 'list', 'post': 'create'}), name='user-list'),
     path('user/', views.UserProfileView.as_view(), name='user-profile'),
+    path('users/<int:pk>/', views.UserViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update'}), name='user-detail'),
     path('products/', views.ProductViewSet.as_view({'get': 'list', 'post': 'create'}), name='product-list'),
     path('products/<int:pk>/', views.ProductViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='product-detail'),
     path('orders/', views.OrderViewSet.as_view({'get': 'list', 'post': 'create'}), name='order-list'),
