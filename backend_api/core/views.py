@@ -6,14 +6,16 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from django_filters.rest_framework import DjangoFilterBackend
+from .filters import ProductFilter, OrderFilter, UserFilter, CartFilter, ReviewFilter, AuctionBidFilter, FavoriteFilter, CategoryFilter, PaymentFilter, ShippingFilter
 
 from django.contrib.auth import get_user_model
 
-from .models import Product, Order, Cart
+from .models import Product, Order, Cart, Review, AuctionBid, Favorite, Category, Payment, Shipping
 from .serializers import (ProductSerializer, OrderSerializer, UserSerializer,
                           RegisterSerializer, PasswordResetRequestSerializer,
                           PasswordResetConfirmSerializer, VerifyEmailSerializer, LoginSerializer,
-                          CartSerializer, CartRemoveSerializer)
+                          CartSerializer, CartRemoveSerializer, ReviewSerializer, AuctionBidSerializer, FavoriteSerializer, CategorySerializer, PaymentSerializer, ShippingSerializer)
 
 User = get_user_model()
 
@@ -22,13 +24,17 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = UserFilter
 
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ProductFilter
+    
     def perform_create(self, serializer):
         serializer.save(vendor=self.request.user)
 
@@ -37,6 +43,8 @@ class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = OrderFilter
 
     def get_queryset(self):
         if self.request.user.is_superuser:
@@ -219,11 +227,72 @@ class CartRemoveView(generics.GenericAPIView):
 class CartListView(generics.GenericAPIView):
     serializer_class = CartSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = CartFilter
 
     def get(self, request, *args, **kwargs):
         try:
-            cart_items = Cart.objects.filter(user=request.user)
-            serializer = self.get_serializer(cart_items, many=True)
+            queryset = Cart.objects.filter(user=request.user)
+            # Застосовуємо фільтри
+            filterset = self.filterset_class(request.GET, queryset=queryset)
+            if not filterset.is_valid():
+                return Response({"success": False, "errors": filterset.errors}, status=status.HTTP_400_BAD_REQUEST)
+            filtered_queryset = filterset.qs
+            serializer = self.get_serializer(filtered_queryset, many=True)
             return Response({"success": True, "data": serializer.data}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"success": False, "errors": {"detail": [str(e)]}}, status=status.HTTP_400_BAD_REQUEST)
+            
+class ReviewViewSet(viewsets.ModelViewSet):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ReviewFilter
+    
+class AuctionBidViewSet(viewsets.ModelViewSet):
+    queryset = AuctionBid.objects.all()
+    serializer_class = AuctionBidSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = AuctionBidFilter
+
+    def get_queryset(self):
+        return AuctionBid.objects.filter(user=self.request.user)  
+        
+class FavoriteViewSet(viewsets.ModelViewSet):
+    queryset = Favorite.objects.all()
+    serializer_class = FavoriteSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = FavoriteFilter
+
+    def get_queryset(self):
+        return Favorite.objects.filter(user=self.request.user)
+        
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = CategoryFilter
+
+class PaymentViewSet(viewsets.ModelViewSet):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = PaymentFilter
+
+    def get_queryset(self):
+        return Payment.objects.filter(user=self.request.user)
+        
+class ShippingViewSet(viewsets.ModelViewSet):
+    queryset = Shipping.objects.all()
+    serializer_class = ShippingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ShippingFilter
+
+    def get_queryset(self):
+        return Shipping.objects.filter(order__customer=self.request.user)
