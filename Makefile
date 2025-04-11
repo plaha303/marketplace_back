@@ -58,13 +58,21 @@ logs: ## Вивести логи всіх сервісів
 ps: ## Показати активні контейнери
 	$(DOCKER_COMPOSE_BIN) -f docker-compose.yml ps
 
-migrate: ## Запуск міграцій бази даних
+makemigrations: check_venv ## Створення нових міграцій
+	@echo "🛠 Створення нових міграцій..."
+	$(PYTHON_BIN) backend_api/manage.py makemigrations
+
+migrate: makemigrations ## Запуск міграцій бази даних
 	@echo "🔄 Виконання міграцій..."
 	$(PYTHON_BIN) backend_api/manage.py migrate
 
 super: ## Створення суперкористувача
 	@echo "👤 Створення суперкористувача..."
 	$(PYTHON_BIN) backend_api/manage.py createsuperuser
+
+kill: ## Зупинка Django сервера
+	@echo "🛑 Зупинка Django сервера..."
+	@ps aux | grep "python backend_api/manage.py runserver" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "Сервер не був запущений."
 
 run: check_venv ## Запускає сервер Django без Docker
 	@echo "🚀 Запуск Django сервера..."

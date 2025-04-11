@@ -27,7 +27,15 @@ class UserViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = UserFilter
     
-    
+    def perform_update(self, serializer):
+        # Дозволяємо оновлювати groups тільки адмінам
+        if not self.request.user.groups.filter(name='Admins').exists():
+            raise permissions.PermissionDenied("Тільки адміни можуть змінювати групи користувачів.")
+        serializer.save()
+
+    def perform_create(self, serializer):
+        # Переконуємося, що створюємо користувача з правильною групою
+        serializer.save()
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
@@ -75,7 +83,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     filterset_class = OrderFilter
 
     def get_queryset(self):
-        if self.request.user.is_superuser:
+        if self.request.user.groups.filter(name='Admins').exists():
             return Order.objects.all()
         return Order.objects.filter(customer=self.request.user)
 
