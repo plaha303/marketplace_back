@@ -31,7 +31,17 @@ class User(AbstractUser):
         self.verification_code = str(random.randint(100000, 999999))
         self.verification_expires_at = now() + timedelta(hours=1)
         self.save()
-
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)  # Спочатку зберігаємо користувача
+        group_name = {
+            'customer': 'Customers',
+            'vendor': 'Vendors',
+            'admin': 'Admins'
+        }.get(self.role)
+        if group_name:
+            group, _ = Group.objects.get_or_create(name=group_name)
+            if not self.groups.filter(name=group_name).exists():
+                self.groups.add(group)
     def __str__(self):
         return self.username
 
