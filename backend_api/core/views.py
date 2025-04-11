@@ -35,9 +35,36 @@ class ProductViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_class = ProductFilter
-    
+
     def perform_create(self, serializer):
+        if not (self.request.user.groups.filter(name='Vendors').exists() or 
+                self.request.user.groups.filter(name='Admins').exists()):
+            raise PermissionDenied("Тільки продавці або адміни можуть створювати продукти.")
         serializer.save(vendor=self.request.user)
+
+    def perform_update(self, serializer):
+        product = self.get_object()
+        
+        if self.request.user.groups.filter(name='Admins').exists():
+            serializer.save()
+        elif (self.request.user.groups.filter(name='Vendors').exists() and 
+              product.vendor == self.request.user):
+            serializer.save()
+        else:
+            #403
+            raise PermissionDenied("Ви не маєте прав редагувати цей продукт.")
+
+    def perform_destroy(self, instance):
+        product = instance
+        
+        if self.request.user.groups.filter(name='Admins').exists():
+            product.delete()
+        elif (self.request.user.groups.filter(name='Vendors').exists() and 
+              product.vendor == self.request.user):
+            product.delete()
+        else:
+            #403
+            raise PermissionDenied("Ви не маєте прав видаляти цей продукт.")
 
 
 class OrderViewSet(viewsets.ModelViewSet):
