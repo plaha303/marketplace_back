@@ -8,6 +8,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.contrib.auth.models import Group
 import os
 import certifi
 
@@ -16,9 +17,15 @@ os.environ['SSL_CERT_FILE'] = certifi.where()
 
 
 class UserSerializer(serializers.ModelSerializer):
+    groups = serializers.SlugRelatedField(
+        many=True,
+        slug_field='name',
+        queryset=Group.objects.all(),
+        required=False
+    )
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'role']
+        fields = ['id', 'username', 'email', 'role', 'groups']
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -88,6 +95,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         user.is_active = False
         user.is_verified = False
+        user.role = 'customer' #основна роль
+        user.save()
         user.generate_verification_code()
 
         send_mail(
@@ -227,4 +236,4 @@ class ShippingSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'email']
+        fields = ['username', 'email', 'role']
