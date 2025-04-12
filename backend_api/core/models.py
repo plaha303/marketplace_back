@@ -3,6 +3,7 @@ import random
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.timezone import now, timedelta
+from django.core.validators import RegexValidator
 
 
 class User(AbstractUser):
@@ -14,7 +15,7 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='customer', db_index=True)
     is_verified = models.BooleanField(default=False, db_index=True)
-    verification_code = models.CharField(max_length=6, blank=True, null=True)
+    verification_code = models.CharField(max_length=6, blank=True, null=True, validators=[RegexValidator(r'^\d{6}$', message='Код має бути 6-значним числом')])
     verification_expires_at = models.DateTimeField(null=True, blank=True)
     groups = models.ManyToManyField(
         'auth.Group',
@@ -48,7 +49,7 @@ class User(AbstractUser):
 
 class Category(models.Model):
     name = models.CharField(max_length=255, unique=True)
-    parent = models.ForeignKey('self', null=True, on_delete=models.SET_NULL)
+    parent = models.ForeignKey('self', null=True, on_delete=models.SET_NULL, db_index=True)
 
     def __str__(self):
         return self.name
@@ -69,7 +70,7 @@ class Product(models.Model):
     auction_end_time = models.DateTimeField(null=True, blank=True, db_index=True)
     stock = models.PositiveIntegerField(default=0, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
-
+    updated_at = models.DateTimeField(auto_now=True, db_index=True)
     def __str__(self):
         return self.name
 
@@ -113,7 +114,7 @@ class Order(models.Model):
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, db_index=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', db_index=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
-
+    updated_at = models.DateTimeField(auto_now=True, db_index=True)
     def __str__(self):
         return f"Order #{self.id} by {self.customer.username} - {self.status}"
 
@@ -177,7 +178,8 @@ class Review(models.Model):
 class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-
+    class Meta:
+        unique_together = ['user', 'product']
     def __str__(self):
         return f"{self.user.username}'s favorite for {self.product.name}"
         
