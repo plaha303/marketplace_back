@@ -1,16 +1,17 @@
 from django.urls import path
 from . import views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import CartListView
+from .views import CartListView, ProductViewSet
 
 
 urlpatterns = [
     path('users/', views.UserViewSet.as_view({'get': 'list', 'post': 'create'}), name='user-list'),
     path('user/', views.UserProfileView.as_view(), name='user-profile'),
-    path('users/<int:pk>/', views.UserViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update'}), name='user-detail'),
+    path('users/<int:pk>/', views.UserViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='user-detail'),
     path('products/', views.ProductViewSet.as_view({'get': 'list', 'post': 'create'}), name='product-list'),
-    path('products/<int:pk>/', views.ProductViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='product-detail'),
+    path('products/<int:pk>/', views.ProductViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='product-detail'),
     path('orders/', views.OrderViewSet.as_view({'get': 'list', 'post': 'create'}), name='order-list'),
+    path('orders/<int:pk>/', views.OrderViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='order-detail'),
     path('auth/register/', views.RegisterView.as_view(), name='register'),
     path('auth/verify-email/', views.VerifyEmailView.as_view(), name='verify-email'),
     path('auth/login/', views.LoginView.as_view(), name='login'),
@@ -22,9 +23,15 @@ urlpatterns = [
     path('cart/remove/', views.CartRemoveView.as_view(), name='cart-remove'),
     path('cart/', CartListView.as_view(), name='cart-list'),
     path('reviews/', views.ReviewViewSet.as_view({'get': 'list', 'post': 'create'}), name='review-list'),
+    path('reviews/<int:pk>/', views.ReviewViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='review-detail'),
     path('auction-bids/', views.AuctionBidViewSet.as_view({'get': 'list', 'post': 'create'}), name='auction-bid-list'),
+    path('auction-bids/<int:pk>/', views.AuctionBidViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='auction-bid-detail'),
     path('favorites/', views.FavoriteViewSet.as_view({'get': 'list', 'post': 'create'}), name='favorite-list'),
+    path('favorites/<int:pk>/', views.FavoriteViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='favorite-detail'),
     path('categories/', views.CategoryViewSet.as_view({'get': 'list', 'post': 'create'}), name='category-list'),
+    path('categories/<int:pk>/', views.CategoryViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='category-detail'),
     path('payments/', views.PaymentViewSet.as_view({'get': 'list', 'post': 'create'}), name='payment-list'),
+    path('payments/<int:pk>/', views.PaymentViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='payment-detail'),
     path('shipping/', views.ShippingViewSet.as_view({'get': 'list', 'post': 'create'}), name='shipping-list'),
+    path('shipping/<int:pk>/', views.ShippingViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='shipping-detail'),
 ]

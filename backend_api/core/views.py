@@ -10,7 +10,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .filters import ProductFilter, OrderFilter, UserFilter, CartFilter, ReviewFilter, AuctionBidFilter, FavoriteFilter, CategoryFilter, PaymentFilter, ShippingFilter
 
 from django.contrib.auth import get_user_model
-
+from .permissions import HasGroupPermission
 from .models import Product, Order, Cart, Review, AuctionBid, Favorite, Category, Payment, Shipping
 from .serializers import (ProductSerializer, OrderSerializer, UserSerializer,
                           RegisterSerializer, PasswordResetRequestSerializer,
@@ -23,14 +23,13 @@ User = get_user_model()
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [HasGroupPermission]
+    allowed_groups = ['Admins']
     filter_backends = [DjangoFilterBackend]
     filterset_class = UserFilter
     
     def perform_update(self, serializer):
         # Дозволяємо оновлювати groups тільки адмінам
-        if not self.request.user.groups.filter(name='Admins').exists():
-            raise permissions.PermissionDenied("Тільки адміни можуть змінювати групи користувачів.")
         serializer.save()
 
     def perform_create(self, serializer):
@@ -40,45 +39,26 @@ class UserViewSet(viewsets.ModelViewSet):
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [HasGroupPermission]
+    allowed_groups = ['Vendors', 'Admins']
     filter_backends = [DjangoFilterBackend]
     filterset_class = ProductFilter
 
     def perform_create(self, serializer):
-        if not (self.request.user.groups.filter(name='Vendors').exists() or 
-                self.request.user.groups.filter(name='Admins').exists()):
-            raise PermissionDenied("Тільки продавці або адміни можуть створювати продукти.")
         serializer.save(vendor=self.request.user)
 
     def perform_update(self, serializer):
-        product = self.get_object()
-        
-        if self.request.user.groups.filter(name='Admins').exists():
-            serializer.save()
-        elif (self.request.user.groups.filter(name='Vendors').exists() and 
-              product.vendor == self.request.user):
-            serializer.save()
-        else:
-            #403
-            raise PermissionDenied("Ви не маєте прав редагувати цей продукт.")
+        serializer.save()
 
     def perform_destroy(self, instance):
-        product = instance
-        
-        if self.request.user.groups.filter(name='Admins').exists():
-            product.delete()
-        elif (self.request.user.groups.filter(name='Vendors').exists() and 
-              product.vendor == self.request.user):
-            product.delete()
-        else:
-            #403
-            raise PermissionDenied("Ви не маєте прав видаляти цей продукт.")
+        instance.delete()
 
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [HasGroupPermission]
+    allowed_groups = ['Customers', 'Admins']
     filter_backends = [DjangoFilterBackend]
     filterset_class = OrderFilter
 
@@ -190,7 +170,8 @@ class LoginView(generics.GenericAPIView):
         
 class CartAddView(generics.GenericAPIView):
     serializer_class = CartSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [HasGroupPermission]
+    allowed_groups = ['Customers']
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -228,7 +209,8 @@ class CartAddView(generics.GenericAPIView):
         
 class CartRemoveView(generics.GenericAPIView):
     serializer_class = CartRemoveSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [HasGroupPermission]
+    allowed_groups = ['Customers']
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -262,7 +244,8 @@ class CartRemoveView(generics.GenericAPIView):
         
 class CartListView(generics.GenericAPIView):
     serializer_class = CartSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [HasGroupPermission]
+    allowed_groups = ['Customers']
     filter_backends = [DjangoFilterBackend]
     filterset_class = CartFilter
 
@@ -282,14 +265,16 @@ class CartListView(generics.GenericAPIView):
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [HasGroupPermission]
+    allowed_groups = ['Customers']
     filter_backends = [DjangoFilterBackend]
     filterset_class = ReviewFilter
     
 class AuctionBidViewSet(viewsets.ModelViewSet):
     queryset = AuctionBid.objects.all()
     serializer_class = AuctionBidSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [HasGroupPermission]
+    allowed_groups = ['Customers']
     filter_backends = [DjangoFilterBackend]
     filterset_class = AuctionBidFilter
 
@@ -299,7 +284,8 @@ class AuctionBidViewSet(viewsets.ModelViewSet):
 class FavoriteViewSet(viewsets.ModelViewSet):
     queryset = Favorite.objects.all()
     serializer_class = FavoriteSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [HasGroupPermission]
+    allowed_groups = ['Customers']
     filter_backends = [DjangoFilterBackend]
     filterset_class = FavoriteFilter
 
@@ -309,14 +295,16 @@ class FavoriteViewSet(viewsets.ModelViewSet):
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [HasGroupPermission]
+    allowed_groups = ['Admins']
     filter_backends = [DjangoFilterBackend]
     filterset_class = CategoryFilter
 
 class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [HasGroupPermission]
+    allowed_groups = ['Customers']
     filter_backends = [DjangoFilterBackend]
     filterset_class = PaymentFilter
 
@@ -326,7 +314,8 @@ class PaymentViewSet(viewsets.ModelViewSet):
 class ShippingViewSet(viewsets.ModelViewSet):
     queryset = Shipping.objects.all()
     serializer_class = ShippingSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [HasGroupPermission]
+    allowed_groups = ['Customers']
     filter_backends = [DjangoFilterBackend]
     filterset_class = ShippingFilter
 

@@ -1,7 +1,7 @@
 import random
 
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.utils.timezone import now, timedelta
 from django.core.validators import RegexValidator
 
@@ -18,12 +18,12 @@ class User(AbstractUser):
     verification_code = models.CharField(max_length=6, blank=True, null=True, validators=[RegexValidator(r'^\d{6}$', message='Код має бути 6-значним числом')])
     verification_expires_at = models.DateTimeField(null=True, blank=True)
     groups = models.ManyToManyField(
-        'auth.Group',
+        Group,
         related_name='core_users',
         blank=True
     )
     user_permissions = models.ManyToManyField(
-        'auth.Permission',
+        Permission,
         related_name='core_users_permissions',
         blank=True
     )
