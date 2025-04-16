@@ -7,9 +7,6 @@ function useLogInMutation() {
     onSuccess: () => {
       console.log('Log in success')
     },
-    onError: (error) => {
-      console.error("Ошибка входа:", error);
-    },
   })
 
   return {mutateLogIn, mutateLoginPending, isError, error}
