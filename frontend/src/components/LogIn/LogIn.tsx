@@ -27,8 +27,12 @@ function LogIn() {
 
 				if(customError.errors) {
 					Object.entries(customError.errors).forEach(([field, message]) => {
-						setError(field as keyof onSubmitProps, {type: 'server', message})
-					})
+						const errorMessage = Array.isArray(message) ? message[0] : message;
+						setError(field as keyof onSubmitProps, {
+							type: 'server',
+							message: errorMessage,
+						});
+					});
 				}
 			}
 		})
