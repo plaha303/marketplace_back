@@ -58,11 +58,11 @@ logs: ## Вивести логи всіх сервісів
 ps: ## Показати активні контейнери
 	$(DOCKER_COMPOSE_BIN) -f docker-compose.yml ps
 
-makemigrations: check_venv ## Створення нових міграцій
+makemigrations: check_venv
 	@echo "🛠 Створення нових міграцій..."
 	$(PYTHON_BIN) backend_api/manage.py makemigrations
 
-migrate: makemigrations ## Запуск міграцій бази даних
+migrate: check_venv
 	@echo "🔄 Виконання міграцій..."
 	$(PYTHON_BIN) backend_api/manage.py migrate
 
