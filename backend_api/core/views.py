@@ -137,8 +137,10 @@ class VerifyEmailView(GenericAPIView):
             return Response({"success": False, "errors": {"code": ["Невірний код"]}}, status=status.HTTP_400_BAD_REQUEST)
 
         if user.verification_expires_at and now() > user.verification_expires_at:
-            user.delete()
-            return Response({"success": False, "errors": {"code": ["Код прострочений"]}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"success": False, "errors": {"code": ["Код прострочений. Відправте новий код через /api/auth/resend-verification-code/"]}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         user.is_verified = True
         user.is_active = True
