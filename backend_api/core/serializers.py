@@ -11,6 +11,9 @@ from django.core.mail import send_mail
 from django.contrib.auth.models import Group
 import os
 import certifi
+from django.utils import timezone
+from django.utils.crypto import get_random_string
+from datetime import timedelta
 
 User = get_user_model()
 os.environ['SSL_CERT_FILE'] = certifi.where()
@@ -49,6 +52,13 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = ['id', 'vendor', 'category', 'name', 'description',
                   'sale_type', 'price', 'start_price', 'auction_end_time',
                   'stock', 'created_at', 'images']
+
+    def validate(self, data):
+        sale_type = data.get('sale_type', self.instance.sale_type if self.instance else 'fixed')
+        price = data.get('price', self.instance.price if self.instance else None)
+        if sale_type == 'fixed' and price is None:
+            raise serializers.ValidationError({"price": "Для типу продажу 'fixed' ціна обов’язкова."})
+        return data
 
     def create(self, validated_data):
         request = self.context.get('request')
@@ -112,8 +122,33 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class VerifyEmailSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
-    code = serializers.CharField(required=True, min_length=6, max_length=6)
+    verification_code = serializers.CharField(required=True)
 
+    def validate(self, data):
+        email = data.get('email')
+        verification_code = data.get('verification_code')
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Користувач із таким email не існує.")
+
+        if user.verification_code != verification_code:
+            raise serializers.ValidationError("Неправильний код підтвердження.")
+
+        if user.verification_expires_at < timezone.now():
+            raise serializers.ValidationError("Код підтвердження прострочений.")
+
+        return data
+
+    def save(self):
+        email = self.validated_data['email']
+        user = User.objects.get(email=email)
+        user.is_active = True  # Активуємо користувача
+        user.verification_code = None  # Очищаємо код
+        user.verification_expires_at = None  # Очищаємо термін дії
+        user.save()
+        return user
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -212,6 +247,11 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = ['id', 'product', 'user', 'rating', 'comment', 'created_at']
+
+    def validate_rating(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError("Рейтинг має бути від 1 до 5.")
+        return value
         
 class AuctionBidSerializer(serializers.ModelSerializer):
     class Meta:
@@ -237,3 +277,40 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['username', 'email', 'role']
+
+class ResendVerificationCodeSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+    def validate(self, data):
+        email = data.get('email')
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError({"email": ["Користувача з таким email не знайдено."]})
+
+        if user.is_verified:
+            raise serializers.ValidationError({"email": ["Email вже підтверджений."]})
+
+        if user.is_active:
+            raise serializers.ValidationError({"email": ["Обліковий запис уже активний."]})
+
+        return data
+
+    def save(self):
+        email = self.validated_data['email']
+        user = User.objects.get(email=email)
+
+        # Генеруємо новий код
+        user.verification_code = get_random_string(length=6, allowed_chars='1234567890')
+        user.verification_expires_at = timezone.now() + timedelta(minutes=30)
+        user.save()
+
+        # Відправляємо email
+        send_mail(
+            'Новий код підтвердження',
+            f'Ваш новий код підтвердження: {user.verification_code}',
+            'from@example.com',
+            [user.email],
+            fail_silently=False,
+        )
+        return user
