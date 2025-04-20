@@ -3,6 +3,7 @@ from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from core.models import Product, Cart, Order
+from django.utils.timezone import now, timedelta
 
 User = get_user_model()
 
@@ -100,7 +101,59 @@ class LoginViewTest(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertFalse(response.data['success'])
         self.assertIn('errors', response.data)
-# Ці рядки треба додати в кінець файлу tests.py
+
+class VerifyEmailViewTest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='password123',
+            role='customer',
+            is_verified=False,
+            is_active=False,
+            verification_code='123456',
+            verification_expires_at=now() + timedelta(hours=1)
+        )
+
+    def test_successful_verification(self):
+        # Тест успішної верифікації
+        response = self.client.post('/api/auth/verify-email/', {
+            'email': 'test@example.com',
+            'verification_code': '123456'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data['success'])
+        user = User.objects.get(email='test@example.com')
+        self.assertTrue(user.is_verified)
+        self.assertTrue(user.is_active)
+        self.assertIsNone(user.verification_code)
+
+    def test_invalid_code(self):
+        # Тест невірного коду
+        response = self.client.post('/api/auth/verify-email/', {
+            'email': 'test@example.com',
+            'verification_code': '999999'
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.data['success'])
+        self.assertIn('non_field_errors', response.data['errors'])
+        self.assertEqual(response.data['errors']['non_field_errors'], ['Неправильний код підтвердження.'])
+
+    def test_expired_code(self):
+        # Тест простроченого коду
+        self.user.verification_expires_at = now() - timedelta(hours=1)
+        self.user.save()
+        response = self.client.post('/api/auth/verify-email/', {
+            'email': 'test@example.com',
+            'verification_code': '123456'
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.data['success'])
+        self.assertIn('non_field_errors', response.data['errors'])
+        self.assertEqual(response.data['errors']['non_field_errors'], ['Код підтвердження прострочений.'])
+        # Перевіряємо, що користувач не видалений
+        self.assertTrue(User.objects.filter(email='test@example.com').exists())
 
 class CartAddViewTest(TestCase):
     def setUp(self):
@@ -142,7 +195,6 @@ class CartAddViewTest(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertFalse(response.data['success'])
         self.assertIn('quantity', response.data['errors'])
-# Ці рядки треба додати в кінець файлу tests.py
 
 class OrderViewSetTest(TestCase):
     def setUp(self):
