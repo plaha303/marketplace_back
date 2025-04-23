@@ -15,7 +15,7 @@ from .models import Product, Order, Cart, Review, AuctionBid, Favorite, Category
 from .serializers import (ProductSerializer, OrderSerializer, UserSerializer,
                           RegisterSerializer, PasswordResetRequestSerializer,
                           PasswordResetConfirmSerializer, VerifyEmailSerializer, LoginSerializer,
-                          CartSerializer, CartRemoveSerializer, ReviewSerializer, AuctionBidSerializer, FavoriteSerializer, CategorySerializer, PaymentSerializer, ShippingSerializer, UserProfileSerializer)
+                          CartSerializer, ResendVerificationCodeSerializer, OrderItem, CartRemoveSerializer, ReviewSerializer, AuctionBidSerializer, FavoriteSerializer, CategorySerializer, PaymentSerializer, ShippingSerializer, UserProfileSerializer)
 
 User = get_user_model()
 
@@ -67,10 +67,33 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Order.objects.all()
         return Order.objects.filter(customer=self.request.user)
 
-    def perform_create(self, serializer):
-        serializer.save(customer=self.request.user)
+    def create(self, request, *args, **kwargs):
+        # Перевіряємо, чи є товари в кошику
+        cart_items = Cart.objects.filter(user=self.request.user)
+        if not cart_items.exists():
+            return Response({"success": False, "errors": {"cart": "Кошик порожній."}}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Створюємо серіалізатор для замовлення
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
+        # Рахуємо загальну суму замовлення
+        total_amount = sum(item.product.price * item.quantity for item in cart_items if item.product.price is not None)
+        # Зберігаємо замовлення
+        order = serializer.save(customer=self.request.user, total_amount=total_amount)
+
+        # Створюємо елементи замовлення (OrderItem) для кожного товару з кошика
+        for item in cart_items:
+            OrderItem.objects.create(
+                order=order,
+                product=item.product,
+                quantity=item.quantity,
+                price=item.product.price
+            )
+        # Очищаємо кошик після створення замовлення
+        cart_items.delete()
+        return Response({"success": True, "data": serializer.data}, status=status.HTTP_201_CREATED)
+# Цей рядок треба поміняти: замінити старий perform_create на новий метод create
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
@@ -103,7 +126,7 @@ class VerifyEmailView(GenericAPIView):
             return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
         email = serializer.validated_data.get("email")
-        code = serializer.validated_data.get("code")
+        code = serializer.validated_data.get("verification_code")
 
         try:
             user = User.objects.get(email=email)
@@ -123,7 +146,7 @@ class VerifyEmailView(GenericAPIView):
         user.verification_expires_at = None
         user.save()
 
-        return Response({"success": true}, status=status.HTTP_200_OK)
+        return Response({"success": True}, status=status.HTTP_200_OK)
 
 
 class PasswordResetRequestView(GenericAPIView):
@@ -135,6 +158,15 @@ class PasswordResetRequestView(GenericAPIView):
             return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         serializer.save()
         return Response({"success": True, "message": "Лист для скидання пароля відправлено на email."}, status=status.HTTP_200_OK)
+
+class ResendVerificationCodeView(APIView):
+    def post(self, request):
+        serializer = ResendVerificationCodeSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save()
+        return Response({"success": True, "data": {"message": "Новий код підтвердження відправлено!"}}, status=status.HTTP_200_OK)
 
 
 class PasswordResetConfirmView(GenericAPIView):
