@@ -1,6 +1,6 @@
 import random
 
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.utils.timezone import now, timedelta
 from django.core.validators import RegexValidator
@@ -12,6 +12,11 @@ class User(AbstractUser):
         ('vendor', 'Vendor'),
         ('admin', 'Admin'),
     ]
+    ROLE_GROUP_MAPPING = {
+        'customer': 'Customers',
+        'vendor': 'Vendors',
+        'admin': 'Admins'
+    }
     email = models.EmailField(unique=True)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='customer', db_index=True)
     is_verified = models.BooleanField(default=False, db_index=True)
@@ -32,17 +37,23 @@ class User(AbstractUser):
         self.verification_code = str(random.randint(100000, 999999))
         self.verification_expires_at = now() + timedelta(hours=1)
         self.save()
+
+    @transaction.atomic
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)  # Спочатку зберігаємо користувача
-        group_name = {
-            'customer': 'Customers',
-            'vendor': 'Vendors',
-            'admin': 'Admins'
-        }.get(self.role)
+        group_name = self.ROLE_GROUP_MAPPING.get(self.role)
         if group_name:
-            group, _ = Group.objects.get_or_create(name=group_name)
-            if not self.groups.filter(name=group_name).exists():
+            if self.role == 'admin':
+                # Для адмінів тільки одна група
+                self.groups.clear()
+                group, _ = Group.objects.get_or_create(name='Admins')  # Виправлено: objects
                 self.groups.add(group)
+            else:
+                # Додаємо групу для інших ролей, якщо її немає
+                group, _ = Group.objects.get_or_create(name=group_name)
+                if not self.groups.filter(name=group.name).exists():  # Виправлено: filter, exists
+                    self.groups.add(group)
+                self.groups.remove(*self.groups.filter(name='Admins'))
     def __str__(self):
         return self.username
 
@@ -53,7 +64,9 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
-
+    class Meta:
+        verbose_name = 'Category'
+        verbose_name_plural = 'Categories'
 
 class Product(models.Model):
     SALE_TYPE_CHOICES = [

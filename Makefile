@@ -77,3 +77,8 @@ kill: ## Зупинка Django сервера
 run: check_venv ## Запускає сервер Django без Docker
 	@echo "🚀 Запуск Django сервера..."
 	$(PYTHON_BIN) backend_api/manage.py runserver localhost:8000
+
+test: check_venv ## Запускає тести Django
+	@echo "🧪 Запуск тестів Django..."
+	$(PYTHON_BIN) backend_api/manage.py test core
+
