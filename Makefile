@@ -68,7 +68,7 @@ migrate: check_venv
 
 super: ## Створення суперкористувача
 	@echo "👤 Створення суперкористувача..."
-	$(PYTHON_BIN) backend_api/manage.py createsuperuser
+	$(PYTHON_BIN) backend_api/manage.py customcreatesuperuser
 
 kill: ## Зупинка Django сервера
 	@echo "🛑 Зупинка Django сервера..."
