@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django import forms
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission
 from .models import User, Category, Product, Cart
 
 class UserAdminForm(forms.ModelForm):
@@ -12,7 +12,7 @@ class UserAdminForm(forms.ModelForm):
         cleaned_data = super().clean()
         role = cleaned_data.get('role')
         groups = cleaned_data.get('groups')
-        expected_group = models.User.ROLE_GROUP_MAPPING.get(role)
+        expected_group = User.ROLE_GROUP_MAPPING.get(role)
 
         if role == 'admin':
             admin_group = Group.objects.filter(name='Admins').first()
