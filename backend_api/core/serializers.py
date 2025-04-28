@@ -105,13 +105,20 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         user.is_active = False
         user.is_verified = False
-        user.role = 'customer' #основна роль
+        user.role = 'customer'
         user.save()
         user.generate_verification_code()
 
+        # Генеруємо посилання для активації
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        activation_link = f"http://localhost:8000/api/auth/activate/{uid}/{token}/"
+
         send_mail(
-            'Код підтвердження реєстрації',
-            f'Ваш код підтвердження: {user.verification_code}. Він дійсний протягом 1 години.',
+            'Підтвердження реєстрації',
+            f'Вітаємо, {user.username}!\n\n'
+            f'Ваш код підтвердження: {user.verification_code} (дійсний 1 годину).\n'
+            f'Або перейдіть за посиланням для активації: {activation_link}\n',
             settings.DEFAULT_FROM_EMAIL,
             [user.email],
             fail_silently=False,
@@ -291,25 +298,25 @@ class ResendVerificationCodeSerializer(serializers.Serializer):
         if user.is_verified:
             raise serializers.ValidationError({"email": ["Email вже підтверджений."]})
 
-        if user.is_active:
-            raise serializers.ValidationError({"email": ["Обліковий запис уже активний."]})
-
         return data
 
     def save(self):
         email = self.validated_data['email']
         user = User.objects.get(email=email)
-
-        # Генеруємо новий код
         user.verification_code = get_random_string(length=6, allowed_chars='1234567890')
         user.verification_expires_at = timezone.now() + timedelta(minutes=30)
         user.save()
 
-        # Відправляємо email
+        # Додаємо посилання для активації
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        activation_link = f"http://localhost:8000/api/auth/activate/{uid}/{token}/"
+
         send_mail(
             'Новий код підтвердження',
-            f'Ваш новий код підтвердження: {user.verification_code}',
-            'from@example.com',
+            f'Ваш новий код підтвердження: {user.verification_code}\n'
+            f'Або перейдіть за посиланням для активації: {activation_link}',
+            settings.DEFAULT_FROM_EMAIL,  # Використовуємо DEFAULT_FROM_EMAIL
             [user.email],
             fail_silently=False,
         )
