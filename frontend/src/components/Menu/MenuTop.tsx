@@ -1,7 +1,11 @@
 import { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { openAuthModal } from '../../store/authModalSlice';
+
 import styled from '../Menu/Menu.module.css';
-import DropDown from '../../UI/dropdown/dropdown';
-import LogIn from '../LogIn/LogIn';
+import DropDown from '../../UI/dropdown/DropDown';
+
+
 
 const currencies = [
 	{ id: '1', name: '₴' },
@@ -14,22 +18,22 @@ const languages = [
 	{ id: '2', name: 'us' },
 ];
 
-function MenuTop({setIsOpenModal, setModalType}) {
+function MenuTop() {
+	const dispatch = useDispatch();
 	const [selectedDropdown, setSelectedDropdown] = useState({
 		currencies: '₴',
 		languages: 'ua',
 	});
 
-	function selectItem(itemName, dropdownKey) {
+	function selectItem(itemName: string, dropdownKey: string) {
 		setSelectedDropdown((prev) => ({
 			...prev,
 			[dropdownKey]: itemName,
 		}));
 	}
 
-	function handleModalShow(typeModal) {
-		setIsOpenModal(true)
-		setModalType(typeModal)
+	function handleModalShow(typeModal: string) {
+		dispatch(openAuthModal(typeModal))
 	}
 
 	return (
@@ -56,13 +60,13 @@ function MenuTop({setIsOpenModal, setModalType}) {
 					<DropDown
 						current={selectedDropdown.languages}
 						list={languages}
-						selectItem={(itemName) => selectItem(itemName, "languages")}
+						selectItem={(itemName:string) => selectItem(itemName, "languages")}
 						classBlock={`${styled.dropDownBtn} ${styled.languagesBtn}`}
 					/>
 					<DropDown
 						current={selectedDropdown.currencies}
 						list={currencies}
-						selectItem={(itemName) => selectItem(itemName, "currencies")}
+						selectItem={(itemName: string) => selectItem(itemName, "currencies")}
 						classBlock={`${styled.dropDownBtn} ${styled.currenciesBtn}`}
 					/>
 				

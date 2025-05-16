@@ -1,4 +1,4 @@
-import Logo from "../../components/Logo/Logo";
+import Logo from "../Logo/Logo";
 
 function FooterTop(){ 
     return (

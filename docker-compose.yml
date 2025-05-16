@@ -1,6 +1,7 @@
 # Volumes
 volumes:
   marketplace_db_data:
+  redis_data:
 
 services:
 
@@ -17,7 +18,7 @@ services:
     expose:
       - 5432
     env_file:
-      - .env
+      - backend_api/.env
     environment:
       POSTGRES_DB: ${DB_DATABASE}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -25,6 +26,23 @@ services:
       SCHEMA: public
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:alpine
+    container_name: marketplace_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    ports:
+      - 6379:6379
+    expose:
+      - 6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
