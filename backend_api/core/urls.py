@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import CartListView, ProductViewSet, ResendVerificationCodeView, ActivateEmailView
+from .views import CartListView, ProductViewSet, ResendVerificationCodeView
 
 
 urlpatterns = [
@@ -14,7 +14,6 @@ urlpatterns = [
     path('orders/<int:pk>/', views.OrderViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='order-detail'),
     path('auth/register/', views.RegisterView.as_view(), name='register'),
     path('auth/verify-email/', views.VerifyEmailView.as_view(), name='verify-email'),
-    path('auth/activate/<str:uidb64>/<str:token>/', views.ActivateEmailView.as_view(), name='activate-email'),
     path('auth/resend-verification-code/', ResendVerificationCodeView.as_view(), name='resend-verification-code'),
     path('auth/login/', views.LoginView.as_view(), name='login'),
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

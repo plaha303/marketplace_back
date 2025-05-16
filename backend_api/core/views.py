@@ -372,33 +372,3 @@ class UserProfileView(generics.GenericAPIView):
         serializer = self.get_serializer(request.user)
         return Response({"success": True, "data": serializer.data})
 
-class ActivateEmailView(APIView):
-    def get(self, request, uidb64, token):
-        try:
-            uid = force_str(urlsafe_base64_decode(uidb64))
-            user = User.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            return Response(
-                {"success": False, "errors": {"detail": "Недійсне посилання"}},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if default_token_generator.check_token(user, token):
-            if not user.is_verified:
-                user.is_verified = True
-                user.is_active = True
-                user.verification_code = None
-                user.verification_expires_at = None
-                user.save()
-                return Response(
-                    {"success": True, "message": "Обліковий запис активовано"},
-                    status=status.HTTP_200_OK
-                )
-            return Response(
-                {"success": True, "message": "Обліковий запис уже активовано"},
-                status=status.HTTP_200_OK
-            )
-        return Response(
-            {"success": False, "errors": {"detail": "Недійсний токен"}},
-            status=status.HTTP_400_BAD_REQUEST
-        )
