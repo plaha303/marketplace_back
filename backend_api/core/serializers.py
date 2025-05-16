@@ -3,22 +3,32 @@ from rest_framework.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
-from .models import Product, ProductImage, Order, OrderItem, Category, Cart
+from .models import Product, ProductImage, Order, OrderItem, Category, Cart, Review, AuctionBid, Favorite, Payment, Shipping
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.contrib.auth.models import Group
 import os
 import certifi
+from django.utils import timezone
+from django.utils.crypto import get_random_string
+from datetime import timedelta
 
 User = get_user_model()
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
 
 class UserSerializer(serializers.ModelSerializer):
+    groups = serializers.SlugRelatedField(
+        many=True,
+        slug_field='name',
+        queryset=Group.objects.all(),
+        required=False
+    )
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'role']
+        fields = ['id', 'username', 'email', 'role', 'groups']
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -42,6 +52,13 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = ['id', 'vendor', 'category', 'name', 'description',
                   'sale_type', 'price', 'start_price', 'auction_end_time',
                   'stock', 'created_at', 'images']
+
+    def validate(self, data):
+        sale_type = data.get('sale_type', self.instance.sale_type if self.instance else 'fixed')
+        price = data.get('price', self.instance.price if self.instance else None)
+        if sale_type == 'fixed' and price is None:
+            raise serializers.ValidationError({"price": "Для типу продажу 'fixed' ціна обов’язкова."})
+        return data
 
     def create(self, validated_data):
         request = self.context.get('request')
@@ -88,11 +105,20 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         user.is_active = False
         user.is_verified = False
+        user.role = 'customer'
+        user.save()
         user.generate_verification_code()
 
+        # Генеруємо посилання для активації
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        activation_link = f"http://localhost:8000/api/auth/activate/{uid}/{token}/"
+
         send_mail(
-            'Код підтвердження реєстрації',
-            f'Ваш код підтвердження: {user.verification_code}. Він дійсний протягом 1 години.',
+            'Підтвердження реєстрації',
+            f'Вітаємо, {user.username}!\n\n'
+            f'Ваш код підтвердження: {user.verification_code} (дійсний 1 годину).\n'
+            f'Або перейдіть за посиланням для активації: {activation_link}\n',
             settings.DEFAULT_FROM_EMAIL,
             [user.email],
             fail_silently=False,
@@ -103,8 +129,33 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class VerifyEmailSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
-    code = serializers.CharField(required=True, min_length=6, max_length=6)
+    verification_code = serializers.CharField(required=True)
 
+    def validate(self, data):
+        email = data.get('email')
+        verification_code = data.get('verification_code')
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Користувач із таким email не існує.")
+
+        if user.verification_code != verification_code:
+            raise serializers.ValidationError("Неправильний код підтвердження.")
+
+        if user.verification_expires_at < timezone.now():
+            raise serializers.ValidationError("Код підтвердження прострочений.")
+
+        return data
+
+    def save(self):
+        email = self.validated_data['email']
+        user = User.objects.get(email=email)
+        user.is_active = True  # Активуємо користувача
+        user.verification_code = None  # Очищаємо код
+        user.verification_expires_at = None  # Очищаємо термін дії
+        user.save()
+        return user
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -198,3 +249,75 @@ class CartSerializer(serializers.ModelSerializer):
         
 class CartRemoveSerializer(serializers.Serializer):
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+    
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ['id', 'product', 'user', 'rating', 'comment', 'created_at']
+
+    def validate_rating(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError("Рейтинг має бути від 1 до 5.")
+        return value
+        
+class AuctionBidSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AuctionBid
+        fields = ['id', 'product', 'user', 'amount', 'created_at']
+        
+class FavoriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Favorite
+        fields = ['id', 'user', 'product']
+        
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = ['id', 'order', 'user', 'amount', 'payment_method', 'status', 'created_at']
+        
+class ShippingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Shipping
+        fields = ['id', 'order', 'recipient_name', 'address', 'city', 'postal_code', 'country', 'tracking_number', 'shipped_at']
+        
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'role']
+
+class ResendVerificationCodeSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+    def validate(self, data):
+        email = data.get('email')
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError({"email": ["Користувача з таким email не знайдено."]})
+
+        if user.is_verified:
+            raise serializers.ValidationError({"email": ["Email вже підтверджений."]})
+
+        return data
+
+    def save(self):
+        email = self.validated_data['email']
+        user = User.objects.get(email=email)
+        user.verification_code = get_random_string(length=6, allowed_chars='1234567890')
+        user.verification_expires_at = timezone.now() + timedelta(minutes=30)
+        user.save()
+
+        # Додаємо посилання для активації
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        activation_link = f"http://localhost:8000/api/auth/activate/{uid}/{token}/"
+
+        send_mail(
+            'Новий код підтвердження',
+            f'Ваш новий код підтвердження: {user.verification_code}\n'
+            f'Або перейдіть за посиланням для активації: {activation_link}',
+            settings.DEFAULT_FROM_EMAIL,  # Використовуємо DEFAULT_FROM_EMAIL
+            [user.email],
+            fail_silently=False,
+        )
+        return user
