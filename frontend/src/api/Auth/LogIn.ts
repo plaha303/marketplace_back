@@ -1,21 +1,17 @@
 import axios from "axios";
+import { Request } from "../../http/http-request-service";
+import { HttpMethod } from "../../http/enums/http-method";
+import { ApiEndpoint } from "../../http/enums/api-endpoint";
 
-interface LogInProps {
+export interface LogInProps {
   email: string,
   password: string
 }
 
 export async function LogIn(data: LogInProps) {
-  const BASE_URL = import.meta.env.VITE_BASE_URL;
-
-  try {
-    const response = await axios.post(`${BASE_URL}/api/auth/login/`, data);
-
-    return response.data
-  } catch (error:unknown) {
-    if(axios.isAxiosError(error)) {
-      throw error.response?.data
-    }
-    throw { message: "Невідома помилка" };
-  }
+  return Request({
+    url: ApiEndpoint.LOGIN,
+    method: HttpMethod.POST,
+    body: data
+  })
 }
