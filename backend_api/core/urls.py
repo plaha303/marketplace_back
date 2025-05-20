@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import CartListView, ProductViewSet, ResendVerificationCodeView
+from .views import CartListView, ProductViewSet, ResendVerificationCodeView, CustomTokenRefreshView
 
 
 urlpatterns = [
@@ -16,7 +16,7 @@ urlpatterns = [
     path('auth/verify-email/', views.VerifyEmailView.as_view(), name='verify-email'),
     path('auth/resend-verification-code/', ResendVerificationCodeView.as_view(), name='resend-verification-code'),
     path('auth/login/', views.LoginView.as_view(), name='login'),
-    path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('auth/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
     path('auth/password-reset/', views.PasswordResetRequestView.as_view(), name='password_reset'),
     path('auth/password-reset-confirm/<str:uidb64>/<str:token>/', views.PasswordResetConfirmView.as_view(),
          name='password_reset_confirm'),

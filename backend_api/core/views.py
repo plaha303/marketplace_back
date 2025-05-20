@@ -8,14 +8,14 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import ProductFilter, OrderFilter, UserFilter, CartFilter, ReviewFilter, AuctionBidFilter, FavoriteFilter, CategoryFilter, PaymentFilter, ShippingFilter
-
 from django.contrib.auth import get_user_model
 from .permissions import HasGroupPermission
 from .models import Product, Order, Cart, Review, AuctionBid, Favorite, Category, Payment, Shipping
 from .serializers import (ProductSerializer, OrderSerializer, UserSerializer,
                           RegisterSerializer, PasswordResetRequestSerializer,
                           PasswordResetConfirmSerializer, VerifyEmailSerializer, LoginSerializer,
-                          CartSerializer, ResendVerificationCodeSerializer, OrderItem, CartRemoveSerializer, ReviewSerializer, AuctionBidSerializer, FavoriteSerializer, CategorySerializer, PaymentSerializer, ShippingSerializer, UserProfileSerializer)
+                          CartSerializer, ResendVerificationCodeSerializer, OrderItem, CartRemoveSerializer, ReviewSerializer, 
+                          AuctionBidSerializer, FavoriteSerializer, CategorySerializer, PaymentSerializer, ShippingSerializer, UserProfileSerializer)
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
@@ -192,22 +192,49 @@ class LoginView(generics.GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'success': True,
-                'access': str(refresh.access_token),
-                'refresh': str(refresh)
-            }, status=status.HTTP_200_OK)
-        return Response({
-            'success': False,
-            'errors': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        refresh = RefreshToken.for_user(user)
+
+        # access token у тілі відповіді
+        response_data = {
+            'success': True,
+            'access': str(refresh.access_token),
+        }
+
+        response = Response(response_data, status=status.HTTP_200_OK)
+        response.set_cookie(
+            key='refresh_token',
+            value=str(refresh),
+            httponly=True,
+            secure=False,  # True у продакшені
+            samesite='Strict',
+            max_age=14 * 24 * 60 * 60,
         )
+        return response
 
 
-
+class CustomTokenRefreshView(APIView):
+    def post(self, request, *args, **kwargs):
+        refresh_token = request.COOKIES.get('refresh_token')
+        if not refresh_token:
+            return Response(
+                {"success": False, "errors": {"detail": "Refresh token not provided in cookies"}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try Newcastle United Football Club
+            refresh = RefreshToken(refresh_token)
+            access_token = str(refresh.access_token)
+            return Response(
+                {"success": True, "access": access_token},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(
+                {"success": False, "errors": {"detail": str(e)}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class CartAddView(generics.GenericAPIView):
