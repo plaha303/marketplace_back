@@ -109,16 +109,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.save()
         user.generate_verification_code()
 
-        # Генеруємо посилання для активації
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = default_token_generator.make_token(user)
-        activation_link = f"http://localhost:8000/api/auth/activate/{uid}/{token}/"
+
 
         send_mail(
             'Підтвердження реєстрації',
             f'Вітаємо, {user.username}!\n\n'
-            f'Ваш код підтвердження: {user.verification_code} (дійсний 1 годину).\n'
-            f'Або перейдіть за посиланням для активації: {activation_link}\n',
+            f'Ваш код підтвердження: {user.verification_code} (дійсний 1 годину).\n',
             settings.DEFAULT_FROM_EMAIL,
             [user.email],
             fail_silently=False,
@@ -307,16 +303,11 @@ class ResendVerificationCodeSerializer(serializers.Serializer):
         user.verification_expires_at = timezone.now() + timedelta(minutes=30)
         user.save()
 
-        # Додаємо посилання для активації
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = default_token_generator.make_token(user)
-        activation_link = f"http://localhost:8000/api/auth/activate/{uid}/{token}/"
 
         send_mail(
             'Новий код підтвердження',
-            f'Ваш новий код підтвердження: {user.verification_code}\n'
-            f'Або перейдіть за посиланням для активації: {activation_link}',
-            settings.DEFAULT_FROM_EMAIL,  # Використовуємо DEFAULT_FROM_EMAIL
+            f'Ваш новий код підтвердження: {user.verification_code} (дійсний 30 хвилин).',
+            settings.DEFAULT_FROM_EMAIL,
             [user.email],
             fail_silently=False,
         )

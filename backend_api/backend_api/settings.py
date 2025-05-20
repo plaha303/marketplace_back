@@ -84,6 +84,7 @@ TEMPLATES = [
     },
 ]
 
+CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
@@ -219,3 +220,8 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),  # Access token діє 2 години
     'REFRESH_TOKEN_LIFETIME': timedelta(days=14), # Refresh token діє 14 днів
 }
+
+# Налаштування cookie
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Strict'
+SESSION_COOKIE_SECURE = False  # У продакшні  True для HTTPS
