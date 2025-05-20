@@ -2,8 +2,9 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from core.models import Product, Cart, Order
+from core.models import Product, Cart, Order, User
 from django.utils.timezone import now, timedelta
+from django.core import mail
 
 User = get_user_model()
 
@@ -102,6 +103,58 @@ class LoginViewTest(TestCase):
         self.assertFalse(response.data['success'])
         self.assertIn('errors', response.data)
 
+class RegisterViewTest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_successful_registration(self):
+        response = self.client.post('/api/auth/register/', {
+            'username': 'newuser',
+            'email': 'newuser@example.com',
+            'password': 'Password123',
+            'password2': 'Password123'
+        })
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.data['success'])
+        user = User.objects.get(email='newuser@example.com')
+        self.assertFalse(user.is_verified)
+        self.assertFalse(user.is_active)
+        self.assertIsNotNone(user.verification_code)
+        self.assertIsNotNone(user.verification_expires_at)
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertEqual(email.subject, 'Підтвердження реєстрації')
+        self.assertIn(f'Ваш код підтвердження: {user.verification_code}', email.body)
+        self.assertNotIn('http://localhost:8000/api/auth/activate/', email.body)
+
+    def test_registration_password_mismatch(self):
+        response = self.client.post('/api/auth/register/', {
+            'username': 'newuser',
+            'email': 'newuser@example.com',
+            'password': 'Password123',
+            'password2': 'Different123'
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.data['success'])
+        self.assertIn('non_field_errors', response.data['errors'])
+        self.assertEqual(response.data['errors']['non_field_errors'], ['Паролі не співпадають'])
+
+    def test_registration_duplicate_email(self):
+        User.objects.create_user(
+            username='existing',
+            email='newuser@example.com',
+            password='Password123'
+        )
+        response = self.client.post('/api/auth/register/', {
+            'username': 'newuser',
+            'email': 'newuser@example.com',
+            'password': 'Password123',
+            'password2': 'Password123'
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.data['success'])
+        self.assertIn('email', response.data['errors'])
+
 class VerifyEmailViewTest(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -117,7 +170,6 @@ class VerifyEmailViewTest(TestCase):
         )
 
     def test_successful_verification(self):
-        # Тест успішної верифікації
         response = self.client.post('/api/auth/verify-email/', {
             'email': 'test@example.com',
             'verification_code': '123456'
@@ -128,9 +180,9 @@ class VerifyEmailViewTest(TestCase):
         self.assertTrue(user.is_verified)
         self.assertTrue(user.is_active)
         self.assertIsNone(user.verification_code)
+        self.assertIsNone(user.verification_expires_at)
 
     def test_invalid_code(self):
-        # Тест невірного коду
         response = self.client.post('/api/auth/verify-email/', {
             'email': 'test@example.com',
             'verification_code': '999999'
@@ -141,7 +193,6 @@ class VerifyEmailViewTest(TestCase):
         self.assertEqual(response.data['errors']['non_field_errors'], ['Неправильний код підтвердження.'])
 
     def test_expired_code(self):
-        # Тест простроченого коду
         self.user.verification_expires_at = now() - timedelta(hours=1)
         self.user.save()
         response = self.client.post('/api/auth/verify-email/', {
@@ -152,8 +203,82 @@ class VerifyEmailViewTest(TestCase):
         self.assertFalse(response.data['success'])
         self.assertIn('non_field_errors', response.data['errors'])
         self.assertEqual(response.data['errors']['non_field_errors'], ['Код підтвердження прострочений.'])
-        # Перевіряємо, що користувач не видалений
-        self.assertTrue(User.objects.filter(email='test@example.com').exists())
+
+    def test_non_existent_email(self):
+        response = self.client.post('/api/auth/verify-email/', {
+            'email': 'nonexistent@example.com',
+            'verification_code': '123456'
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.data['success'])
+        self.assertIn('non_field_errors', response.data['errors'])
+        self.assertEqual(response.data['errors']['non_field_errors'], ['Користувач із таким email не існує.'])
+
+class ResendVerificationCodeViewTest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='password123',
+            role='customer',
+            is_verified=False,
+            is_active=False,
+            verification_code='123456',
+            verification_expires_at=now() + timedelta(hours=1)
+        )
+
+    def test_successful_resend_code(self):
+        response = self.client.post('/api/auth/resend-verification-code/', {
+            'email': 'test@example.com'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data['success'])
+        self.assertEqual(response.data['data']['message'], 'Новий код підтвердження відправлено!')
+        user = User.objects.get(email='test@example.com')
+        self.assertNotEqual(user.verification_code, '123456')  # Код змінився
+        self.assertTrue(user.verification_expires_at > now())
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertEqual(email.subject, 'Новий код підтвердження')
+        self.assertIn(f'Ваш новий код підтвердження: {user.verification_code}', email.body)
+        self.assertNotIn('http://localhost:8000/api/auth/activate/', email.body)
+
+    def test_resend_code_already_verified(self):
+        self.user.is_verified = True
+        self.user.save()
+        response = self.client.post('/api/auth/resend-verification-code/', {
+            'email': 'test@example.com'
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.data['success'])
+        self.assertIn('email', response.data['errors'])
+        self.assertEqual(response.data['errors']['email'], ['Email вже підтверджений.'])
+
+    def test_resend_code_non_existent_email(self):
+        response = self.client.post('/api/auth/resend-verification-code/', {
+            'email': 'nonexistent@example.com'
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.data['success'])
+        self.assertIn('email', response.data['errors'])
+        self.assertEqual(response.data['errors']['email'], ['Користувача з таким email не знайдено.'])
+
+class ActivateEmailViewTest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='password123',
+            role='customer',
+            is_verified=False,
+            is_active=False
+        )
+
+    def test_activate_endpoint_not_found(self):
+        response = self.client.get('/api/auth/activate/dummyuid/dummytoken/')
+        self.assertEqual(response.status_code, 404)
 
 class CartAddViewTest(TestCase):
     def setUp(self):
