@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { openAuthModal } from '../../store/authModalSlice';
 
 import styled from '../Menu/Menu.module.css';
 import DropDown from '../../UI/dropdown/DropDown';
 import { RootState } from '../../store/store';
+import { useAppDispatch, useAppSelector } from '../../store/hooks/hooks';
 
 
 
@@ -20,9 +20,9 @@ const languages = [
 ];
 
 function MenuTop() {
-	const isCodeSent = useSelector((state: RootState) => state.authModal.isCodeSent);
+	const isCodeSent = useAppSelector((state: RootState) => state.authModal.isCodeSent);
 
-	const dispatch = useDispatch();
+	const dispatch = useAppDispatch();
 	const [selectedDropdown, setSelectedDropdown] = useState({
 		currencies: '₴',
 		languages: 'ua',

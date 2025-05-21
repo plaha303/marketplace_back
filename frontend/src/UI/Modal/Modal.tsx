@@ -1,8 +1,8 @@
 import React, { PropsWithChildren } from 'react';
-import { useDispatch } from "react-redux";
-import styled from "./Modal.module.css"
+import styled from "./Modal.module.scss"
 import { closeAuthModal } from "../../store/authModalSlice";
 import { useRef } from "react";
+import { useAppDispatch } from '../../store/hooks/hooks';
 
 interface ModalProps {
   modalType: string | null,
@@ -11,7 +11,7 @@ interface ModalProps {
 }
 
 const Modal: React.FC<PropsWithChildren<ModalProps>> = ({ children, modalType }) => {
-  const dispatch = useDispatch()
+  const dispatch = useAppDispatch()
   const dialogRef = useRef<HTMLDialogElement | null>(null);
 
   function handleModalClick(e: React.MouseEvent<HTMLSpanElement>) {

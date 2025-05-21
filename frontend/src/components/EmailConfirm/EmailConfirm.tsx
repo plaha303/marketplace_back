@@ -1,6 +1,5 @@
 import { useForm, Controller } from "react-hook-form";
-import useEmailConfirmMutation from "../../hooks/Auth/useEmailConfirmMutation";
-import React from "react";
+import useEmailConfirmMutation from "./hook/useEmailConfirmMutation";
 
 function EmailConfirm() {
   const {emailConfirm, emailConfirmPending, isError, error} = useEmailConfirmMutation();

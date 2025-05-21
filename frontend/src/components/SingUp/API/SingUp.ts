@@ -1,6 +1,7 @@
-import { ApiEndpoint } from "../../http/enums/api-endpoint"
-import { HttpMethod } from "../../http/enums/http-method"
-import { Request } from "../../http/http-request-service"
+import { ApiEndpoint } from "@/utils/http/enums/api-endpoint"
+import { HttpMethod } from "@/utils/http/enums/http-method"
+import { request } from "@/utils/http/http-request"
+
 
 export interface SingUpProps {
   userName: string,
@@ -13,7 +14,7 @@ export interface SingUpProps {
 export async function SingUp(data: SingUpProps) {
   console.log('SingUp', data)
   
-  return Request({
+  return request({
     url: ApiEndpoint.SINGUP,
     method: HttpMethod.POST,
     body: data
