@@ -223,7 +223,7 @@ class CustomTokenRefreshView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        try Newcastle United Football Club
+        try:
             refresh = RefreshToken(refresh_token)
             access_token = str(refresh.access_token)
             return Response(
