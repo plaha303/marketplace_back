@@ -7,15 +7,18 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django_filters.rest_framework import DjangoFilterBackend
-from .filters import ProductFilter, OrderFilter, UserFilter, CartFilter, ReviewFilter, AuctionBidFilter, FavoriteFilter, CategoryFilter, PaymentFilter, ShippingFilter
+from .filters import ProductFilter, OrderFilter, UserFilter, CartFilter, ReviewFilter, AuctionBidFilter, FavoriteFilter, \
+    CategoryFilter, PaymentFilter, ShippingFilter
 from django.contrib.auth import get_user_model
 from .permissions import HasGroupPermission
 from .models import Product, Order, Cart, Review, AuctionBid, Favorite, Category, Payment, Shipping
 from .serializers import (ProductSerializer, OrderSerializer, UserSerializer,
                           RegisterSerializer, PasswordResetRequestSerializer,
                           PasswordResetConfirmSerializer, VerifyEmailSerializer, LoginSerializer,
-                          CartSerializer, ResendVerificationCodeSerializer, OrderItem, CartRemoveSerializer, ReviewSerializer, 
-                          AuctionBidSerializer, FavoriteSerializer, CategorySerializer, PaymentSerializer, ShippingSerializer, UserProfileSerializer)
+                          CartSerializer, ResendVerificationCodeSerializer, OrderItem, CartRemoveSerializer,
+                          ReviewSerializer,
+                          AuctionBidSerializer, FavoriteSerializer, CategorySerializer, PaymentSerializer,
+                          ShippingSerializer, UserProfileSerializer)
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
@@ -30,7 +33,7 @@ class UserViewSet(viewsets.ModelViewSet):
     allowed_groups = ['Admins']
     filter_backends = [DjangoFilterBackend]
     filterset_class = UserFilter
-    
+
     def perform_update(self, serializer):
         # Дозволяємо оновлювати groups тільки адмінам
         serializer.save()
@@ -38,6 +41,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         # Переконуємося, що створюємо користувача з правильною групою
         serializer.save()
+
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
@@ -74,7 +78,8 @@ class OrderViewSet(viewsets.ModelViewSet):
         # Перевіряємо, чи є товари в кошику
         cart_items = Cart.objects.filter(user=self.request.user)
         if not cart_items.exists():
-            return Response({"success": False, "errors": {"cart": "Кошик порожній."}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success": False, "errors": {"cart": "Кошик порожній."}},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         # Створюємо серіалізатор для замовлення
         serializer = self.get_serializer(data=request.data)
@@ -96,6 +101,8 @@ class OrderViewSet(viewsets.ModelViewSet):
         # Очищаємо кошик після створення замовлення
         cart_items.delete()
         return Response({"success": True, "data": serializer.data}, status=status.HTTP_201_CREATED)
+
+
 # Цей рядок треба поміняти: замінити старий perform_create на новий метод create
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -134,14 +141,17 @@ class VerifyEmailView(GenericAPIView):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            return Response({"success": False, "errors": {"email": ["Користувача не знайдено"]}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success": False, "errors": {"email": ["Користувача не знайдено"]}},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         if user.verification_code != code:
-            return Response({"success": False, "errors": {"code": ["Невірний код"]}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success": False, "errors": {"code": ["Невірний код"]}},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         if user.verification_expires_at and now() > user.verification_expires_at:
             return Response(
-                {"success": False, "errors": {"code": ["Код прострочений. Відправте новий код через /api/auth/resend-verification-code/"]}},
+                {"success": False, "errors": {
+                    "code": ["Код прострочений. Відправте новий код через /api/auth/resend-verification-code/"]}},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -162,7 +172,9 @@ class PasswordResetRequestView(GenericAPIView):
         if not serializer.is_valid():
             return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         serializer.save()
-        return Response({"success": True, "message": "Лист для скидання пароля відправлено на email."}, status=status.HTTP_200_OK)
+        return Response({"success": True, "message": "Лист для скидання пароля відправлено на email."},
+                        status=status.HTTP_200_OK)
+
 
 class ResendVerificationCodeView(APIView):
     def post(self, request):
@@ -171,7 +183,8 @@ class ResendVerificationCodeView(APIView):
             return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer.save()
-        return Response({"success": True, "data": {"message": "Новий код підтвердження відправлено!"}}, status=status.HTTP_200_OK)
+        return Response({"success": True, "data": {"message": "Новий код підтвердження відправлено!"}},
+                        status=status.HTTP_200_OK)
 
 
 class PasswordResetConfirmView(GenericAPIView):
@@ -186,7 +199,8 @@ class PasswordResetConfirmView(GenericAPIView):
             return Response({"success": True, "message": "Пароль успішно змінено."}, status=status.HTTP_200_OK)
         except ValidationError as e:
             return Response({"success": False, "errors": {"detail": [str(e)]}}, status=status.HTTP_400_BAD_REQUEST)
-        
+
+
 class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
 
@@ -222,7 +236,7 @@ class CustomTokenRefreshView(APIView):
                 {"success": False, "errors": {"detail": "Refresh token not provided in cookies"}},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             refresh = RefreshToken(refresh_token)
             access_token = str(refresh.access_token)
@@ -275,7 +289,8 @@ class CartAddView(generics.GenericAPIView):
             {"success": False, "errors": serializer.errors},
             status=status.HTTP_400_BAD_REQUEST
         )
-        
+
+
 class CartRemoveView(generics.GenericAPIView):
     serializer_class = CartRemoveSerializer
     permission_classes = [HasGroupPermission]
@@ -310,7 +325,8 @@ class CartRemoveView(generics.GenericAPIView):
             {"success": False, "errors": serializer.errors},
             status=status.HTTP_400_BAD_REQUEST
         )
-        
+
+
 class CartListView(generics.GenericAPIView):
     serializer_class = CartSerializer
     permission_classes = [HasGroupPermission]
@@ -330,7 +346,8 @@ class CartListView(generics.GenericAPIView):
             return Response({"success": True, "data": serializer.data}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"success": False, "errors": {"detail": [str(e)]}}, status=status.HTTP_400_BAD_REQUEST)
-            
+
+
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
@@ -338,7 +355,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
     allowed_groups = ['Customers']
     filter_backends = [DjangoFilterBackend]
     filterset_class = ReviewFilter
-    
+
+
 class AuctionBidViewSet(viewsets.ModelViewSet):
     queryset = AuctionBid.objects.all()
     serializer_class = AuctionBidSerializer
@@ -348,8 +366,9 @@ class AuctionBidViewSet(viewsets.ModelViewSet):
     filterset_class = AuctionBidFilter
 
     def get_queryset(self):
-        return AuctionBid.objects.filter(user=self.request.user)  
-        
+        return AuctionBid.objects.filter(user=self.request.user)
+
+
 class FavoriteViewSet(viewsets.ModelViewSet):
     queryset = Favorite.objects.all()
     serializer_class = FavoriteSerializer
@@ -360,7 +379,8 @@ class FavoriteViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Favorite.objects.filter(user=self.request.user)
-        
+
+
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -368,6 +388,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     allowed_groups = ['Admins']
     filter_backends = [DjangoFilterBackend]
     filterset_class = CategoryFilter
+
 
 class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
@@ -379,7 +400,8 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Payment.objects.filter(user=self.request.user)
-        
+
+
 class ShippingViewSet(viewsets.ModelViewSet):
     queryset = Shipping.objects.all()
     serializer_class = ShippingSerializer
@@ -390,7 +412,8 @@ class ShippingViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Shipping.objects.filter(order__customer=self.request.user)
-        
+
+
 class UserProfileView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserProfileSerializer
