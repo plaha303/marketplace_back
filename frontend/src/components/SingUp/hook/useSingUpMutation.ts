@@ -1,10 +1,11 @@
+import { useAppDispatch } from "@/store/hooks/hooks";
 import {useMutation} from "@tanstack/react-query"
-import { SingUp } from "../../api/Auth/SingUp"
-import { useDispatch } from "react-redux"
-import { openAuthModal, setCodeSent } from "../../store/authModalSlice";
+import { SingUp } from "../API/SingUp";
+import { openAuthModal, setCodeSent } from "@/store/authModalSlice";
+
 
 function useSingUpMutation()  {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const {mutate: mutateSingUp, isPending: mutateSingUpPenging, isError, error} = useMutation({
     mutationFn: SingUp,
