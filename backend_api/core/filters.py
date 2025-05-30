@@ -45,13 +45,18 @@ class OrderFilter(filters.FilterSet):
         fields = ['status', 'min_amount', 'max_amount', 'created_after', 'created_before', 'product', 'customer', 'payment_status']
         
 class UserFilter(filters.FilterSet):
-    role = filters.ChoiceFilter(choices=User.ROLE_CHOICES)
+    roles = filters.CharFilter(method='filter_roles')
     is_verified = filters.BooleanFilter(field_name='is_verified', lookup_expr='exact')
     username = filters.CharFilter(field_name='username', lookup_expr='icontains')
 
     class Meta:
         model = User
-        fields = ['role', 'is_verified', 'username']
+        fields = ['roles', 'is_verified', 'username']
+
+    def filter_roles(self, queryset, name, value):
+        if value in [choice[0] for choice in User.ROLE_CHOICES]:
+            return queryset.filter(roles__contains=[value])
+        return queryset
         
 class CartFilter(filters.FilterSet):
     product_id = filters.NumberFilter(field_name='product__id', lookup_expr='exact')

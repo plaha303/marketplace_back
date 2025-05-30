@@ -2,46 +2,35 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth import authenticate
-from .models import Product, ProductImage, Order, OrderItem, Category, Cart, Review, AuctionBid, Favorite, Payment, Shipping
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.contrib.auth.models import Group
-import os
-import certifi
+from .models import Product, ProductImage, Order, OrderItem, Category, Cart, Review, AuctionBid, Favorite, Payment, Shipping
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from datetime import timedelta
+import os
+import certifi
 
 User = get_user_model()
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
-
 class UserSerializer(serializers.ModelSerializer):
-    groups = serializers.SlugRelatedField(
-        many=True,
-        slug_field='name',
-        queryset=Group.objects.all(),
-        required=False
-    )
+    roles = serializers.ListField(child=serializers.CharField(), required=False)  # Для ArrayField
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'role', 'groups']
-
+        fields = ['id', 'username', 'email', 'roles']
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ['id', 'name', 'parent']
 
-    
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
         fields = ['id', 'image_url']
-
 
 class ProductSerializer(serializers.ModelSerializer):
     vendor = UserSerializer(read_only=True)
@@ -66,12 +55,10 @@ class ProductSerializer(serializers.ModelSerializer):
             validated_data['vendor'] = request.user
         return super().create(validated_data)
 
-
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
         fields = ['id', 'product', 'quantity', 'price']
-
 
 class OrderSerializer(serializers.ModelSerializer):
     customer = UserSerializer(read_only=True)
@@ -86,7 +73,6 @@ class OrderSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             validated_data['customer'] = request.user
         return super().create(validated_data)
-
 
 class RegisterSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(write_only=True)
@@ -105,11 +91,9 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         user.is_active = False
         user.is_verified = False
-        user.role = 'customer'
+        user.roles = ['user']
         user.save()
         user.generate_verification_code()
-
-
 
         send_mail(
             'Підтвердження реєстрації',
@@ -121,7 +105,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
 
         return user
-
 
 class VerifyEmailSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
@@ -147,9 +130,9 @@ class VerifyEmailSerializer(serializers.Serializer):
     def save(self):
         email = self.validated_data['email']
         user = User.objects.get(email=email)
-        user.is_active = True  # Активуємо користувача
-        user.verification_code = None  # Очищаємо код
-        user.verification_expires_at = None  # Очищаємо термін дії
+        user.is_active = True
+        user.verification_code = None
+        user.verification_expires_at = None
         user.save()
         return user
 
@@ -166,7 +149,6 @@ class PasswordResetRequestSerializer(serializers.Serializer):
         user = User.objects.get(email=email)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
-        # url need change before production
         reset_url = f"localhost:8000/api/auth/password-reset-confirm/{uid}/{token}"
 
         send_mail(
@@ -176,7 +158,6 @@ class PasswordResetRequestSerializer(serializers.Serializer):
             recipient_list=[email],
             fail_silently=False,
         )
-
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
     new_password = serializers.CharField(write_only=True, min_length=8)
@@ -223,7 +204,7 @@ class LoginSerializer(serializers.Serializer):
 
         data['user'] = user
         return data
-        
+
 class CartSerializer(serializers.ModelSerializer):
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
 
@@ -242,10 +223,10 @@ class CartSerializer(serializers.ModelSerializer):
         if product.stock < quantity:
             raise serializers.ValidationError({"quantity": "Недостатньо товару в наявності."})
         return data
-        
+
 class CartRemoveSerializer(serializers.Serializer):
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
-    
+
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
@@ -255,31 +236,31 @@ class ReviewSerializer(serializers.ModelSerializer):
         if value < 1 or value > 5:
             raise serializers.ValidationError("Рейтинг має бути від 1 до 5.")
         return value
-        
+
 class AuctionBidSerializer(serializers.ModelSerializer):
     class Meta:
         model = AuctionBid
         fields = ['id', 'product', 'user', 'amount', 'created_at']
-        
+
 class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = ['id', 'user', 'product']
-        
+
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = ['id', 'order', 'user', 'amount', 'payment_method', 'status', 'created_at']
-        
+
 class ShippingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shipping
         fields = ['id', 'order', 'recipient_name', 'address', 'city', 'postal_code', 'country', 'tracking_number', 'shipped_at']
-        
+
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'email', 'role']
+        fields = ['username', 'email', 'roles']
 
 class ResendVerificationCodeSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
@@ -302,7 +283,6 @@ class ResendVerificationCodeSerializer(serializers.Serializer):
         user.verification_code = get_random_string(length=6, allowed_chars='1234567890')
         user.verification_expires_at = timezone.now() + timedelta(minutes=30)
         user.save()
-
 
         send_mail(
             'Новий код підтвердження',

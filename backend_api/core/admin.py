@@ -1,44 +1,46 @@
 from django.contrib import admin
 from django import forms
-from django.contrib.auth.models import Group
 from .models import User, Category, Product, Cart
 
 class UserAdminForm(forms.ModelForm):
+    roles = forms.MultipleChoiceField(
+        choices=User.ROLE_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        help_text="Select roles for the user (user or admin)."
+    )
+
     class Meta:
         model = User
         fields = '__all__'
 
     def clean(self):
         cleaned_data = super().clean()
-        role = cleaned_data.get('role')
-        groups = cleaned_data.get('groups')
-        expected_group = models.User.ROLE_GROUP_MAPPING.get(role)
-
-        if role == 'admin':
-            admin_group = Group.objects.filter(name='Admins').first()
-            if not admin_group:
-                self.add_error('groups', 'Група Admins не існує. Створіть її перед призначенням ролі admin.')
-            elif not groups or admin_group not in groups or len(groups) > 1:
-                self.add_error('groups', 'Для ролі admin дозволена лише група Admins.')
-        else:
-            if expected_group:
-                group = Group.objects.filter(name=expected_group).first()
-                if group and group not in groups:
-                    self.add_error('groups', f"Для ролі {role} потрібно включити групу {expected_group}.")
-            if groups and groups.filter(name='Admins').exists():
-                self.add_error('groups', 'Група Admins не дозволена для ролі customer, vendor або інших')
-
+        roles = cleaned_data.get('roles', [])
+        if not roles:
+            self.add_error('roles', 'At least one role must be selected.')
         return cleaned_data
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.roles = self.cleaned_data['roles']
+        if commit:
+            user.save()
+        return user
 
 class UserAdmin(admin.ModelAdmin):
     form = UserAdminForm
-    list_display = ['username', 'email', 'role', 'is_verified', 'is_active']
-    list_filter = ['role', 'is_verified', 'is_active']
+    list_display = ['username', 'email', 'get_roles_display', 'is_verified', 'is_active']
+    list_filter = ['is_verified', 'is_active']
     search_fields = ['username', 'email']
-    filter_horizontal = ['groups', 'user_permissions']
+    fields = ['username', 'email', 'roles', 'is_verified', 'is_active', 'is_superuser', 'password']
 
-# Реєстрація моделей
-admin.site.register(User, UserAdmin)  # Правильна реєстрація: модель User із класом UserAdmin
+    def get_roles_display(self, obj):
+        return ", ".join(obj.roles)
+    get_roles_display.short_description = 'Roles'
+
+# Register models
+admin.site.register(User, UserAdmin)
 admin.site.register(Category)
 admin.site.register(Product)
 admin.site.register(Cart)

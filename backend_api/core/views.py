@@ -10,44 +10,39 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .filters import ProductFilter, OrderFilter, UserFilter, CartFilter, ReviewFilter, AuctionBidFilter, FavoriteFilter, \
     CategoryFilter, PaymentFilter, ShippingFilter
 from django.contrib.auth import get_user_model
-from .permissions import HasGroupPermission
+from .permissions import HasRolePermission
 from .models import Product, Order, Cart, Review, AuctionBid, Favorite, Category, Payment, Shipping
 from .serializers import (ProductSerializer, OrderSerializer, UserSerializer,
                           RegisterSerializer, PasswordResetRequestSerializer,
                           PasswordResetConfirmSerializer, VerifyEmailSerializer, LoginSerializer,
                           CartSerializer, ResendVerificationCodeSerializer, OrderItem, CartRemoveSerializer,
-                          ReviewSerializer,
-                          AuctionBidSerializer, FavoriteSerializer, CategorySerializer, PaymentSerializer,
-                          ShippingSerializer, UserProfileSerializer)
+                          ReviewSerializer, AuctionBidSerializer, FavoriteSerializer, CategorySerializer,
+                          PaymentSerializer, ShippingSerializer, UserProfileSerializer)
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
 
 User = get_user_model()
 
-
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [HasGroupPermission]
-    allowed_groups = ['Admins']
+    permission_classes = [HasRolePermission]
+    allowed_roles = ['admin']
     filter_backends = [DjangoFilterBackend]
     filterset_class = UserFilter
 
     def perform_update(self, serializer):
-        # Дозволяємо оновлювати groups тільки адмінам
         serializer.save()
 
     def perform_create(self, serializer):
-        # Переконуємося, що створюємо користувача з правильною групою
         serializer.save()
-
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [HasGroupPermission]
-    allowed_groups = ['Vendors', 'Admins']
+    permission_classes = [HasRolePermission]
+    allowed_roles = ['user', 'admin']
     filter_backends = [DjangoFilterBackend]
     filterset_class = ProductFilter
 
@@ -60,37 +55,31 @@ class ProductViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         instance.delete()
 
-
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    permission_classes = [HasGroupPermission]
-    allowed_groups = ['Customers', 'Admins']
+    permission_classes = [HasRolePermission]
+    allowed_roles = ['user', 'admin']
     filter_backends = [DjangoFilterBackend]
     filterset_class = OrderFilter
 
     def get_queryset(self):
-        if self.request.user.groups.filter(name='Admins').exists():
+        if 'admin' in (self.request.user.get_roles() if hasattr(self.request.user, 'get_roles') else self.request.user.roles):
             return Order.objects.all()
         return Order.objects.filter(customer=self.request.user)
 
     def create(self, request, *args, **kwargs):
-        # Перевіряємо, чи є товари в кошику
         cart_items = Cart.objects.filter(user=self.request.user)
         if not cart_items.exists():
             return Response({"success": False, "errors": {"cart": "Кошик порожній."}},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        # Створюємо серіалізатор для замовлення
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Рахуємо загальну суму замовлення
         total_amount = sum(item.product.price * item.quantity for item in cart_items if item.product.price is not None)
-        # Зберігаємо замовлення
         order = serializer.save(customer=self.request.user, total_amount=total_amount)
 
-        # Створюємо елементи замовлення (OrderItem) для кожного товару з кошика
         for item in cart_items:
             OrderItem.objects.create(
                 order=order,
@@ -98,12 +87,9 @@ class OrderViewSet(viewsets.ModelViewSet):
                 quantity=item.quantity,
                 price=item.product.price
             )
-        # Очищаємо кошик після створення замовлення
         cart_items.delete()
         return Response({"success": True, "data": serializer.data}, status=status.HTTP_201_CREATED)
 
-
-# Цей рядок треба поміняти: замінити старий perform_create на новий метод create
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
@@ -115,21 +101,9 @@ class RegisterView(generics.CreateAPIView):
             return Response({'success': True}, status=status.HTTP_201_CREATED)
         return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-
 class VerifyEmailView(GenericAPIView):
     serializer_class = VerifyEmailSerializer
 
-    # @extend_schema(
-    #     request=VerifyEmailSerializer,
-    #     responses={200: {"message": "Електронна пошта підтверджена"}},
-    #     examples=[
-    #         OpenApiExample(
-    #             name="Приклад успішного запиту",
-    #             value={"email": "user@example.com", "code": "123456"},
-    #             request_only=True,
-    #         )
-    #     ],
-    # )
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
@@ -163,7 +137,6 @@ class VerifyEmailView(GenericAPIView):
 
         return Response({"success": True}, status=status.HTTP_200_OK)
 
-
 class PasswordResetRequestView(GenericAPIView):
     serializer_class = PasswordResetRequestSerializer
 
@@ -175,7 +148,6 @@ class PasswordResetRequestView(GenericAPIView):
         return Response({"success": True, "message": "Лист для скидання пароля відправлено на email."},
                         status=status.HTTP_200_OK)
 
-
 class ResendVerificationCodeView(APIView):
     def post(self, request):
         serializer = ResendVerificationCodeSerializer(data=request.data)
@@ -185,7 +157,6 @@ class ResendVerificationCodeView(APIView):
         serializer.save()
         return Response({"success": True, "data": {"message": "Новий код підтвердження відправлено!"}},
                         status=status.HTTP_200_OK)
-
 
 class PasswordResetConfirmView(GenericAPIView):
     serializer_class = PasswordResetConfirmSerializer
@@ -200,7 +171,6 @@ class PasswordResetConfirmView(GenericAPIView):
         except ValidationError as e:
             return Response({"success": False, "errors": {"detail": [str(e)]}}, status=status.HTTP_400_BAD_REQUEST)
 
-
 class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
 
@@ -210,7 +180,6 @@ class LoginView(generics.GenericAPIView):
         user = serializer.validated_data['user']
         refresh = RefreshToken.for_user(user)
 
-        # access token у тілі відповіді
         response_data = {
             'success': True,
             'access': str(refresh.access_token),
@@ -221,12 +190,11 @@ class LoginView(generics.GenericAPIView):
             key='refresh_token',
             value=str(refresh),
             httponly=True,
-            secure=False,  # True у продакшені
+            secure=False,
             samesite='Strict',
             max_age=14 * 24 * 60 * 60,
         )
         return response
-
 
 class CustomTokenRefreshView(APIView):
     def post(self, request, *args, **kwargs):
@@ -250,18 +218,16 @@ class CustomTokenRefreshView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-
 class CartAddView(generics.GenericAPIView):
     serializer_class = CartSerializer
-    permission_classes = [HasGroupPermission]
-    allowed_groups = ['Customers']
+    permission_classes = [HasRolePermission]
+    allowed_roles = ['user']
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             product = serializer.validated_data['product']
             quantity = serializer.validated_data['quantity']
-            # Перевірка запасу
             if product.stock < quantity:
                 return Response(
                     {"success": False, "errors": {"quantity": ["Недостатньо товару на складі"]}},
@@ -290,17 +256,16 @@ class CartAddView(generics.GenericAPIView):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-
 class CartRemoveView(generics.GenericAPIView):
     serializer_class = CartRemoveSerializer
-    permission_classes = [HasGroupPermission]
-    allowed_groups = ['Customers']
+    permission_classes = [HasRolePermission]
+    allowed_roles = ['user']
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             product = serializer.validated_data['product']
-            quantity_to_remove = serializer.validated_data.get('quantity', 1)  # За замовчуванням 1
+            quantity_to_remove = serializer.validated_data.get('quantity', 1)
             try:
                 cart_item = Cart.objects.get(user=request.user, product=product)
                 if cart_item.quantity > quantity_to_remove:
@@ -326,18 +291,16 @@ class CartRemoveView(generics.GenericAPIView):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-
 class CartListView(generics.GenericAPIView):
     serializer_class = CartSerializer
-    permission_classes = [HasGroupPermission]
-    allowed_groups = ['Customers']
+    permission_classes = [HasRolePermission]
+    allowed_roles = ['user']
     filter_backends = [DjangoFilterBackend]
     filterset_class = CartFilter
 
     def get(self, request, *args, **kwargs):
         try:
             queryset = Cart.objects.filter(user=request.user)
-            # Застосовуємо фільтри
             filterset = self.filterset_class(request.GET, queryset=queryset)
             if not filterset.is_valid():
                 return Response({"success": False, "errors": filterset.errors}, status=status.HTTP_400_BAD_REQUEST)
@@ -347,72 +310,65 @@ class CartListView(generics.GenericAPIView):
         except Exception as e:
             return Response({"success": False, "errors": {"detail": [str(e)]}}, status=status.HTTP_400_BAD_REQUEST)
 
-
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = [HasGroupPermission]
-    allowed_groups = ['Customers']
+    permission_classes = [HasRolePermission]
+    allowed_roles = ['user']
     filter_backends = [DjangoFilterBackend]
     filterset_class = ReviewFilter
-
 
 class AuctionBidViewSet(viewsets.ModelViewSet):
     queryset = AuctionBid.objects.all()
     serializer_class = AuctionBidSerializer
-    permission_classes = [HasGroupPermission]
-    allowed_groups = ['Customers']
+    permission_classes = [HasRolePermission]
+    allowed_roles = ['user']
     filter_backends = [DjangoFilterBackend]
     filterset_class = AuctionBidFilter
 
     def get_queryset(self):
         return AuctionBid.objects.filter(user=self.request.user)
 
-
 class FavoriteViewSet(viewsets.ModelViewSet):
     queryset = Favorite.objects.all()
     serializer_class = FavoriteSerializer
-    permission_classes = [HasGroupPermission]
-    allowed_groups = ['Customers']
+    permission_classes = [HasRolePermission]
+    allowed_roles = ['user']
     filter_backends = [DjangoFilterBackend]
     filterset_class = FavoriteFilter
 
     def get_queryset(self):
         return Favorite.objects.filter(user=self.request.user)
 
-
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [HasGroupPermission]
-    allowed_groups = ['Admins']
+    permission_classes = [HasRolePermission]
+    allowed_roles = ['admin']
     filter_backends = [DjangoFilterBackend]
     filterset_class = CategoryFilter
-
 
 class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
-    permission_classes = [HasGroupPermission]
-    allowed_groups = ['Customers']
+    permission_classes = [HasRolePermission]
+    allowed_roles = ['user']
     filter_backends = [DjangoFilterBackend]
     filterset_class = PaymentFilter
 
     def get_queryset(self):
         return Payment.objects.filter(user=self.request.user)
 
-
 class ShippingViewSet(viewsets.ModelViewSet):
     queryset = Shipping.objects.all()
     serializer_class = ShippingSerializer
-    permission_classes = [HasGroupPermission]
-    allowed_groups = ['Customers']
+    permission_classes = [HasRolePermission]
+    allowed_roles = ['user']
     filter_backends = [DjangoFilterBackend]
     filterset_class = ShippingFilter
 
     def get_queryset(self):
         return Shipping.objects.filter(order__customer=self.request.user)
-
 
 class UserProfileView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -420,5 +376,13 @@ class UserProfileView(generics.GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         serializer = self.get_serializer(request.user)
-        return Response({"success": True, "data": serializer.data})
-
+        orders = Order.objects.filter(customer=request.user).count()
+        products = Product.objects.filter(vendor=request.user).count()
+        return Response({
+            "success": True,
+            "data": {
+                "user": serializer.data,
+                "orders_count": orders,
+                "products_count": products
+            }
+        })

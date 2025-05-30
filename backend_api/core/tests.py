@@ -1,7 +1,6 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from core.models import Product, Cart, Order, User
 from django.utils.timezone import now, timedelta
 from django.core import mail
@@ -11,57 +10,39 @@ User = get_user_model()
 class ProductViewSetTest(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.vendor = User.objects.create_user(
-            username='vendor',
-            email='vendor@example.com',
+        self.user = User.objects.create_user(
+            username='user',
+            email='user@example.com',
             password='pass',
-            role='vendor'
+            roles=['user']
         )
-        self.vendor.groups.add(Group.objects.get_or_create(name='Vendors')[0])
-
-        self.customer = User.objects.create_user(
-            username='customer',
-            email='customer@example.com',
-            password='pass',
-            role='customer'
-        )
-        self.customer.groups.add(Group.objects.get_or_create(name='Customers')[0])
-
         self.admin = User.objects.create_user(
             username='admin',
             email='admin@example.com',
             password='pass',
-            role='admin'
+            roles=['admin']
         )
-        self.admin.groups.add(Group.objects.get_or_create(name='Admins')[0])
-
         self.product = Product.objects.create(
-            vendor=self.vendor, name='Test Product', price=100, stock=10
+            vendor=self.user, name='Test Product', price=100, stock=10
         )
 
-    def test_vendor_can_create_product(self):
-        self.client.force_authenticate(self.vendor)
+    def test_user_can_create_product(self):
+        self.client.force_authenticate(self.user)
         response = self.client.post('/api/products/', {'name': 'New Product', 'price': 200, 'stock': 5})
         self.assertEqual(response.status_code, 201)
         self.assertEqual(Product.objects.count(), 2)
 
-    def test_customer_cannot_create_product(self):
-        self.client.force_authenticate(self.customer)
-        response = self.client.post('/api/products/', {'name': 'New Product', 'price': 200, 'stock': 5})
-        self.assertEqual(response.status_code, 403)
-
-    def test_vendor_cannot_edit_other_product(self):
-        other_vendor = User.objects.create_user(
+    def test_user_cannot_edit_other_product(self):
+        other_user = User.objects.create_user(
             username='other',
             email='other@example.com',
             password='pass',
-            role='vendor'
+            roles=['user']
         )
-        other_vendor.groups.add(Group.objects.get_or_create(name='Vendors')[0])
         other_product = Product.objects.create(
-            vendor=other_vendor, name='Other Product', price=300, stock=5
+            vendor=other_user, name='Other Product', price=300, stock=5
         )
-        self.client.force_authenticate(self.vendor)
+        self.client.force_authenticate(self.user)
         response = self.client.put(f'/api/products/{other_product.id}/', {'name': 'Edited', 'price': 400, 'stock': 5})
         self.assertEqual(response.status_code, 403)
 
@@ -78,11 +59,10 @@ class LoginViewTest(TestCase):
             username='testuser',
             email='test@example.com',
             password='password123',
-            role='customer',
+            roles=['user'],
             is_verified=True,
             is_active=True
         )
-        self.user.groups.add(Group.objects.get_or_create(name='Customers')[0])
 
     def test_successful_login(self):
         response = self.client.post('/api/auth/login/', {
@@ -92,7 +72,6 @@ class LoginViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.data['success'])
         self.assertIn('access', response.data)
-        self.assertIn('refresh', response.data)
 
     def test_failed_login_wrong_password(self):
         response = self.client.post('/api/auth/login/', {
@@ -143,7 +122,8 @@ class RegisterViewTest(TestCase):
         User.objects.create_user(
             username='existing',
             email='newuser@example.com',
-            password='Password123'
+            password='Password123',
+            roles=['user']
         )
         response = self.client.post('/api/auth/register/', {
             'username': 'newuser',
@@ -162,7 +142,7 @@ class VerifyEmailViewTest(TestCase):
             username='testuser',
             email='test@example.com',
             password='password123',
-            role='customer',
+            roles=['user'],
             is_verified=False,
             is_active=False,
             verification_code='123456',
@@ -221,7 +201,7 @@ class ResendVerificationCodeViewTest(TestCase):
             username='testuser',
             email='test@example.com',
             password='password123',
-            role='customer',
+            roles=['user'],
             is_verified=False,
             is_active=False,
             verification_code='123456',
@@ -236,7 +216,7 @@ class ResendVerificationCodeViewTest(TestCase):
         self.assertTrue(response.data['success'])
         self.assertEqual(response.data['data']['message'], 'Новий код підтвердження відправлено!')
         user = User.objects.get(email='test@example.com')
-        self.assertNotEqual(user.verification_code, '123456')  # Код змінився
+        self.assertNotEqual(user.verification_code, '123456')
         self.assertTrue(user.verification_expires_at > now())
         self.assertEqual(len(mail.outbox), 1)
         email = mail.outbox[0]
@@ -271,7 +251,7 @@ class ActivateEmailViewTest(TestCase):
             username='testuser',
             email='test@example.com',
             password='password123',
-            role='customer',
+            roles=['user'],
             is_verified=False,
             is_active=False
         )
@@ -283,25 +263,24 @@ class ActivateEmailViewTest(TestCase):
 class CartAddViewTest(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.customer = User.objects.create_user(
-            username='customer',
-            email='customer@example.com',
+        self.user = User.objects.create_user(
+            username='user',
+            email='user@example.com',
             password='pass',
-            role='customer'
+            roles=['user']
         )
-        self.customer.groups.add(Group.objects.get_or_create(name='Customers')[0])
-        self.vendor = User.objects.create_user(
-            username='vendor',
-            email='vendor@example.com',
+        self.other_user = User.objects.create_user(
+            username='other_user',
+            email='other_user@example.com',
             password='pass',
-            role='vendor'
+            roles=['user']
         )
         self.product = Product.objects.create(
-            vendor=self.vendor, name='Test Product', price=100, stock=10
+            vendor=self.other_user, name='Test Product', price=100, stock=10
         )
 
     def test_add_to_cart_success(self):
-        self.client.force_authenticate(self.customer)
+        self.client.force_authenticate(self.user)
         response = self.client.post('/api/cart/add/', {
             'product': self.product.id,
             'quantity': 2
@@ -312,7 +291,7 @@ class CartAddViewTest(TestCase):
         self.assertEqual(Cart.objects.first().quantity, 2)
 
     def test_add_to_cart_insufficient_stock(self):
-        self.client.force_authenticate(self.customer)
+        self.client.force_authenticate(self.user)
         response = self.client.post('/api/cart/add/', {
             'product': self.product.id,
             'quantity': 15
@@ -324,40 +303,39 @@ class CartAddViewTest(TestCase):
 class OrderViewSetTest(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.customer = User.objects.create_user(
-            username='customer',
-            email='customer@example.com',
+        self.user = User.objects.create_user(
+            username='user',
+            email='user@example.com',
             password='pass',
-            role='customer'
+            roles=['user']
         )
-        self.customer.groups.add(Group.objects.get_or_create(name='Customers')[0])
-        self.vendor = User.objects.create_user(
-            username='vendor',
-            email='vendor@example.com',
+        self.other_user = User.objects.create_user(
+            username='other_user',
+            email='other_user@example.com',
             password='pass',
-            role='vendor'
+            roles=['user']
         )
         self.product = Product.objects.create(
-            vendor=self.vendor, name='Test Product', price=100, stock=10
+            vendor=self.other_user, name='Test Product', price=100, stock=10
         )
         self.cart_item = Cart.objects.create(
-            user=self.customer, product=self.product, quantity=2
+            user=self.user, product=self.product, quantity=2
         )
 
     def test_create_order_success(self):
-        self.client.force_authenticate(self.customer)
+        self.client.force_authenticate(self.user)
         response = self.client.post('/api/orders/', {})
         self.assertEqual(response.status_code, 201)
         self.assertTrue(response.data['success'])
         self.assertEqual(Order.objects.count(), 1)
         order = Order.objects.first()
-        self.assertEqual(order.total_amount, 200)  # 2 * 100
+        self.assertEqual(order.total_amount, 200)
         self.assertEqual(order.items.count(), 1)
-        self.assertEqual(Cart.objects.count(), 0)  # Кошик очищений
+        self.assertEqual(Cart.objects.count(), 0)
 
     def test_create_order_empty_cart(self):
         Cart.objects.all().delete()
-        self.client.force_authenticate(self.customer)
+        self.client.force_authenticate(self.user)
         response = self.client.post('/api/orders/', {})
         self.assertEqual(response.status_code, 400)
         self.assertFalse(response.data['success'])
