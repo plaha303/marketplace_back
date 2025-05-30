@@ -4,12 +4,13 @@ import Header from "../Header/Header";
 import Footer from "../Footer/Footer";
 
 import LogIn from "../../components/LogIn/LogIn";
-import SignUp from "../../components/SignUp/SignUp";
+
 import EmailConfirm from "../../components/EmailConfirm/EmailConfirm";
 import ForgotPassword from "../../components/ForgotPassword/ForgotPassword";
 import Modal from "../../UI/Modal/Modal";
 import { closeAuthModal } from "../../store/authModalSlice";
 import { useAppDispatch, useAppSelector } from "../../store/hooks/hooks";
+import SignUp from "@/components/SignUp/SignUp";
 
 function Layout() {
   const dispatch = useAppDispatch();
