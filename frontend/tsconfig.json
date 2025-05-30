@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
+    "composite": true,
     "target": "ESNext", 
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -12,15 +14,23 @@
     "module": "ESNext", 
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
-    "types": ["vite/client"]
+    "rootDir": "./src",
+    "moduleDetection": "force",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@components/*": ["src/components/*"],
+      "@assets/*": ["src/assets/*"]
+    },
   },
   "include": [
-    "src/**/*"
+    "src"
   ],
   "exclude": [
     "node_modules", 
-    "dist",
-    "src/**/*.ts",
-    "src/**/*.tsx"
+    "dist"
   ]
 }

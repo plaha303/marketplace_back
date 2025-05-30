@@ -1,15 +1,15 @@
 import { useForm } from "react-hook-form"
 
-import styled from "../../UI/Modal/Modal.module.css"
+import styled from "@/UI/Modal/Modal.module.scss"
 
-import { useDispatch } from "react-redux";
 import { openAuthModal } from "../../store/authModalSlice";
-import useSingUpMutation from "../../hooks/Auth/useSingUpMutation";
 import PlatformsButtons from "../PlatformsButtons/PlatformsButtons";
+import { useAppDispatch } from "../../store/hooks/hooks";
+import useSingUpMutation from "./hook/useSingUpMutation";
 
 
 function SingUp() {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 	const {mutateSingUp, mutateSingUpPenging, isError, error} = useSingUpMutation();
   const {handleSubmit, register, formState: {errors}, watch, setError} = useForm();
 

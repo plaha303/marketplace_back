@@ -1,34 +1,50 @@
+import { useAppDispatch } from "@/store/hooks/hooks";
 import PlatformsButtons from "../PlatformsButtons/PlatformsButtons";
-import styled from "../../UI/Modal/Modal.module.css"
-import { SubmitHandler, useForm } from "react-hook-form";
-import { useDispatch } from "react-redux";
-import { openAuthModal } from "../../store/authModalSlice";
-import useLogInMutation from "../../hooks/Auth/useLogInMutation";
+import { useForm } from "react-hook-form";
+import useLogInMutation from "./hook/useLogInMutation";
+
+import styled from "@/UI/Modal/Modal.module.scss"
+import { openAuthModal } from "@/store/authModalSlice";
+import { useState } from "react";
+
 
 function LogIn() {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
+	const [globalError, setGlobalError] = useState('')
 
-	const {mutateLogIn, mutateLoginPending, isError, error} = useLogInMutation();
+	const {mutateLogIn, mutateLoginPending} = useLogInMutation();
 
-  const {handleSubmit, register, formState: {errors}, watch, setError} = useForm<onSubmitProps>();
+  const {handleSubmit, register, formState: {errors}, setError} = useForm<onSubmitProps>();
 
 	interface onSubmitProps {
 		email: string,
 		password: string
 	}
 	interface CustomError {
-		errors?: Record<string, string>
+		original?: Record<string, string>,
+		message: string
 	}
 
   function onSubmit(data: onSubmitProps) {
 		mutateLogIn(data, {
 			onError: (error: Error) => {
+				console.log('error', error)
 				const customError = error as CustomError;
+				let hasFieldErrors = false;
 
-				if(customError.errors) {
-					Object.entries(customError.errors).forEach(([field, message]) => {
-						setError(field as keyof onSubmitProps, {type: 'server', message})
-					})
+				if(customError.original) {
+					Object.entries(customError.original).forEach(([field, message]) => {
+						const errorMessage = Array.isArray(message) ? message[0] : message;
+						setError(field as keyof onSubmitProps, {
+							type: 'server',
+							message: errorMessage,
+						});
+						hasFieldErrors = true;
+					});
+				}
+
+				if(!hasFieldErrors && customError.message) {
+					setGlobalError(customError.message);
 				}
 			}
 		})
@@ -143,15 +159,16 @@ function LogIn() {
 					</div>
 
 
-					{isError && (
+					{globalError && (
 						<p style={{ color: "red" }} className="mb-4">
-							{error?.message}
+							{globalError}
 						</p>
 					)}
 
 					<button
 						type="submit"
 						className="w-full rounded-lg text-white font-semibold text-2xl p-2 leading-[1.5] btn-blue"
+						disabled={mutateLoginPending}
 					>
 						Увійти
 					</button>

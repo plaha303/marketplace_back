@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { useDispatch } from 'react-redux';
 import { openAuthModal } from '../../store/authModalSlice';
 
 import styled from '../Menu/Menu.module.css';
 import DropDown from '../../UI/dropdown/DropDown';
+import { RootState } from '../../store/store';
+import { useAppDispatch, useAppSelector } from '../../store/hooks/hooks';
 
 
 
@@ -19,7 +20,9 @@ const languages = [
 ];
 
 function MenuTop() {
-	const dispatch = useDispatch();
+	const isCodeSent = useAppSelector((state: RootState) => state.authModal.isCodeSent);
+
+	const dispatch = useAppDispatch();
 	const [selectedDropdown, setSelectedDropdown] = useState({
 		currencies: '₴',
 		languages: 'ua',
@@ -32,8 +35,12 @@ function MenuTop() {
 		}));
 	}
 
-	function handleModalShow(typeModal: string) {
-		dispatch(openAuthModal(typeModal))
+	function handleModalShow() {
+		if(isCodeSent) {
+			dispatch(openAuthModal('EmailConfirm'))
+		} else {
+			dispatch(openAuthModal('LogIn'))
+		}
 	}
 
 	return (
@@ -70,7 +77,7 @@ function MenuTop() {
 						classBlock={`${styled.dropDownBtn} ${styled.currenciesBtn}`}
 					/>
 				
-				<button type="button" onClick={() => handleModalShow('LogIn')} className={`flex items-center ${styled.headerBtn__action}`}>
+				<button type="button" onClick={() => handleModalShow()} className={`flex items-center ${styled.headerBtn__action}`}>
 					<span className={`icon me-2 ${styled.iconUser}`}></span>
 					Увійти
 				</button>

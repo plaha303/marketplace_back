@@ -1,18 +1,20 @@
+import { useAppDispatch } from "@/store/hooks/hooks";
 import {useMutation} from "@tanstack/react-query"
-import { SingUp } from "../../api/Auth/SingUp"
-import { useDispatch } from "react-redux"
-import { openAuthModal } from "../../store/authModalSlice";
+import { SingUp } from "../API/SingUp";
+import { openAuthModal, setCodeSent } from "@/store/authModalSlice";
 
-function useSingUpMutation() {
-  const dispatch = useDispatch();
+
+function useSingUpMutation()  {
+  const dispatch = useAppDispatch();
 
   const {mutate: mutateSingUp, isPending: mutateSingUpPenging, isError, error} = useMutation({
     mutationFn: SingUp,
     onSuccess: () => {
       console.log('useSingUpMutation work');
       dispatch(openAuthModal('EmailConfirm'));
+      dispatch(setCodeSent(true))
     },
-    onError: (error, variables, context) => {
+    onError: (error) => {
       console.log('error: ', error)
     },
   })
