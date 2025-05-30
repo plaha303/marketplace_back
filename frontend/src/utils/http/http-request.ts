@@ -6,7 +6,7 @@ import { ApiEndpoint } from "./enums/api-endpoint";
 import { RequestOptions } from "./type/interface";
 import buildRequestConfig from "./buildRequestConfig";
 import axios, { AxiosResponse } from "axios";
-import { getQueryClient } from "../../helpers/getQueryClient";
+import { getQueryClient } from "../helpers/getQueryClient";
 import { normalizeApiError } from "./normalizeApiError";
 
 export async function refreshAccessToken() {

@@ -2,7 +2,7 @@ import { useState } from "react";
 import Button from "../Button/Button";
 import {DropDownProps} from "./type/interfaces"
 import classNames from "classnames";
-import { useClickOutside } from "@/helpers/useClickOutside";
+import { useClickOutside } from "@/utils/helpers/useClickOutside";
 
 function DropDown({buttonContent, classNameButton, classNameMenu, children}: DropDownProps) {
   const [isOpen, setIsOpen] = useState(false);

@@ -6,7 +6,7 @@ import Support from "./pages/Support/Support";
 import NotFound from "./pages/NotFound/NotFound"
 import store from "./store/store";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { setQueryClientInstance } from "./helpers/getQueryClient";
+import { setQueryClientInstance } from "./utils/helpers/getQueryClient";
 import { Bounce, ToastContainer } from "react-toastify";
 
 function App() {
