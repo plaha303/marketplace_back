@@ -176,25 +176,31 @@ class LoginView(generics.GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        refresh = RefreshToken.for_user(user)
+        try:
+            serializer.is_valid(raise_exception=True)
+            user = serializer.validated_data['user']
+            refresh = RefreshToken.for_user(user)
 
-        response_data = {
-            'success': True,
-            'access': str(refresh.access_token),
-        }
+            response_data = {
+                'success': True,
+                'access': str(refresh.access_token),
+            }
 
-        response = Response(response_data, status=status.HTTP_200_OK)
-        response.set_cookie(
-            key='refresh_token',
-            value=str(refresh),
-            httponly=True,
-            secure=False,
-            samesite='Strict',
-            max_age=14 * 24 * 60 * 60,
-        )
-        return response
+            response = Response(response_data, status=status.HTTP_200_OK)
+            response.set_cookie(
+                key='refresh_token',
+                value=str(refresh),
+                httponly=True,
+                secure=False,
+                samesite='Strict',
+                max_age=14 * 24 * 60 * 60,
+            )
+            return response
+        except serializers.ValidationError as e:
+            return Response(
+                {"success": False, "errors": e.detail},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class CustomTokenRefreshView(APIView):
     def post(self, request, *args, **kwargs):
