@@ -1,14 +1,27 @@
-import { AxiosError } from "axios";
+import { isAxiosError } from "axios";
 import { ApiError } from "./type/interface";
 
 export function normalizeApiError(error: unknown): ApiError {
-  if(error instanceof AxiosError) {
-    const row = error.response?.data
+  if(isAxiosError(error)) {
+    const row = error.response?.data;
 
-    const message = typeof row === 'string' ? row : row?.message ?? row?.error?.message ?? 'Server error';
+    console.log('row', row)
 
-    const fieldErrors =  row && typeof row === 'object' && row.data && typeof row.data === 'object' 
-    ? Object.fromEntries(Object.entries(row.data).filter(([_, v]) => typeof v === "string")) as Record<string, string>
+    const message = typeof row === 'string'
+      ? (row.startsWith('<!DOCTYPE html') ? 'Server error' : row)
+      : row?.message ?? row?.error?.message ?? 'Server error';
+
+    const possibleFieldErrors = row && typeof row === 'object' ? row?.data || row?.errors || row?.error?.errors : undefined;
+
+    console.log('possibleFieldErrors err', possibleFieldErrors)
+
+    const fieldErrors =
+  possibleFieldErrors && typeof possibleFieldErrors === 'object'
+    ? Object.fromEntries(
+        Object.entries(possibleFieldErrors)
+          .filter(([_, v]) => Array.isArray(v) && typeof v[0] === 'string')
+          .map(([key, value]) => [key, (value as string[])[0]])
+      ) as Record<string, string>
     : undefined;
 
     return {message, statusCode: error.response?.status, original: row, fieldErrors}

@@ -1,6 +1,6 @@
 const ApiEndpoint = {
   LOGIN: '/auth/login/',
-  SINGUP: '/auth/register/',
+  SIGNUP: '/auth/register/',
   EMAILCONFIRM: '/auth/verify-email/',
   REFRESHTOKEN: '/auth/refresh/'
 } as const
