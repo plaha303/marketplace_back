@@ -42,28 +42,3 @@ body {
     max-width: 1330px;
   }
 }
-
-.icon {
-  display: block;
-}
-.btn-blue {
-  box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
-  background: linear-gradient(45deg, #0b2354 0%, #043392 100%);
-  animation: gradientAnimation 0.9s forwards;
-}
-.btn-blue:hover {
-  background: linear-gradient(45deg, #0b2354 100%, #043392 0%);
-  animation: gradientAnimation 0.9s reverse forwards;
-}
-
-@keyframes gradientAnimation {
-  0% { background: linear-gradient(45deg, #0b2354 1000%, #043392 0%); }
-  100% { background: linear-gradient(45deg, #0b2354 0%, #043392 100%); }
-}
-
-.custom-boxShadow {
-  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
-}
-.slick-list {
-  overflow: hidden;
-}
