@@ -44,7 +44,7 @@
     "postcss": "^8.5.3",
     "postcss-import": "^16.1.0",
     "prettier": "^3.5.1",
-    "sass": "^1.89.0",
+    "sass": "^1.89.1",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.2",
     "vite": "^6.2.3"
