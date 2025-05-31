@@ -7,7 +7,7 @@
 # Plagins
 1. react
 2. tailwindcss
-3. all styles from https://daisyui.com/
+3. components from https://headlessui.com/
 4. react-router
 5. @tanstack/react-query
 6. @tanstack/react-query-devtools
