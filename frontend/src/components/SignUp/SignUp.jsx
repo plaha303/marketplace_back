@@ -5,20 +5,22 @@ import styled from "@/UI/Modal/Modal.module.scss"
 import { openAuthModal } from "../../store/authModalSlice";
 import PlatformsButtons from "../PlatformsButtons/PlatformsButtons";
 import { useAppDispatch } from "../../store/hooks/hooks";
-import useSingUpMutation from "./hook/useSingUpMutation";
+import useSignUpMutation from "./hook/useSignUpMutation";
 
 
-function SingUp() {
+function SignUp() {
   const dispatch = useAppDispatch();
-	const {mutateSingUp, mutateSingUpPenging, isError, error} = useSingUpMutation();
+	const {mutateSignUp, mutateSignUpPenging, isError, error} = useSignUpMutation();
   const {handleSubmit, register, formState: {errors}, watch, setError} = useForm();
 
   function onSubmit(data) {
-		mutateSingUp(data, {
+		mutateSignUp(data, {
 			onError: (error) => {
-				if(error.errors) {
-					Object.entries(error.errors).forEach(([field, message]) => {
-						console.log('message', message)
+				console.log('asd', error)
+				const fieldErrors = error.fieldErrors;
+
+				if(fieldErrors) {
+					Object.entries(fieldErrors).forEach(([field, message]) => {
 						setError(field, {type: "server", message})
 					})
 				}
@@ -239,7 +241,7 @@ function SingUp() {
 						<div className="error-block text-red-600"></div>
 					</div>
 
-					{isError && (
+					{isError && (!error?.fieldErrors || Object.keys(error.fieldErrors).length === 0) && (
 						<p style={{ color: "red", marginBottom: '15px' }}>{error.message}</p>
 					)}
 
@@ -280,4 +282,4 @@ function SingUp() {
 	);
 }
 
-export default SingUp;
+export default SignUp;

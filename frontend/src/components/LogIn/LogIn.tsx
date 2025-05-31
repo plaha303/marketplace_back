@@ -192,7 +192,7 @@ function LogIn() {
 						<button
 							type="button"
 							className="font-medium btn bg-transparent border-0 shadow-none lg:w-[210px] md:w-full"
-							onClick={() => dispatch(openAuthModal('SingUp'))}
+							onClick={() => dispatch(openAuthModal('SignUp'))}
 						>
 							Зареєструватися
 						</button>
