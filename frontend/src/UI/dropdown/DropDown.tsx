@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Button from "../Button/Button";
+import Button from "../Button2/Button";
 import {DropDownProps} from "./type/interfaces"
 import classNames from "classnames";
 import { useClickOutside } from "@/utils/helpers/useClickOutside";

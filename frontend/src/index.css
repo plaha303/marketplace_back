@@ -1,12 +1,12 @@
+/* @import "tailwindcss/preflight"; */
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
 
-@font-face {
-  font-family: "Montserrat";
-  src: url("./fonts/Montserrat/Montserrat-VariableFont_wght.ttf");
-}
+@import './tailwind-settings.css';
+@custom-variant dark (&:is(.dark *));
 
 html, body {
   height: 100%;
@@ -24,7 +24,7 @@ main {
 }
 
 body {
-  font-family: "Montserrat", serif;
+  font-family: var(--font-generale);
   font-optical-sizing: auto;
   font-weight: 400;
   font-style: normal;
@@ -33,6 +33,7 @@ body {
   color: #01060b;
   background: #fbfcf3;
 }
+
 * {
   outline: none !important;
   outline-offset: 0 !important

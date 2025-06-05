@@ -2,8 +2,6 @@ import classNames from 'classnames';
 import styles from './Menu.module.scss';
 
 
-
-
 const currencies = [
 	{ id: '1', name: '₴' },
 	{ id: '2', name: '$' },
@@ -18,6 +16,7 @@ const languages = [
 function MenuTop() {
 	return (
 		<div className={classNames(styles['menuTop container'])}>
+
 		</div>
 	);
 }
