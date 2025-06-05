@@ -1,3 +1,4 @@
+import LogoIcon from "@/UI/Icons/LogoIcon";
 import {Link} from "react-router"
 
 function Logo() {
@@ -5,7 +6,8 @@ function Logo() {
 		<Link to="/"
 			className={`max-w-[200px]`}
 		>
-			<img src="/img/Logo.svg" alt="Logo" className="size-full" />
+			<LogoIcon color="#A0864D" />
+			<span className="logo-text text-h2">ArtLance</span>
 		</Link>
 	);
 }
