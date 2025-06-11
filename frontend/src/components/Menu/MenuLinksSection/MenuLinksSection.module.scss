@@ -1,0 +1,17 @@
+.menuCatalog__btn,
+.menu__items {
+  position: relative;
+  @media (max-width: 1024px) {
+    &:after {
+      position: absolute;
+      bottom: 0;
+      left: 16px;
+
+      content: '';
+      display: block;
+      width: calc(100% - 32px);
+      height: 1px;
+      background: var(--color-primary-100);
+    }
+  }
+}
