@@ -1,0 +1,58 @@
+import AppRoute from "@/routers/enums/routers-enums";
+import BasketIcon from "@/UI/Icons/BasketIcon";
+import FavoriteIcon from "@/UI/Icons/FavoriteIcon";
+import NotificationIcon from "@/UI/Icons/NotificationIcon";
+import UserIcon from "@/UI/Icons/UserIcon";
+import { Link } from "react-router";
+
+import styled from "./HeaderActions.module.scss"
+import classNames from "classnames";
+import SearchIcon from "@/UI/Icons/SearchIcon";
+
+function HeaderActions() {
+  return (
+    <div className="menuActions flex lg:flex-row flex-col  lg:items-center xl:gap-4">
+      <div className={`${styled.menuAction} xl:order-3 order-3`}>
+        <Link to={AppRoute.NOTIFICATION} className="flex items-center">
+          <div className="relative">
+            <NotificationIcon className="text-snow hover:text-accent-600 duration-500" />
+            <span className={classNames('bg-red-100', styled.menuAction__notificationDot)}></span>
+          </div>
+          <span className="lg:hidden btn-2 ml-2 text-snow block font-bold">Сповіщення</span>
+        </Link>
+      </div>
+
+      <div className={`${styled.menuAction} xl:hidden block order-2`}>
+        <Link to={AppRoute.FAVORITE} className="flex items-center">
+          <SearchIcon className="text-snow hover:text-accent-600 duration-500" />
+          <span className="btn-2 ml-2 text-snow hover:text-accent-600 duration-500 font-bold">Пошук</span>
+        </Link>
+      </div>
+
+      <div className={`${styled.menuAction} xl:order-2 order-4`}>
+        <Link to={AppRoute.FAVORITE} className="flex items-center">
+          <FavoriteIcon className="text-snow hover:text-accent-600 duration-500" />
+          <span className="lg:hidden btn-2 ml-2 text-snow font-bold">Обране</span>
+        </Link>
+      </div>
+      <div className={`${styled.menuAction} xl:order-3 order-5`}>
+        <Link to={AppRoute.BASKET} className="flex items-center">
+          <div className="relative">
+            <BasketIcon className="text-snow hover:text-accent-600 duration-500" />
+            <span className={classNames('bg-red-100', styled.menuAction__basketCount)}>2</span>
+          </div>
+          <span className="lg:hidden btn-2 ml-2 text-snow font-bold">Корзина</span>
+        </Link>
+      </div>
+      <div className={`${styled.menuAction} xl:order-4 order-0`}>
+        <Link to={AppRoute.REGISTRATION} className="flex items-center">
+          <UserIcon className="text-snow hover:text-accent-600 duration-500" />
+          <span className="lg:hidden btn-2 ml-2 text-snow block font-bold">Вхід</span>
+        </Link>
+      </div>
+      
+    </div>
+  );
+}
+
+export default HeaderActions;
