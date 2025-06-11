@@ -16,6 +16,11 @@
   --font-size-body-4: 14px;
   --font-size-body-5: 12px;
   --font-size-body-6: 10px;
+
+  --font-size-label-1: 20px;
+  --font-size-label-2: 16px;
+
+  --font-size-link-1: 16px;
   
   --line-height-100: 100%;
   --line-height-130: 130%;
@@ -41,9 +46,8 @@
   --color-primary-800: #3A3A3A;
   --color-primary-900: #282828;
   
-  --color-neutral: #fff;
-  --color-show: #FCFCFC;
-  --color-show-70: #FCFCFC;
+  --color-snow: #FCFCFC;
+  --color-snow-70: #FCFCFCB3;
 
   --color-red-10: #fb3748;
   --color-red-100: #FF6636;
@@ -62,9 +66,9 @@
   --color-blue-10: #2DA5F3;
   --color-blue-100: #2DA5F3;
 
-  --radius-5xl: 64px;
+  --shadow-custom1: 0 0 4px 0 rgba(40, 40, 40, 0.1);
 
-  --spacing: 2px; 
+  --radius-5xl: 64px;
 }
 
 .text-h1 {
@@ -117,12 +121,49 @@
   line-height: var(--line-height-100);
 }
 
+.label-1 {
+  font-family: var(--font-secondary);
+  font-size: var(--font-size-label-1);
+  line-height: var(--line-height-100);
+  font-weight: var(--font-weight-semibold);
+}
+.label-2 {
+  font-family: var(--font-secondary);
+  font-size: var(--font-size-label-2);
+  line-height: var(--line-height-100);
+  font-weight: var(--font-weight-semibold);
+}
+
+.link-1 {
+  font-family: var(--font-secondary);
+  font-size: var(--font-size-link-1);
+  transition: 0.5s;
+}
+.link-1:hover {
+  opacity: 0.7;
+  transition: 0.5s;
+}
+
+.shadow-custom1 {
+  box-shadow: var(--shadow-custom1);
+}
+
+.btn-1 {
+  font-family: var(--font-secondary);
+  font-size: var(--font-size-body-2);
+  line-height: var(--line-height-100);
+}
+.btn-2 {
+  font-family: var(--font-secondary);
+  font-size: var(--font-size-body-3);
+  line-height: var(--line-height-100);
+}
+
 button,
 a {
   font-family: var(--font-secondary);
   font-size: var(--font-size-body-2);
   line-height: var(--line-height-100);
-  font-weight: var(--font-weight-bold);
 }
 
 

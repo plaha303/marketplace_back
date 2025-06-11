@@ -1,0 +1,11 @@
+.languagesBlock + .currencyBlock:before {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  content: '';
+  display: block;
+  width: 1px;
+  height: 16px;
+  background: var(--color-snow);
+}
