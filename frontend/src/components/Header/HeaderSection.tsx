@@ -5,8 +5,6 @@ import HeaderTop from "./HeaderTop/HeaderTop";
 import { useMediaQuery } from "react-responsive";
 import { AnimatePresence, motion } from "motion/react"
 import HeaderMobileMenu from "./HeaderMobileMenu/HeaderMobileMenu";
-import { useClickOutside } from "@/utils/helpers/useClickOutside";
-
 
 function HeaderSection() {
 	const [activeHamburger, setActiveHamburger] = useState(false);
@@ -20,8 +18,6 @@ function HeaderSection() {
     setActiveHamburger(prev => !prev)
 		setOpenMenuCatalog(false)
   }
-
-	const ref = useClickOutside<HTMLDivElement>(() => handleCloseMobileMenu())
 
 	const isWidth1023 = useMediaQuery({query: '(max-width: 1023px)'});
 
@@ -38,11 +34,10 @@ function HeaderSection() {
 			<HeaderTop />
 			<HeaderBottom setActiveHamburger={setActiveHamburger} activeHamburger={activeHamburger} />
 
-			{!isWidth1023 && (<Menu handleOpenMenuCatalog={handleOpenMenuCatalog} openMenuCatalog={openMenuCatalog} />)}
+			{!isWidth1023 && (<Menu handleOpenMenuCatalog={handleOpenMenuCatalog} openMenuCatalog={openMenuCatalog} handleCloseMobileMenu={handleCloseMobileMenu} />)}
 
 			<AnimatePresence>
 				{activeHamburger && (<motion.div
-					ref={ref}
 					key="sidebar"
 					initial={{ opacity: 0, x: -285 }}
 					animate={{ opacity: 1, x: 0 }}
@@ -54,7 +49,7 @@ function HeaderSection() {
 				</motion.div>)}
 			</AnimatePresence>
 
-			{activeHamburger && (<div className="overlay"></div>)}
+			{activeHamburger && (<div className="overlay" onClick={handleCloseMobileMenu}></div>)}
 
 		</div>
 	);

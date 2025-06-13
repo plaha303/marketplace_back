@@ -6,6 +6,10 @@ export type MenuLinksSectionProps = {
   openMenuCatalog?: boolean;
   buttonRef?: React.RefObject<HTMLButtonElement | null>;
 }
+export type MenuProps = {
+  handleOpenMenuCatalog: () => void;
+  openMenuCatalog?: boolean;
+}
 
 export type CatalogLinksProps = {
   id: number,
