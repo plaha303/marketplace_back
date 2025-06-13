@@ -27,7 +27,7 @@ function MenuCatalog() {
               <ul className="menu-catalog__items lg:min-w-[256px] lg:gap-y-0 gap-y-1 lg:block flex flex-col" key={i}>
                 {col.map((item, j) => (
                   <li key={item.id}>
-                    <Link to={`${CategorySlugMap[item.categoryId]}`} className="menu-catalog__link body-3 flex items-center lg:p-3 py-1 px-4">
+                    <Link to={`${CategorySlugMap[item.categoryId]}`} className="menu-catalog__link text-size-body-3 flex items-center lg:p-3 py-1 px-4">
                       <span className="menu-catalog__icon lg:w-[48px] lg:h-[48px] w-10 h-10 mr-2 block rounded-full">
                         <img src={item.icon} alt="" className="rounded-full h-full object-cover" />
                       </span>

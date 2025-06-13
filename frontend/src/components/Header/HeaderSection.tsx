@@ -15,7 +15,7 @@ function HeaderSection() {
   function handleOpenMenuCatalog() {
     setOpenMenuCatalog(prev => !prev)
   }
-
+	
 	function handleCloseMobileMenu() {
     setActiveHamburger(prev => !prev)
 		setOpenMenuCatalog(false)

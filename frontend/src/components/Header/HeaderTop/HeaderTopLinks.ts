@@ -1,14 +1,9 @@
 import AppRoute from "@/routers/enums/routers-enums";
-import { ReactNode } from "react";
-import FacebookIcon from "@/UI/Icons/FacebookIcon"
-import InstaIcon from "@/UI/Icons/InstaIcon";
-import PinterestIcon from "@/UI/Icons/PinterestIcon";
 
 export type headerTopLinksProps = {
   id: number;
   label?: string;
   path: string;
-  icon?: ReactNode;
 }
 
 export const headerTopLinks:headerTopLinksProps[] = [
@@ -17,9 +12,3 @@ export const headerTopLinks:headerTopLinksProps[] = [
   { id: 3, label: 'Допомога', path: AppRoute.SUPPORT },
   { id: 4, label: 'Реєстрація', path: AppRoute.REGISTRATION },
 ]
-
-export const headerTopLinksMobile: headerTopLinksProps[] = [
-  {id: 1, icon: <FacebookIcon />, path: '/' },
-  {id: 2, icon: <InstaIcon />, path: '/'},
-  {id: 3, icon: <PinterestIcon />, path: '/'},
-] 
