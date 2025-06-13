@@ -2,28 +2,33 @@
   --font-generale: "Comfortaa", sans-serif;
   --font-secondary: "Nunito", sans-serif;
 
-  --font-size-h1: 56px;
-  --font-size-h2: 48px;
-  --font-size-h3: 40px;
-  --font-size-h4: 36px;
-  --font-size-h5: 32px;
-  --font-size-h6: 24px;
-  --font-size-h7: 16px;
+  --text-size-h1: clamp(36px, 5vw, 56px);
+  --text-size-h2: clamp(32px, 5vw, 48px);
+  --text-size-h3: clamp(32px, 5vw, 40px);
+  --text-size-h4: clamp(24px, 5vw, 36px);
+  --text-size-h5: clamp(20px, 5vw, 32px);
+  --text-size-h6: clamp(16px, 5vw, 24px);
+  --text-size-h7: clamp(14px, 5vw, 16px);
   
-  --font-size-body-1: 24px;
-  --font-size-body-2: 20px;
-  --font-size-body-3: 16px;
-  --font-size-body-4: 14px;
-  --font-size-body-5: 12px;
-  --font-size-body-6: 10px;
+  --text-size-body-1: 24px;
+  --text-size-body-2: 20px;
+  --text-size-body-3: 16px;
+  --text-size-body-4: 14px;
+  --text-size-body-5: 12px;
+  --text-size-body-6: 10px;
 
-  --font-size-label-1: 20px;
-  --font-size-label-2: 16px;
+  --text-size-card-1: 24px;
+  --text-size-card-2: 16px;
+  --text-size-card-3: 16px;
+  --text-size-card-4: 12px;
 
-  --font-size-link-1: 16px;
+  --text-size-label-1: 20px;
+  --text-size-label-2: 16px;
+
+  --text-size-link-1: 16px;
   
-  --line-height-100: 100%;
-  --line-height-130: 130%;
+  --leading-100: 100%;
+  --leading-130: 130%;
 
   --color-accent-40:  #a0864d66;
   --color-accent-100: #FBF4E6;
@@ -71,6 +76,15 @@
   --radius-5xl: 64px;
 }
 
+@layer utilities {
+  .regional_btn {
+    font-size: var(--text-size-body-3);
+    line-height: var(--leading-130);
+    color: var(--color-snow);
+  }
+}
+
+
 .text-h1 {
   font-size: var(--font-size-h1);
   line-height: var(--line-height-130);
@@ -95,6 +109,10 @@
   font-size: var(--font-size-h6);
   line-height: var(--line-height-130);
 }
+.text-h7 {
+  font-size: var(--font-size-h7);
+  line-height: var(--line-height-130);
+}
 
 .body-1 {
   font-size: var(--font-size-body-1);
@@ -105,11 +123,11 @@
   line-height: var(--line-height-130);
 }
 .body-3 {
-  font-size: var(--font-size-body-3);
+  font-size: var(--text-size-body-3);
   line-height: var(--line-height-130);
 }
 .body-4 {
-  font-size: var(--font-size-body-4);
+  font-size: var(--text-size-body-4);
   line-height: var(--line-height-130);
 }
 .body-5 {
@@ -148,22 +166,54 @@
   box-shadow: var(--shadow-custom1);
 }
 
-.btn-1 {
+.btn {
   font-family: var(--font-secondary);
-  font-size: var(--font-size-body-2);
   line-height: var(--line-height-100);
 }
-.btn-2 {
-  font-family: var(--font-secondary);
-  font-size: var(--font-size-body-3);
-  line-height: var(--line-height-100);
+  
+
+
+.btn-primary { 
+  background: var(--color-primary-900);
+  color: var(--color-snow);
+  transition: 0.5s;
+}
+.btn-primary:hover {
+  background: var(--color-primary-800);
+  box-shadow: var(--shadow-custom1);
+  transition: 0.5s;
+}
+.btn-primary:focus {
+  background: var(--color-primary-700);
+  transition: 0.5s;
+}
+.btn-primary:disabled {
+  background: var(--color-primary-300);
+}
+
+.btn-secondary {
+  background: var(--color-accent-700);
+  color: var(--color-snow);
+  transition: 0.5s;
+}
+.btn-secondary:hover {
+  background: var(--color-accent-600);
+  color: var(--color-snow);
+  box-shadow: var(--shadow-custom1);
+  transition: 0.5s;
+}
+.btn-secondary:focus {
+  background: var(--color-accent-500);
+  color: var(--color-snow);
+  transition: 0.5s;
+}
+.btn-secondary:disabled {
+  background: var(--color-accent-300);
 }
 
 button,
 a {
   font-family: var(--font-secondary);
-  font-size: var(--font-size-body-2);
-  line-height: var(--line-height-100);
 }
 
 

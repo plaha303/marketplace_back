@@ -1,10 +1,8 @@
-
-
 function Home() {
 	return (
 		<div>
-      Home
-			
+      <h1 className="text-size-h1">Home</h1>
+
 		</div>
 	);
 }

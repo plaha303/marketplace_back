@@ -1,7 +1,7 @@
 import { Outlet } from "react-router";
-
 import Header from "../Header/Header";
 import Footer from "../Footer/Footer";
+
 
 import LogIn from "../../components/LogIn/LogIn";
 
@@ -11,6 +11,7 @@ import Modal from "../../UI/Modal/Modal";
 import { closeAuthModal } from "../../store/authModalSlice";
 import { useAppDispatch, useAppSelector } from "../../store/hooks/hooks";
 import SignUp from "@/components/SignUp/SignUp";
+
 
 function Layout() {
   const dispatch = useAppDispatch();

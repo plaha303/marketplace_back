@@ -1,0 +1,17 @@
+.footerBottom__link,
+.footer__copyright {
+  position: relative;
+  display: flex;
+  align-items: center;
+  &:not(:last-child):after {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 16px;
+    margin: 0 12px;
+    background: var(--color-snow);
+    @media(max-width: 767px) {
+      display: none;
+    }
+  }
+}
