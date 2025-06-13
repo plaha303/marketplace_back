@@ -57,7 +57,7 @@ function HeaderMobileMenu({handleOpenMenuCatalog, openMenuCatalog, handleCloseMo
               className="fixed z-[9999] top-0 w-[285px] h-full bg-snow pb-6"
             >
               <div className="mobileMenuCatalog__top" ref={menuTop}>
-                <div className="btn-2 flex items-center py-4 px-2.5 font-bold" onClick={handleOpenMenuCatalog}>
+                <div className="text-size-body-3 flex items-center py-4 px-2.5 font-bold" onClick={handleOpenMenuCatalog}>
                   <span className="mr-2">
                     <ArrowDown className="text-primary-900 rotate-90" />
                   </span>

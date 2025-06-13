@@ -15,7 +15,7 @@ function RegionalSettings() {
       <div className='flex items-center'>
         <div className={classNames('relative', styled.languagesBlock)}>
           <Select value={selectedLanguages} onValueChange={(value: Languages) => setSelectedLanguages(value)}>
-            <SelectTrigger className="border-0 text-snow body-3 opacity-100 focus-visible:ring-0 py-2 px-4 min-w-[84px] min-h-[40px] hover:text-accent-600 duration-500" 
+            <SelectTrigger className="border-0 text-snow text-size-body-3 opacity-100 focus-visible:ring-0 py-2 px-4 min-w-[84px] min-h-[40px] hover:text-accent-600 duration-500" 
               iconClassName="w-[20px] h-[20px]"
             >
               <SelectValue />
@@ -30,7 +30,7 @@ function RegionalSettings() {
 
         <div className={classNames('relative', styled.currencyBlock)}>
           <Select value={selectedCurrency} onValueChange={(value: Currency) => setSelectedCurrency(value)}>
-            <SelectTrigger className="border-0 text-snow body-3 opacity-100 focus-visible:ring-0  py-2 px-4 min-w-[96px] min-h-[40px] hover:text-accent-600 duration-500" 
+            <SelectTrigger className="border-0 text-snow text-size-body-3 opacity-100 focus-visible:ring-0  py-2 px-4 min-w-[96px] min-h-[40px] hover:text-accent-600 duration-500" 
               iconClassName="w-[20px] h-[20px]">
               <SelectValue />
             </SelectTrigger>

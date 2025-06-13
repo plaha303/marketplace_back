@@ -11,7 +11,10 @@ const AppRoute = {
   NOTIFICATION: '/notification',
   BASKET: '/basket',
   BLOG: '/blog',
-  CATEGORY: '/:category'
+  CATEGORY: '/:category',
+  PRIVACY_POLICY: '/privacy_policy',
+  PROCESSING_PERSONAL_DATA: '/processing_personal_data',
+  TERMS_SERVICE: '/terms_of_service'
 } as const;
 
 type AppRoute = (typeof AppRoute)[keyof typeof AppRoute];
