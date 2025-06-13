@@ -77,6 +77,13 @@
 }
 
 @layer utilities {
+  .regional_btn {
+    font-size: var(--text-size-body-3);
+    line-height: var(--leading-130);
+    color: var(--color-snow);
+  }
+}
+
 
 .text-h1 {
   font-size: var(--font-size-h1);
@@ -164,7 +171,7 @@
   line-height: var(--line-height-100);
 }
   
-}
+
 
 .btn-primary { 
   background: var(--color-primary-900);
