@@ -18,7 +18,7 @@ function FooterTop(){
 			<div className="footer__left md:max-w-[276px] max-w-none md:mb-0 mb-9">
 				<div className="md:mb-8 mb-4">
 					<Logo />
-					<div className="md:text-size-body-3 text-size-body-4  mt-4">
+					<div className="md:text-size-body-3 text-size-body-4  mt-4 leading-130">
 						Найкраще для тих, хто цінує унікальність: ручна робота, ексклюзивн історії, теплі емоції.
 					</div>
 				</div>
