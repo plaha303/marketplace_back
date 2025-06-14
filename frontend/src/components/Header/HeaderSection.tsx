@@ -34,7 +34,7 @@ function HeaderSection() {
 			<HeaderTop />
 			<HeaderBottom setActiveHamburger={setActiveHamburger} activeHamburger={activeHamburger} />
 
-			{!isWidth1023 && (<Menu handleOpenMenuCatalog={handleOpenMenuCatalog} openMenuCatalog={openMenuCatalog} handleCloseMobileMenu={handleCloseMobileMenu} />)}
+			{!isWidth1023 && (<Menu handleOpenMenuCatalog={handleOpenMenuCatalog} openMenuCatalog={openMenuCatalog} />)}
 
 			<AnimatePresence>
 				{activeHamburger && (<motion.div

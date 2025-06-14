@@ -72,6 +72,7 @@
   --color-blue-100: #2DA5F3;
 
   --shadow-custom1: 0 0 4px 0 rgba(40, 40, 40, 0.1);
+  --shadow-custom2: 0 0 8px 0 rgba(160, 134, 77, 0.1);
 
   --radius-5xl: 64px;
 }
@@ -82,8 +83,15 @@
     line-height: var(--leading-130);
     color: var(--color-snow);
   }
+  .pattern-bg {
+    background: url('./assets/Pattern-bg.svg');
+  }
 }
 
+
+/* .shadow-custom2 {
+    box-shadow: var(--shadow-custom2);
+  } */
 
 .text-h1 {
   font-size: var(--font-size-h1);
@@ -162,9 +170,9 @@
   transition: 0.5s;
 }
 
-.shadow-custom1 {
+/* .shadow-custom1 {
   box-shadow: var(--shadow-custom1);
-}
+} */
 
 .btn {
   font-family: var(--font-secondary);
