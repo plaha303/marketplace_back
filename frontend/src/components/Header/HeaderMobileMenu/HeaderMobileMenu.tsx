@@ -25,8 +25,6 @@ function HeaderMobileMenu({handleOpenMenuCatalog, openMenuCatalog, handleCloseMo
     }
   }, [openMenuCatalog])
 
-  
-
   return (
     <div className='mobile-menu h-full overflow-y-auto'>
       <div className="mobile-menu bg-snow pb-5">
