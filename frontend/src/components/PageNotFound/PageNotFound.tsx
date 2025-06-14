@@ -34,7 +34,7 @@ function PageNotFound() {
             </div>
           </div>
 
-          <div className={`${style.page__title} lg:mt-12 mt-8`}>СТОРІНКА 404</div>
+          <div className={`${style.page__title_second} lg:mt-12 mt-8`}>СТОРІНКА 404</div>
         </div>
       </div>
     </div>
