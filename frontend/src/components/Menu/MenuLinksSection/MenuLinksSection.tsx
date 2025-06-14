@@ -8,16 +8,16 @@ import { MenuLinksSectionProps } from '../type/interfaces';
 import styled from "./MenuLinksSection.module.scss"
 
 function MenuLinksSection({handleOpenMenuCatalog, openMenuCatalog, buttonRef}: MenuLinksSectionProps) {
-  
+  console.log('openMenuCatalog', openMenuCatalog)
   return (
     <>
      <div className={classNames('xl:mr-9 lg:mr-7 lg:py-0 py-2', styled.menuCatalog__btn)}>
         <Button ref={buttonRef} className={classNames(
           `bg-transparent text-primary-900 hover:bg-transparent flex items-center 
           lg:px-5 min-w-[165px] min-h-[40px] border-1 border-transparent font-normal 
-          shadow-none duration-500 rounded-[64px] py-2 !px-3 text-size-body-3
+           duration-500 rounded-[64px] py-2 !px-3 text-size-body-3 shadow-none
           `, 
-          openMenuCatalog ? 'lg:shadow-custom1 border-1 lg:border-primary-100 duration-500' : ''
+          openMenuCatalog ? 'lg:shadow-custom1 shadow-none lg:border-primary-100 duration-500' : ''
         )} 
           onClick={handleOpenMenuCatalog}
         >
