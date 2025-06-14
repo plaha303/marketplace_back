@@ -26,7 +26,8 @@
     }
   }
 
-  &__title {
+  &__title,
+  &__title_second {
     color: #7C6B47;
     filter:url(#stroke-text-svg-filter);
     font-size: clamp(36px, 8vw, 140px);
@@ -34,5 +35,8 @@
     font-weight: 600;
     line-height: 1;
     opacity: 0.5;
+  }
+  &__title_second {
+    font-size: clamp(30px, 8vw, 130px);
   }
 }
