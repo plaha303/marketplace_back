@@ -1,21 +1,34 @@
-import * as React from "react"
+import { FieldValues } from "react-hook-form";
+import BaseInput from "./BaseInput";
+import usePasswordToggle from "./hook/usePasswordToggle";
+import PasswordToggle from "./PasswordToggle";
+import { InputProps } from "./type/interface";
 
-import { cn } from "@/lib/utils"
+function Input<T extends FieldValues>({label, validationText, name, type, hasError, register, className}: InputProps<T>) {
+  const {passwordShow, togglePassword} = usePasswordToggle();
 
-function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  const isPassword = type === 'password';
+  const inputType = type === 'password' && passwordShow ? 'text' : type;
+
   return (
-    <input
-      type={type}
-      data-slot="input"
-      className={cn(
-        "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-        className
-      )}
-      {...props}
-    />
-  )
+    <div>
+      {label && (<label className="mb-2 text-white text-xs block">{label}</label>)}
+      <div className="relative">
+        <BaseInput 
+          className={className}
+          {...register ? register(name) : {}}
+          type={inputType}
+          hasError={hasError}
+          autoComplete={`new-${name}`}
+        />
+        {isPassword && (
+          <PasswordToggle isVisible={passwordShow} onToggle={togglePassword} />
+        )}
+      </div>
+
+      {validationText && (<div className="text-red text-xs mt-1">{validationText}</div>)}
+    </div>
+  );
 }
 
-export { Input }
+export default Input;

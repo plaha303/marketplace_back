@@ -176,7 +176,7 @@
 
 .btn {
   font-family: var(--font-secondary);
-  line-height: var(--line-height-100);
+  line-height: var(--leading-100);
 }
   
 

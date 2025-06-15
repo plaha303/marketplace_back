@@ -1,33 +1,27 @@
-import React from 'react';
+import { Button } from '@/UI/Button/Button';
+import FacebookIcon from '@/UI/Icons/FacebookIcon';
+import GoogleIcon from '@/UI/Icons/GoogleIcon';
+import PinterestIcon from '@/UI/Icons/PinterestIcon';
 
 function PlatformsButtons() {
   return (
     <>
-      <div className="platforms flex justify-between mb-[24px]">
+      <div className="platforms flex justify-center gap-4 mb-12">
         <div className="platformsBlock">
-          <button type="button" className="flex items-center platformButton hover:opacity-35 duration-500">
-            <img src="/img/icons/google.svg" alt="Google" className="me-2" />
-            <span className="font-semibold">Google</span>
-          </button>
+          <Button type="button" className="flex items-center platformButton hover:opacity-35 duration-500 w-[56px] h-[56px] p-0 btn-secondary">
+            <FacebookIcon className='text-snow'/>
+          </Button>
         </div>
         <div className="platformsBlock">
-          <button type="button" className="flex items-center platformButton hover:opacity-35 duration-500">
-            <img src="/img/icons/facebook.svg" alt="facebook" className="me-2" />
-            <span className="font-semibold">Facebook</span>
-          </button>
+          <Button type="button" className="flex items-center platformButton hover:opacity-35 duration-500 w-[56px] h-[56px] p-0 btn-secondary">
+            <PinterestIcon className='text-snow' />
+          </Button>
         </div>
         <div className="platformsBlock">
-          <button type="button" className="flex items-center platformButton hover:opacity-35 duration-500">
-            <img src="/img/icons/apple.svg" alt="facebook" className="me-2" />
-            <span className="font-semibold">Apple</span>
-          </button>
+          <Button type="button" className="flex items-center platformButton hover:opacity-35 duration-500 w-[56px] h-[56px] p-0 btn-secondary">
+            <GoogleIcon className='text-snow' />
+          </Button>
         </div>
-      </div>
-
-      <div>
-        <p>
-          <a href='#' className='underline hover:text-blue-600 duration-500'>Створюючи обліковий запис</a>, ви приймаєте наші <a href='#' className="underline hover:text-blue-600 duration-500">Умови надання послуг та Політику конфіденційності</a>.
-        </p>
       </div>
     </>
   );

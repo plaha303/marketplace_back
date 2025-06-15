@@ -60,7 +60,7 @@ function FooterTop(){
 			</div>
 
 			<div className="footer__right md:w-[375px] w-full">
-				<div className="flex items-center gap-6 mb-8">
+				<div className="flex items-center md:gap-6 gap-3 mb-8">
 					<RegionalSettings />
 					<Button asChild className="btn-secondary text-size-body-2 font-bold h-[56px] flex-1" size="lg">
 						<Link to={AppRoute.LOGIN}>Вхід</Link>
