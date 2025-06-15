@@ -17,16 +17,16 @@
 .modalTypeModalBox {
   max-width: 530px;
 }
-.separateBlock:after {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  display: block;
-  content: "";
-  width: 100%;
-  height: 1px;
-  background: #01060b;
-}
+// .separateBlock:after {
+//   position: absolute;
+//   top: 50%;
+//   transform: translateY(-50%);
+//   display: block;
+//   content: "";
+//   width: 100%;
+//   height: 1px;
+//   background: #01060b;
+// }
 
 
 @media(max-width: 991px) {
