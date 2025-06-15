@@ -3,9 +3,12 @@ const AppRoute = {
   ABOUT: '/about',
   CONTACT: '/contact',
   SUPPORT: '/support',
+
   REGISTRATION: '/registration',
   LOGIN: '/login',
   LOGOUT: '/logout',
+  RESET_PASSWORD: '/reset_password',
+
   PROFILE: '/profile',
   FAVORITE: '/favorite',
   NOTIFICATION: '/notification',

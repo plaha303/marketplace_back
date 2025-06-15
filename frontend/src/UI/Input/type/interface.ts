@@ -2,7 +2,9 @@ import { FieldValues, Path, UseFormRegister } from "react-hook-form";
 
 export interface BaseInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   hasError?: boolean,
-  className?: string
+  className?: string;
+  type?: string;
+  id?: string
 }
 
 export interface InputProps<T extends FieldValues> {
@@ -18,4 +20,5 @@ export interface InputProps<T extends FieldValues> {
 export interface PasswordToggleProps {
   onToggle: () => void;
   isVisible: boolean;
+  iconClassName: string
 }
