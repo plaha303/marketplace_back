@@ -1,10 +1,16 @@
-.separateBlock:after {
+.separateBlock:after,
+.separateBlock:before {
   position: absolute;
   top: 50%;
+  left: 0;
   transform: translateY(-50%);
   display: block;
   content: "";
-  width: 100%;
+  width: calc(50% - 55px);
   height: 1px;
-  background: #01060b;
+  background: var(--color-primary-400);
+}
+.separateBlock:after {
+  left: auto;
+  right: 0;
 }
