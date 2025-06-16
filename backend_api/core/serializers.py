@@ -2,16 +2,15 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth import authenticate
-from .models import Product, ProductImage, Order, OrderItem, Category, Cart, Review, AuctionBid, Favorite, Payment, Shipping
+from .models import Product, ProductImage, Order, OrderItem, Category, Cart, Review, AuctionBid, Favorite, Payment, \
+    Shipping
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.contrib.auth.models import Group
 import os
 import certifi
-from django.utils import timezone
+from django.utils.timezone import timezone
 from django.utils.crypto import get_random_string
 from datetime import timedelta
 
@@ -20,15 +19,11 @@ os.environ['SSL_CERT_FILE'] = certifi.where()
 
 
 class UserSerializer(serializers.ModelSerializer):
-    groups = serializers.SlugRelatedField(
-        many=True,
-        slug_field='name',
-        queryset=Group.objects.all(),
-        required=False
-    )
+    roles = serializers.ListField(child=serializers.ChoiceField(choices=User.ROLE_CHOICES), required=False)
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'surname', 'email', 'role', 'groups']
+        fields = ['id', 'username', 'surname', 'email', 'roles']
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -36,7 +31,7 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ['id', 'name', 'parent', 'category_image', 'category_href']
 
-    
+
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
@@ -106,11 +101,11 @@ class RegisterSerializer(serializers.ModelSerializer):
             username=validated_data['username'],
             email=validated_data['email'],
             password=validated_data['password'],
-            surname=validated_data.get('surname')
+            surname=validated_data.get('surname'),
+            roles=['user']
         )
         user.is_active = False
         user.is_verified = False
-        user.role = 'customer'
         user.save()
         user.generate_verification_code()
 
@@ -150,11 +145,12 @@ class VerifyEmailSerializer(serializers.Serializer):
     def save(self):
         email = self.validated_data['email']
         user = User.objects.get(email=email)
-        user.is_active = True  # Активуємо користувача
-        user.verification_code = None  # Очищаємо код
-        user.verification_expires_at = None  # Очищаємо термін дії
+        user.is_active = True
+        user.verification_code = None
+        user.verification_expires_at = None
         user.save()
         return user
+
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -169,7 +165,6 @@ class PasswordResetRequestSerializer(serializers.Serializer):
         user = User.objects.get(email=email)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
-        # url need change before production
         reset_url = f"localhost:8000/api/auth/password-reset-confirm/{uid}/{token}"
 
         send_mail(
@@ -203,6 +198,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         user.set_password(self.validated_data['new_password'])
         user.save()
 
+
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(required=True, write_only=True)
@@ -216,17 +212,20 @@ class LoginSerializer(serializers.Serializer):
             try:
                 user = User.objects.get(email=email)
                 if not user.check_password(password):
-                    raise serializers.ValidationError({'email': ['Невірний email або пароль'], 'password': ['Невірний email або пароль']})
+                    raise serializers.ValidationError(
+                        {'email': ['Невірний email або пароль'], 'password': ['Невірний email або пароль']})
                 if not user.is_active or not user.is_verified:
                     raise serializers.ValidationError({'email': ['Обліковий запис не активний або не підтверджений']})
             except User.DoesNotExist:
-                raise serializers.ValidationError({'email': ['Невірний email або пароль'], 'password': ['Невірний email або пароль']})
+                raise serializers.ValidationError(
+                    {'email': ['Невірний email або пароль'], 'password': ['Невірний email або пароль']})
         else:
             raise serializers.ValidationError({'email': ['Це поле обов’язкове'], 'password': ['Це поле обов’язкове']})
 
         data['user'] = user
         return data
-        
+
+
 class CartSerializer(serializers.ModelSerializer):
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
 
@@ -245,10 +244,12 @@ class CartSerializer(serializers.ModelSerializer):
         if product.stock < quantity:
             raise serializers.ValidationError({"quantity": "Недостатньо товару в наявності."})
         return data
-        
+
+
 class CartRemoveSerializer(serializers.Serializer):
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
-    
+
+
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
@@ -258,31 +259,38 @@ class ReviewSerializer(serializers.ModelSerializer):
         if value < 1 or value > 5:
             raise serializers.ValidationError("Рейтинг має бути від 1 до 5.")
         return value
-        
+
+
 class AuctionBidSerializer(serializers.ModelSerializer):
     class Meta:
         model = AuctionBid
         fields = ['id', 'product', 'user', 'amount', 'created_at']
-        
+
+
 class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = ['id', 'user', 'product']
-        
+
+
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = ['id', 'order', 'user', 'amount', 'payment_method', 'status', 'created_at']
-        
+
+
 class ShippingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shipping
-        fields = ['id', 'order', 'recipient_name', 'address', 'city', 'postal_code', 'country', 'tracking_number', 'shipped_at']
-        
+        fields = ['id', 'order', 'recipient_name', 'address', 'city', 'postal_code', 'country', 'tracking_number',
+                  'shipped_at']
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'surname', 'email', 'role']
+        fields = ['username', 'surname', 'email', 'roles']
+
 
 class ResendVerificationCodeSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
@@ -305,7 +313,6 @@ class ResendVerificationCodeSerializer(serializers.Serializer):
         user.verification_code = get_random_string(length=6, allowed_chars='1234567890')
         user.verification_expires_at = timezone.now() + timedelta(minutes=30)
         user.save()
-
 
         send_mail(
             'Новий код підтвердження',
