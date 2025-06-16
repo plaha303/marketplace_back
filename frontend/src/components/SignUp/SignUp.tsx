@@ -18,6 +18,7 @@ import { Button } from "@/UI/Button/Button";
 import { CustomError, SignUpRequestDTO } from "@/utils/packages/auth/type/interfaces";
 import { Link } from "react-router";
 import AppRoute from "@/routers/enums/routers-enums";
+import AuthLayout from "@/layout/AuthLayout/AuthLayout";
 
 
 function SignUp() {
@@ -67,14 +68,7 @@ function SignUp() {
 	const hasSpecialChar = /[!@#&()–/[{}\]:;',?/*~$^+=<>]/.test(passwordValue);
 
   return (
-		<div className="signup__block max-w-[685px] mx-auto bg-snow-70 shadow-custom1 lg:p-12 px-6 py-10 rounded-5xl">
-			<div className="login__header lg:mb-12 mb-6">
-				<h2 className="login__title text-size-h2 mb-2 leading-100 text-accent-800">Реєстрація у системі</h2>
-				<div className="login__subtitle text-size-body-1 leading-130">
-					Вітаємо на нашому маркетплейсі! 
-				</div>
-			</div>
-
+		<AuthLayout title="Реєстрація у системі" subtitle="Вітаємо на нашому маркетплейсі! ">
 			<div className="signup-body">
 				<form autoComplete="off" onSubmit={handleSubmit(onSubmit)} className="lg:mb-12 mb-6">
 					<div className="lg:mb-12 mb-6">
@@ -117,22 +111,22 @@ function SignUp() {
 
 						<div className="mb-4">
 							<label className="block mb-1 font-size-body-4 leading-130 font-secondary">Електронна адреса <sup className="text-red-200 font-size-body-4">*</sup></label>
-								<BaseInput 
-									id="email"
-									type="text"
-									inputMode="email"
-									hasError={!!errors.email}
-									{...register('email')}
-									placeholder="Email"
-									className="rounded-5xl font-secondary"
-								/>
-								{errors.email && (
-									<div className="flex items-center  mt-1">
-										<HintIcon className="text-red-200 flex items-center mr-1"/>
-										<span className="text-red-600 text-size-body-4 leading-130 font-secondary">{errors.email.message}</span>
-									</div>
-								)}
-							</div>
+							<BaseInput 
+								id="email"
+								type="text"
+								inputMode="email"
+								hasError={!!errors.email}
+								{...register('email')}
+								placeholder="Email"
+								className="rounded-5xl font-secondary"
+							/>
+							{errors.email && (
+								<div className="flex items-center  mt-1">
+									<HintIcon className="text-red-200 flex items-center mr-1"/>
+									<span className="text-red-600 text-size-body-4 leading-130 font-secondary">{errors.email.message}</span>
+								</div>
+							)}
+						</div>
 
 						<div className="flex lg:gap-6 lg:flex-row flex-col">
 							<div className="flex-1/2">
@@ -228,7 +222,7 @@ function SignUp() {
 						disabled={!agreeTerms ? true : false}
 						type="submit"
 						size="md"
-						className="w-full  btn-primary h-[55px] font-secondary text-size-body-2 font-bold leading-100"
+						className="w-full btn-primary h-[55px] font-secondary text-size-body-2 font-bold leading-100"
 					>
 						Зареєструватися
 					</Button>
@@ -244,7 +238,7 @@ function SignUp() {
 
 				<div className="formBottom">
 					<div className="flex justify-center items-center lg:flex-row flex-col ">
-						<div className="text-size-body-3 leading-130 lg:mb-0 mb-2">
+						<div className="text-size-body-3 leading-130 lg:mb-0 mb-2 font-secondary">
 							Ще не зареєстровані?
 						</div>
 						<Link to={AppRoute.LOGIN}
@@ -257,7 +251,7 @@ function SignUp() {
 
 				
 			</div>
-		</div>
+		</AuthLayout>
 	);
 }
 
