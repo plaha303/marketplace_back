@@ -28,13 +28,13 @@ class UserSerializer(serializers.ModelSerializer):
     )
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'role', 'groups']
+        fields = ['id', 'username', 'surname', 'email', 'role', 'groups']
 
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ['id', 'name', 'parent']
+        fields = ['id', 'name', 'parent', 'category_image', 'category_href']
 
     
 class ProductImageSerializer(serializers.ModelSerializer):
@@ -51,7 +51,7 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = ['id', 'vendor', 'category', 'name', 'description',
                   'sale_type', 'price', 'start_price', 'auction_end_time',
-                  'stock', 'created_at', 'images']
+                  'stock', 'created_at', 'images', 'product_href']
 
     def validate(self, data):
         sale_type = data.get('sale_type', self.instance.sale_type if self.instance else 'fixed')
@@ -89,27 +89,30 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password2 = serializers.CharField(write_only=True)
+    password_confirm = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'password2']
+        fields = ['username', 'surname', 'email', 'password', 'password_confirm']
 
     def validate(self, data):
-        if data['password'] != data['password2']:
-            raise serializers.ValidationError('Паролі не співпадають')
+        if data['password'] != data['password_confirm']:
+            raise serializers.ValidationError({'password_confirm': 'Паролі не співпадають'})
         return data
 
     def create(self, validated_data):
-        validated_data.pop('password2')
-        user = User.objects.create_user(**validated_data)
+        validated_data.pop('password_confirm')
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+            surname=validated_data.get('surname')
+        )
         user.is_active = False
         user.is_verified = False
         user.role = 'customer'
         user.save()
         user.generate_verification_code()
-
-
 
         send_mail(
             'Підтвердження реєстрації',
@@ -279,7 +282,7 @@ class ShippingSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'email', 'role']
+        fields = ['username', 'surname', 'email', 'role']
 
 class ResendVerificationCodeSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
