@@ -60,6 +60,14 @@ class ProductViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         instance.delete()
 
+    def retrieve_by_href(self, request, category_href=None, product_href=None):
+        try:
+            product = Product.objects.get(product_href=product_href, category__category_href=category_href)
+            serializer = self.get_serializer(product)
+            return Response({"success": True, "data": serializer.data}, status=status.HTTP_200_OK)
+        except Product.DoesNotExist:
+            return Response({"success": False, "errors": {"detail": "Продукт не знайдено"}}, status=status.HTTP_404_NOT_FOUND)
+
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
@@ -388,6 +396,14 @@ class CategoryViewSet(viewsets.ModelViewSet):
     allowed_groups = ['Admins']
     filter_backends = [DjangoFilterBackend]
     filterset_class = CategoryFilter
+
+    def retrieve_by_href(self, request, category_href=None):
+        try:
+            category = Category.objects.get(category_href=category_href)
+            serializer = self.get_serializer(category)
+            return Response({"success": True, "data": serializer.data}, status=status.HTTP_200_OK)
+        except Category.DoesNotExist:
+            return Response({"success": False, "errors": {"detail": "Категорію не знайдено"}}, status=status.HTTP_404_NOT_FOUND)
 
 
 class PaymentViewSet(viewsets.ModelViewSet):

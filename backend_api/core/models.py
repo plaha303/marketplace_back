@@ -22,6 +22,7 @@ class User(AbstractUser):
     is_verified = models.BooleanField(default=False, db_index=True)
     verification_code = models.CharField(max_length=6, blank=True, null=True, validators=[RegexValidator(r'^\d{6}$', message='Код має бути 6-значним числом')])
     verification_expires_at = models.DateTimeField(null=True, blank=True)
+    surname = models.CharField(max_length=255, blank=True, null=True)  # Нове поле для прізвища
     groups = models.ManyToManyField(
         Group,
         related_name='core_users',
@@ -40,20 +41,19 @@ class User(AbstractUser):
 
     @transaction.atomic
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)  # Спочатку зберігаємо користувача
+        super().save(*args, **kwargs)
         group_name = self.ROLE_GROUP_MAPPING.get(self.role)
         if group_name:
             if self.role == 'admin':
-                # Для адмінів тільки одна група
                 self.groups.clear()
-                group, _ = Group.objects.get_or_create(name='Admins')  # Виправлено: objects
+                group, _ = Group.objects.get_or_create(name='Admins')
                 self.groups.add(group)
             else:
-                # Додаємо групу для інших ролей, якщо її немає
                 group, _ = Group.objects.get_or_create(name=group_name)
-                if not self.groups.filter(name=group.name).exists():  # Виправлено: filter, exists
+                if not self.groups.filter(name=group.name).exists():
                     self.groups.add(group)
                 self.groups.remove(*self.groups.filter(name='Admins'))
+
     def __str__(self):
         return self.username
 
@@ -61,9 +61,20 @@ class User(AbstractUser):
 class Category(models.Model):
     name = models.CharField(max_length=255, unique=True)
     parent = models.ForeignKey('self', null=True, on_delete=models.SET_NULL, db_index=True)
+    category_image = models.URLField(blank=True, null=True)
+    category_href = models.SlugField(max_length=255, unique=True, blank=True)
 
-    def __str__(self):
-        return self.name
+    def save(self, *args, **kwargs):
+        if not self.category_href:
+            from django.utils.text import slugify
+            self.category_href = slugify(self.name)
+            base_href = self.category_href
+            counter = 1
+            while Category.objects.filter(category_href=self.category_href).exclude(id=self.id).exists():
+                self.category_href = f"{base_href}-{counter}"
+                counter += 1
+        super().save(*args, **kwargs)
+
     class Meta:
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
@@ -84,6 +95,21 @@ class Product(models.Model):
     stock = models.PositiveIntegerField(default=0, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
+    product_href = models.SlugField(max_length=255, unique=True, blank=True)  # ЧПУ-посилання
+
+    def save(self, *args, **kwargs):
+        # Автоматична генерація product_href, якщо не вказано
+        if not self.product_href:
+            from django.utils.text import slugify
+            self.product_href = slugify(self.name)
+            # Перевірка унікальності
+            base_href = self.product_href
+            counter = 1
+            while Product.objects.filter(product_href=self.product_href).exclude(id=self.id).exists():
+                self.product_href = f"{base_href}-{counter}"
+                counter += 1
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.name
 
