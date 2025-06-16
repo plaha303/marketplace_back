@@ -362,3 +362,104 @@ class OrderViewSetTest(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertFalse(response.data['success'])
         self.assertIn('cart', response.data['errors'])
+class CategoryViewSetTest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = User.objects.create_user(
+            username='admin',
+            email='admin@example.com',
+            password='pass',
+            role='admin'
+        )
+        self.admin.groups.add(Group.objects.get_or_create(name='Admins')[0])
+        self.category = Category.objects.create(
+            name='Home Products',
+            category_href='home-products',
+            category_image='https://example.com/sample.jpg'  # Тестовий URL
+        )
+
+    def test_retrieve_category_by_href(self):
+        self.client.force_authenticate(self.admin)
+        response = self.client.get('/home-products/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['data']['category_href'], 'home-products')
+        self.assertEqual(response.data['data']['category_image'], 'https://example.com/sample.jpg')
+
+    def test_create_category_without_image(self):
+        self.client.force_authenticate(self.admin)
+        response = self.client.post('/api/categories/', {
+            'name': 'New Category'
+        })
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(Category.objects.count(), 2)
+        self.assertEqual(Category.objects.last().category_href, 'new-category')
+        self.assertIsNone(Category.objects.last().category_image)  # Перевіряємо, що зображення не вказано
+
+class RegisterViewTest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_successful_registration(self):
+        response = self.client.post('/api/auth/register/', {
+            'username': 'newuser',
+            'surname': 'Smith',
+            'email': 'newuser@example.com',
+            'password': 'Password123',
+            'password_confirm': 'Password123'
+        })
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.data['success'])
+        user = User.objects.get(email='newuser@example.com')
+        self.assertEqual(user.surname, 'Smith')  # Перевіряємо surname
+        self.assertFalse(user.is_verified)
+        self.assertFalse(user.is_active)
+        self.assertIsNotNone(user.verification_code)
+        self.assertIsNotNone(user.verification_expires_at)
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertEqual(email.subject, 'Підтвердження реєстрації')
+        self.assertIn(f'Ваш код підтвердження: {user.verification_code}', email.body)
+        self.assertNotIn('http://localhost:8000/api/auth/activate/', email.body)
+
+    def test_registration_password_mismatch(self):
+        response = self.client.post('/api/auth/register/', {
+            'username': 'newuser',
+            'surname': 'Smith',
+            'email': 'newuser@example.com',
+            'password': 'Password123',
+            'password_confirm': 'Different123'
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.data['success'])
+        self.assertIn('password_confirm', response.data['errors'])
+        self.assertEqual(response.data['errors']['password_confirm'], ['Паролі не співпадають'])
+
+    def test_registration_duplicate_email(self):
+        User.objects.create_user(
+            username='existing',
+            surname='Doe',
+            email='newuser@example.com',
+            password='Password123'
+        )
+        response = self.client.post('/api/auth/register/', {
+            'username': 'newuser',
+            'surname': 'Smith',
+            'email': 'newuser@example.com',
+            'password': 'Password123',
+            'password_confirm': 'Password123'
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.data['success'])
+        self.assertIn('email', response.data['errors'])
+
+    def test_registration_without_surname(self):
+        response = self.client.post('/api/auth/register/', {
+            'username': 'newuser',
+            'email': 'newuser@example.com',
+            'password': 'Password123',
+            'password_confirm': 'Password123'
+        })
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.data['success'])
+        user = User.objects.get(email='newuser@example.com')
+        self.assertIsNone(user.surname)  # Перевіряємо, що surname може бути null
