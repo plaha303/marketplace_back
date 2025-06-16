@@ -1,62 +1,39 @@
 import random
-
-from django.db import models, transaction
-from django.contrib.auth.models import AbstractUser, Group, Permission
+from django.db import models
+from django.contrib.auth.models import AbstractUser
 from django.utils.timezone import now, timedelta
 from django.core.validators import RegexValidator
-
+from django.contrib.postgres.fields import ArrayField
 
 class User(AbstractUser):
     ROLE_CHOICES = [
-        ('customer', 'Customer'),
-        ('vendor', 'Vendor'),
+        ('user', 'User'),
         ('admin', 'Admin'),
     ]
-    ROLE_GROUP_MAPPING = {
-        'customer': 'Customers',
-        'vendor': 'Vendors',
-        'admin': 'Admins'
-    }
     email = models.EmailField(unique=True)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='customer', db_index=True)
+    roles = ArrayField(
+        models.CharField(max_length=10, choices=ROLE_CHOICES),
+        default=list,
+        blank=True,
+        db_index=True
+    )
     is_verified = models.BooleanField(default=False, db_index=True)
     verification_code = models.CharField(max_length=6, blank=True, null=True, validators=[RegexValidator(r'^\d{6}$', message='Код має бути 6-значним числом')])
     verification_expires_at = models.DateTimeField(null=True, blank=True)
-    surname = models.CharField(max_length=255, blank=True, null=True)  # Нове поле для прізвища
-    groups = models.ManyToManyField(
-        Group,
-        related_name='core_users',
-        blank=True
-    )
-    user_permissions = models.ManyToManyField(
-        Permission,
-        related_name='core_users_permissions',
-        blank=True
-    )
+    surname = models.CharField(max_length=255, blank=True, null=True)
 
     def generate_verification_code(self):
         self.verification_code = str(random.randint(100000, 999999))
         self.verification_expires_at = now() + timedelta(hours=1)
         self.save()
 
-    @transaction.atomic
     def save(self, *args, **kwargs):
+        if not self.roles:
+            self.roles = ['user']  # За замовчуванням роль user
         super().save(*args, **kwargs)
-        group_name = self.ROLE_GROUP_MAPPING.get(self.role)
-        if group_name:
-            if self.role == 'admin':
-                self.groups.clear()
-                group, _ = Group.objects.get_or_create(name='Admins')
-                self.groups.add(group)
-            else:
-                group, _ = Group.objects.get_or_create(name=group_name)
-                if not self.groups.filter(name=group.name).exists():
-                    self.groups.add(group)
-                self.groups.remove(*self.groups.filter(name='Admins'))
 
     def __str__(self):
         return self.username
-
 
 class Category(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -95,14 +72,12 @@ class Product(models.Model):
     stock = models.PositiveIntegerField(default=0, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
-    product_href = models.SlugField(max_length=255, unique=True, blank=True)  # ЧПУ-посилання
+    product_href = models.SlugField(max_length=255, unique=True, blank=True)
 
     def save(self, *args, **kwargs):
-        # Автоматична генерація product_href, якщо не вказано
         if not self.product_href:
             from django.utils.text import slugify
             self.product_href = slugify(self.name)
-            # Перевірка унікальності
             base_href = self.product_href
             counter = 1
             while Product.objects.filter(product_href=self.product_href).exclude(id=self.id).exists():
@@ -113,14 +88,12 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
-
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
     image_url = models.URLField()
 
     def __str__(self):
         return f"Image for {self.product.name}"
-
 
 class AuctionBid(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='bids')
@@ -131,7 +104,6 @@ class AuctionBid(models.Model):
     def __str__(self):
         return f"Bid of {self.amount} by {self.user.username} on {self.product.name}"
 
-
 class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cart_items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -139,7 +111,6 @@ class Cart(models.Model):
 
     def __str__(self):
         return f"{self.quantity} of {self.product.name} in {self.user.username}'s cart"
-
 
 class Order(models.Model):
     STATUS_CHOICES = [
@@ -154,9 +125,9 @@ class Order(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', db_index=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
+
     def __str__(self):
         return f"Order #{self.id} by {self.customer.username} - {self.status}"
-
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
@@ -166,7 +137,6 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name} in order #{self.order.id}"
-
 
 class Payment(models.Model):
     PAYMENT_METHODS = [
@@ -188,7 +158,6 @@ class Payment(models.Model):
     def __str__(self):
         return f"Payment for order #{self.order.id} - {self.status}"
 
-
 class Shipping(models.Model):
     order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='shipping')
     recipient_name = models.CharField(max_length=255)
@@ -202,7 +171,6 @@ class Shipping(models.Model):
     def __str__(self):
         return f"Shipping for order #{self.order.id}"
 
-
 class Review(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
@@ -213,13 +181,11 @@ class Review(models.Model):
     def __str__(self):
         return f"Review by {self.user.username} for {self.product.name}"
 
-
 class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     class Meta:
         unique_together = ['user', 'product']
+
     def __str__(self):
         return f"{self.user.username}'s favorite for {self.product.name}"
-        
-
