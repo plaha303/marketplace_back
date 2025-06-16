@@ -1,8 +1,7 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
-from core.models import Product, Cart, Order, User
+from core.models import Product, Cart, Order, User, Category
 from django.utils.timezone import now, timedelta
 from django.core import mail
 
@@ -15,26 +14,20 @@ class ProductViewSetTest(TestCase):
             username='vendor',
             email='vendor@example.com',
             password='pass',
-            role='vendor'
+            roles=['user']
         )
-        self.vendor.groups.add(Group.objects.get_or_create(name='Vendors')[0])
-
         self.customer = User.objects.create_user(
             username='customer',
             email='customer@example.com',
             password='pass',
-            role='customer'
+            roles=['user']
         )
-        self.customer.groups.add(Group.objects.get_or_create(name='Customers')[0])
-
         self.admin = User.objects.create_user(
             username='admin',
             email='admin@example.com',
             password='pass',
-            role='admin'
+            roles=['admin']
         )
-        self.admin.groups.add(Group.objects.get_or_create(name='Admins')[0])
-
         self.product = Product.objects.create(
             vendor=self.vendor, name='Test Product', price=100, stock=10
         )
@@ -55,9 +48,8 @@ class ProductViewSetTest(TestCase):
             username='other',
             email='other@example.com',
             password='pass',
-            role='vendor'
+            roles=['user']
         )
-        other_vendor.groups.add(Group.objects.get_or_create(name='Vendors')[0])
         other_product = Product.objects.create(
             vendor=other_vendor, name='Other Product', price=300, stock=5
         )
@@ -78,11 +70,10 @@ class LoginViewTest(TestCase):
             username='testuser',
             email='test@example.com',
             password='password123',
-            role='customer',
+            roles=['user'],
             is_verified=True,
             is_active=True
         )
-        self.user.groups.add(Group.objects.get_or_create(name='Customers')[0])
 
     def test_successful_login(self):
         response = self.client.post('/api/auth/login/', {
@@ -112,7 +103,7 @@ class RegisterViewTest(TestCase):
             'username': 'newuser',
             'email': 'newuser@example.com',
             'password': 'Password123',
-            'password2': 'Password123'
+            'password_confirm': 'Password123'
         })
         self.assertEqual(response.status_code, 201)
         self.assertTrue(response.data['success'])
@@ -132,24 +123,25 @@ class RegisterViewTest(TestCase):
             'username': 'newuser',
             'email': 'newuser@example.com',
             'password': 'Password123',
-            'password2': 'Different123'
+            'password_confirm': 'Different123'
         })
         self.assertEqual(response.status_code, 400)
         self.assertFalse(response.data['success'])
-        self.assertIn('non_field_errors', response.data['errors'])
-        self.assertEqual(response.data['errors']['non_field_errors'], ['Паролі не співпадають'])
+        self.assertIn('password_confirm', response.data['errors'])
+        self.assertEqual(response.data['errors']['password_confirm'], ['Паролі не співпадають'])
 
     def test_registration_duplicate_email(self):
         User.objects.create_user(
             username='existing',
             email='newuser@example.com',
-            password='Password123'
+            password='Password123',
+            roles=['user']
         )
         response = self.client.post('/api/auth/register/', {
             'username': 'newuser',
             'email': 'newuser@example.com',
             'password': 'Password123',
-            'password2': 'Password123'
+            'password_confirm': 'Password123'
         })
         self.assertEqual(response.status_code, 400)
         self.assertFalse(response.data['success'])
@@ -162,7 +154,7 @@ class VerifyEmailViewTest(TestCase):
             username='testuser',
             email='test@example.com',
             password='password123',
-            role='customer',
+            roles=['user'],
             is_verified=False,
             is_active=False,
             verification_code='123456',
@@ -221,7 +213,7 @@ class ResendVerificationCodeViewTest(TestCase):
             username='testuser',
             email='test@example.com',
             password='password123',
-            role='customer',
+            roles=['user'],
             is_verified=False,
             is_active=False,
             verification_code='123456',
@@ -236,7 +228,7 @@ class ResendVerificationCodeViewTest(TestCase):
         self.assertTrue(response.data['success'])
         self.assertEqual(response.data['data']['message'], 'Новий код підтвердження відправлено!')
         user = User.objects.get(email='test@example.com')
-        self.assertNotEqual(user.verification_code, '123456')  # Код змінився
+        self.assertNotEqual(user.verification_code, '123456')
         self.assertTrue(user.verification_expires_at > now())
         self.assertEqual(len(mail.outbox), 1)
         email = mail.outbox[0]
@@ -271,7 +263,7 @@ class ActivateEmailViewTest(TestCase):
             username='testuser',
             email='test@example.com',
             password='password123',
-            role='customer',
+            roles=['user'],
             is_verified=False,
             is_active=False
         )
@@ -287,14 +279,13 @@ class CartAddViewTest(TestCase):
             username='customer',
             email='customer@example.com',
             password='pass',
-            role='customer'
+            roles=['user']
         )
-        self.customer.groups.add(Group.objects.get_or_create(name='Customers')[0])
         self.vendor = User.objects.create_user(
             username='vendor',
             email='vendor@example.com',
             password='pass',
-            role='vendor'
+            roles=['user']
         )
         self.product = Product.objects.create(
             vendor=self.vendor, name='Test Product', price=100, stock=10
@@ -328,14 +319,13 @@ class OrderViewSetTest(TestCase):
             username='customer',
             email='customer@example.com',
             password='pass',
-            role='customer'
+            roles=['user']
         )
-        self.customer.groups.add(Group.objects.get_or_create(name='Customers')[0])
         self.vendor = User.objects.create_user(
             username='vendor',
             email='vendor@example.com',
             password='pass',
-            role='vendor'
+            roles=['user']
         )
         self.product = Product.objects.create(
             vendor=self.vendor, name='Test Product', price=100, stock=10
@@ -351,9 +341,9 @@ class OrderViewSetTest(TestCase):
         self.assertTrue(response.data['success'])
         self.assertEqual(Order.objects.count(), 1)
         order = Order.objects.first()
-        self.assertEqual(order.total_amount, 200)  # 2 * 100
+        self.assertEqual(order.total_amount, 200)
         self.assertEqual(order.items.count(), 1)
-        self.assertEqual(Cart.objects.count(), 0)  # Кошик очищений
+        self.assertEqual(Cart.objects.count(), 0)
 
     def test_create_order_empty_cart(self):
         Cart.objects.all().delete()
@@ -362,6 +352,7 @@ class OrderViewSetTest(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertFalse(response.data['success'])
         self.assertIn('cart', response.data['errors'])
+
 class CategoryViewSetTest(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -369,13 +360,12 @@ class CategoryViewSetTest(TestCase):
             username='admin',
             email='admin@example.com',
             password='pass',
-            role='admin'
+            roles=['admin']
         )
-        self.admin.groups.add(Group.objects.get_or_create(name='Admins')[0])
         self.category = Category.objects.create(
             name='Home Products',
             category_href='home-products',
-            category_image='https://example.com/sample.jpg'  # Тестовий URL
+            category_image='https://example.com/sample.jpg'
         )
 
     def test_retrieve_category_by_href(self):
@@ -393,7 +383,7 @@ class CategoryViewSetTest(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(Category.objects.count(), 2)
         self.assertEqual(Category.objects.last().category_href, 'new-category')
-        self.assertIsNone(Category.objects.last().category_image)  # Перевіряємо, що зображення не вказано
+        self.assertIsNone(Category.objects.last().category_image)
 
 class RegisterViewTest(TestCase):
     def setUp(self):
@@ -410,7 +400,7 @@ class RegisterViewTest(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertTrue(response.data['success'])
         user = User.objects.get(email='newuser@example.com')
-        self.assertEqual(user.surname, 'Smith')  # Перевіряємо surname
+        self.assertEqual(user.surname, 'Smith')
         self.assertFalse(user.is_verified)
         self.assertFalse(user.is_active)
         self.assertIsNotNone(user.verification_code)
@@ -439,7 +429,8 @@ class RegisterViewTest(TestCase):
             username='existing',
             surname='Doe',
             email='newuser@example.com',
-            password='Password123'
+            password='Password123',
+            roles=['user']
         )
         response = self.client.post('/api/auth/register/', {
             'username': 'newuser',
@@ -462,4 +453,4 @@ class RegisterViewTest(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertTrue(response.data['success'])
         user = User.objects.get(email='newuser@example.com')
-        self.assertIsNone(user.surname)  # Перевіряємо, що surname може бути null
+        self.assertIsNone(user.surname)
