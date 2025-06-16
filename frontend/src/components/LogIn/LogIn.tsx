@@ -15,28 +15,19 @@ import { Button } from "@/UI/Button/Button";
 import { logInSchema } from "@/utils/validation/loginSchema";
 import HintIcon from "@/UI/Icons/HintIcon";
 import classNames from "classnames";
-
-	interface onSubmitProps {
-		email: string,
-		password: string
-	}
-	interface CustomError {
-		original?: Record<string, string>,
-		message: string
-	}
-
+import { CustomError, LogInRequestDTO } from "@/utils/packages/auth/type/interfaces";
 
 function LogIn() {
 	const [globalError, setGlobalError] = useState('');
 
 	const {passwordShow, togglePassword} = usePasswordToggle();
 	const {mutateLogIn, mutateLoginPending} = useLogInMutation();
-  const {handleSubmit, register, formState: {errors}, setError} = useForm<onSubmitProps>({
+  const {handleSubmit, register, formState: {errors}, setError} = useForm<LogInRequestDTO>({
     resolver: yupResolver(logInSchema),
   });
 
 
-  function onSubmit(data: onSubmitProps) {
+  function onSubmit(data: LogInRequestDTO) {
 		mutateLogIn(data, {
 			onError: (error: Error) => {
 				console.log('error', error)
@@ -46,7 +37,7 @@ function LogIn() {
 				if(customError.original) {
 					Object.entries(customError.original).forEach(([field, message]) => {
 						const errorMessage = Array.isArray(message) ? message[0] : message;
-						setError(field as keyof onSubmitProps, {
+						setError(field as keyof LogInRequestDTO, {
 							type: 'server',
 							message: errorMessage,
 						});
@@ -72,8 +63,8 @@ function LogIn() {
 				</div>
 
 				<div className="login-body">
-					<form autoComplete="false" onSubmit={handleSubmit(onSubmit)}>
-						<div className="mb-[32px]">
+					<form autoComplete="false" onSubmit={handleSubmit(onSubmit)} className="lg:mb-12 mb-6">
+						<div className="lg:mb-12 mb-6">
 							<div className="mb-4">
 							<label className="block mb-1 font-size-body-4 leading-130">Електронна адреса <sup className="text-red-200 font-size-body-4">*</sup></label>
 								<BaseInput 
@@ -136,17 +127,16 @@ function LogIn() {
 						>
 							Увійти
 						</Button>
+					</form>
 
-						<div
-							className={`${styled.separateBlock} relative text-center lg:my-12 my-6`}
-						>
-							<span className="bg-transparent relative z-10 px-2 text-primary-400 separateBlock__text leading-130 inline-block">
-								або увійти з
-							</span>
-						</div>
+					<div className={`${styled.separateBlock} relative text-center mb-6`}>
+						<span className="bg-transparent relative z-10 px-2 text-primary-400 separateBlock__text leading-130 inline-block">
+							або увійти з
+						</span>
+					</div>
 
 						<PlatformsButtons />
-					</form>
+					
 
 					<div className="formBottom">
 						<div className="flex justify-center items-center lg:flex-row flex-col ">
@@ -160,6 +150,7 @@ function LogIn() {
 							</Link>
 						</div>
 					</div>
+
 				</div>
 			</div>
 	);

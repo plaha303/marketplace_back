@@ -13,48 +13,52 @@ import classNames from "classnames";
 import { useState } from "react";
 import SuccessCheckIcon from "@/UI/Icons/SuccessCheckIcon";
 import ErrorCheckIcon from "@/UI/Icons/ErrorCheckIcon";
-import { Checkbox } from "@/UI/Checkbox/checkbox";
+import { Checkbox } from "@/UI/Checkbox/Checkbox";
 import { Button } from "@/UI/Button/Button";
-
-interface onSubmitProps {
-	username: string;
-	surname: string;
-	email: string;
-	password: string;
-	password_confirm: string;
-}
+import { CustomError, SignUpRequestDTO } from "@/utils/packages/auth/type/interfaces";
+import { Link } from "react-router";
+import AppRoute from "@/routers/enums/routers-enums";
 
 
 function SignUp() {
 	const [showPassword, setShowPassword] = useState(false);
 	const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
 	const [agreeTerms, setAgreeTerms] = useState(false);
+	const [globalError, setGlobalError] = useState('');
+
 	const togglePassword = () => setShowPassword((prev) => !prev);
 	const togglePasswordConfirm = () => setShowPasswordConfirm((prev) => !prev);
 
 
 	const {mutateSignUp, mutateSignUpPenging, isError, error} = useSignUpMutation();
-  const {handleSubmit, register, formState: {errors}, watch, setError} = useForm<onSubmitProps>({
+  const {handleSubmit, register, formState: {errors}, watch, setError} = useForm<SignUpRequestDTO>({
 		resolver: yupResolver(signupSchema),
 	});
 
-  function onSubmit(data: onSubmitProps) {
+  function onSubmit(data: SignUpRequestDTO) {
 		mutateSignUp(data, {
-			onError: (error) => {
-				const fieldErrors = error.fieldErrors;
+			onError: (error: Error) => {
+				console.log('error', error)
+				const customError = error as CustomError;
+				let hasFieldErrors = false;
 
-				if(fieldErrors) {
-					Object.entries(fieldErrors).forEach(([field, message]) => {
-						setError(field, {type: "server", message})
-					})
+				if(customError.original) {
+					Object.entries(customError.original).forEach(([field, message]) => {
+						const errorMessage = Array.isArray(message) ? message[0] : message;
+						setError(field as keyof SignUpRequestDTO, {
+							type: 'server',
+							message: errorMessage,
+						});
+						hasFieldErrors = true;
+					});
+				}
+
+				if(!hasFieldErrors && customError.message) {
+					setGlobalError(customError.message);
 				}
 			}
 		});
   }
-
-	function handleAgreeTerms() {
-		setAgreeTerms(prev => !prev)
-	}
 
 	const passwordValue = watch('password');
 	const isLengthValid = passwordValue ? passwordValue.length >= 8 : '';
@@ -72,7 +76,7 @@ function SignUp() {
 			</div>
 
 			<div className="signup-body">
-				<form autoComplete="off" onSubmit={handleSubmit(onSubmit)}>
+				<form autoComplete="off" onSubmit={handleSubmit(onSubmit)} className="lg:mb-12 mb-6">
 					<div className="lg:mb-12 mb-6">
 						<div className="flex lg:gap-6 lg:flex-row flex-col">
 							<div className="mb-4 flex-1/2">
@@ -214,11 +218,11 @@ function SignUp() {
 						</div>
 					</div>
 
-					{isError && (!error?.fieldErrors || Object.keys(error.fieldErrors).length === 0) && (
-						<p style={{ color: "red", marginBottom: '15px' }}>{error.message}</p>
+					{globalError && (
+						<p style={{ color: "red" }} className="mb-4">
+							{globalError}
+						</p>
 					)}
-
-					
 
 					<Button
 						disabled={!agreeTerms ? true : false}
@@ -228,31 +232,30 @@ function SignUp() {
 					>
 						Зареєструватися
 					</Button>
-
-					<div
-						className={`${styled.separateBlock} relative text-center lg:mt-[32px] lg:mb-[24px] md:mb-[20px] md:mt-[20px]`}
-					>
-						<span className="bg-white relative z-10 ps-[22px] pe-[22px] separateBlock__text leading-[2] inline-block">
-							зареєструватися за допомогю
-						</span>
-					</div>
-
-					<PlatformsButtons />
-
-					<div className="formBottom text-base mt-3 pt-2 border-t-[#01060b] border-t">
-						<div className="flex justify-between items-center md:flex-col lg:flex-row">
-							<div className="lg:max-w-[240px] md:max-w-full lg:mb-0 md:mb-4">
-								Вже маєте обліковий запис?
-							</div>
-							<button
-								type="button"
-								className="font-medium btn bg-transparent border-0 shadow-none lg:w-[120px] md:w-full"
-							>
-								Увійти
-							</button>
-						</div>
-					</div>
 				</form>
+
+				<div className={`${styled.separateBlock} relative text-center mb-6`}>
+					<span className="bg-transparent relative z-10 px-2 text-primary-400 separateBlock__text leading-130 inline-block">
+						або зареєструватися з
+					</span>
+				</div>
+
+				<PlatformsButtons />
+
+				<div className="formBottom">
+					<div className="flex justify-center items-center lg:flex-row flex-col ">
+						<div className="text-size-body-3 leading-130 lg:mb-0 mb-2">
+							Ще не зареєстровані?
+						</div>
+						<Link to={AppRoute.LOGIN}
+							className="text-primary-600 text-size-link-1 ml-2 leading-100"
+						>
+							Вхід
+						</Link>
+					</div>
+				</div>
+
+				
 			</div>
 		</div>
 	);
