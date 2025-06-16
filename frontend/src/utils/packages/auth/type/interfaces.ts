@@ -8,12 +8,17 @@ export interface LogInResponseDTO {
 }
 
 export interface SignUpRequestDTO {
-  userName: string,
-  surName: string,
+  username: string,
+  surname: string,
   email: string,
   password: string,
   password_confirm: string,
 }
 export interface SignUpResponseDTO {
   success: boolean;
+}
+
+export interface CustomError {
+  original?: Record<string, string>,
+  message: string
 }
