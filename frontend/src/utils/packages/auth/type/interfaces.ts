@@ -9,9 +9,10 @@ export interface LogInResponseDTO {
 
 export interface SignUpRequestDTO {
   userName: string,
+  surName: string,
   email: string,
   password: string,
-  password2: string,
+  password_confirm: string,
 }
 export interface SignUpResponseDTO {
   success: boolean;

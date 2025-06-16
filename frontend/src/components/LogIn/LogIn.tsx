@@ -16,6 +16,15 @@ import { logInSchema } from "@/utils/validation/loginSchema";
 import HintIcon from "@/UI/Icons/HintIcon";
 import classNames from "classnames";
 
+	interface onSubmitProps {
+		email: string,
+		password: string
+	}
+	interface CustomError {
+		original?: Record<string, string>,
+		message: string
+	}
+
 
 function LogIn() {
 	const [globalError, setGlobalError] = useState('');
@@ -26,14 +35,6 @@ function LogIn() {
     resolver: yupResolver(logInSchema),
   });
 
-	interface onSubmitProps {
-		email: string,
-		password: string
-	}
-	interface CustomError {
-		original?: Record<string, string>,
-		message: string
-	}
 
   function onSubmit(data: onSubmitProps) {
 		mutateLogIn(data, {
@@ -73,8 +74,8 @@ function LogIn() {
 				<div className="login-body">
 					<form autoComplete="false" onSubmit={handleSubmit(onSubmit)}>
 						<div className="mb-[32px]">
-							<label className="block mb-1 font-size-body-4 leading-130">Електронна адреса <sup className="text-red-200 font-size-body-4">*</sup></label>
 							<div className="mb-4">
+							<label className="block mb-1 font-size-body-4 leading-130">Електронна адреса <sup className="text-red-200 font-size-body-4">*</sup></label>
 								<BaseInput 
 									id="email"
 									type="text"
