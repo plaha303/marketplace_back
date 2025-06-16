@@ -1,7 +1,25 @@
 from django.contrib import admin
 from django import forms
-from django.contrib.auth.models import Group
 from .models import User, Category, Product, Cart
+from django.contrib.postgres.fields import ArrayField
+
+class UserAdmin(admin.ModelAdmin):
+    list_display = ['username', 'email', 'is_verified', 'is_active']
+    list_filter = ['is_verified', 'is_active']
+    search_fields = ['username', 'email']
+    filter_horizontal = []
+    fieldsets = (
+        (None, {'fields': ('username', 'email', 'password', 'surname', 'roles', 'is_verified', 'is_active')}),
+    )
+    formfield_overrides = {
+        ArrayField: {'widget': forms.CheckboxSelectMultiple},
+    }
+
+admin.site.register(User, UserAdmin)
+admin.site.register(Category)
+admin.site.register(Product)
+admin.site.register(Cart)
+
 
 class UserAdminForm(forms.ModelForm):
     class Meta:
@@ -29,16 +47,3 @@ class UserAdminForm(forms.ModelForm):
                 self.add_error('groups', 'Група Admins не дозволена для ролі customer, vendor або інших')
 
         return cleaned_data
-
-class UserAdmin(admin.ModelAdmin):
-    form = UserAdminForm
-    list_display = ['username', 'email', 'role', 'is_verified', 'is_active']
-    list_filter = ['role', 'is_verified', 'is_active']
-    search_fields = ['username', 'email']
-    filter_horizontal = ['groups', 'user_permissions']
-
-# Реєстрація моделей
-admin.site.register(User, UserAdmin)  # Правильна реєстрація: модель User із класом UserAdmin
-admin.site.register(Category)
-admin.site.register(Product)
-admin.site.register(Cart)
