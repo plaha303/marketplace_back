@@ -3,11 +3,12 @@ from . import views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import CartListView, ProductViewSet, ResendVerificationCodeView, CustomTokenRefreshView
 
-
 urlpatterns = [
     path('users/', views.UserViewSet.as_view({'get': 'list', 'post': 'create'}), name='user-list'),
     path('user/', views.UserProfileView.as_view(), name='user-profile'),
     path('users/<int:pk>/', views.UserViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='user-detail'),
+    path('<slug:category_href>/', views.CategoryViewSet.as_view({'get': 'retrieve_by_href'}), name='category-detail-by-href'),
+    path('<slug:category_href>/<slug:product_href>/', views.ProductViewSet.as_view({'get': 'retrieve_by_href', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='product-detail-by-href'),
     path('products/', views.ProductViewSet.as_view({'get': 'list', 'post': 'create'}), name='product-list'),
     path('products/<int:pk>/', views.ProductViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='product-detail'),
     path('orders/', views.OrderViewSet.as_view({'get': 'list', 'post': 'create'}), name='order-list'),
@@ -18,8 +19,7 @@ urlpatterns = [
     path('auth/login/', views.LoginView.as_view(), name='login'),
     path('auth/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
     path('auth/password-reset/', views.PasswordResetRequestView.as_view(), name='password_reset'),
-    path('auth/password-reset-confirm/<str:uidb64>/<str:token>/', views.PasswordResetConfirmView.as_view(),
-         name='password_reset_confirm'),
+    path('auth/password-reset-confirm/<str:uidb64>/<str:token>/', views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('cart/add/', views.CartAddView.as_view(), name='cart-add'),
     path('cart/remove/', views.CartRemoveView.as_view(), name='cart-remove'),
     path('cart/', CartListView.as_view(), name='cart-list'),
