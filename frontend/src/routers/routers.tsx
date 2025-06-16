@@ -8,6 +8,8 @@ import ProtectedRoute from "@/layout/ProtectedRoute/ProtectedRoute";
 import UserProfile from "@/pages/UserProfile/UserProfile";
 import LogInPage from "@/pages/LogInPage/LogInPage";
 import SignUpPage from "@/pages/SignUpPage/SignUpPage";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage/ForgotPasswordPage";
+
 
 export const routers = createBrowserRouter([
   {
@@ -30,6 +32,10 @@ export const routers = createBrowserRouter([
       {
         path: AppRoute.REGISTRATION,
         element: <SignUpPage />
+      },
+      {
+        path: AppRoute.RESET_PASSWORD,
+        element: <ForgotPasswordPage />
       },
       {
         element: <ProtectedRoute />,
