@@ -49,7 +49,7 @@ urlpatterns = [
     path('payments/', views.PaymentViewSet.as_view({'get': 'list', 'post': 'create'}), name='payment-list'),
     path('payments/<int:pk>/', views.PaymentViewSet.as_view(
         {'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='payment-detail'),
-    path('shipping/', views.ShippingViewSet.as_view({'get': 'list', 'post': 'create'}), name = 'Shipping-list'),
+    path('shipping/', views.ShippingViewSet.as_view({'get': 'list', 'post': 'create'}), name = 'shipping-list'),
     path('shipping/<int:pk>/', views.ShippingViewSet.as_view(
         {'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='shipping-detail')
 ]
