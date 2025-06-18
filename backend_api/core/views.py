@@ -22,7 +22,9 @@ from .serializers import (ProductSerializer, OrderSerializer, UserSerializer,
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
+import logging
 
+logger = logging.getLogger(__name__)
 User = get_user_model()
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -102,12 +104,19 @@ class OrderViewSet(viewsets.ModelViewSet):
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
 
     def create(self, request, *args, **kwargs):
+        logger.info(f"RegisterView accessed with method: {request.method}")
+        logger.info(f"Request headers: {request.headers}")
+        logger.info(f"Request data: {request.data}")
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
+            logger.info(f"User registered with email: {request.data.get('email')}")
             return Response({'success': True}, status=status.HTTP_201_CREATED)
+        logger.error(f"Registration failed with errors: {serializer.errors}")
         return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 class VerifyEmailView(GenericAPIView):
