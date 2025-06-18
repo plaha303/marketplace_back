@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-0gos56jbkua+tptfdw5j#(ipe%^%kwt2)ekc@$8!*9++o166wx
 DEBUG = True
 from decouple import config
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -91,6 +91,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:5173',
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    'http://127.0.0.1:8000',
 ]
 
 
@@ -225,3 +226,25 @@ SIMPLE_JWT = {
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Strict'
 SESSION_COOKIE_SECURE = False  # У продакшні  True для HTTPS
+
+
+LOGGING = {
+      'version': 1,
+      'disable_existing_loggers': False,
+      'handlers': {
+          'console': {
+              'class': 'logging.StreamHandler',
+          },
+      },
+      'loggers': {
+          'django': {
+              'handlers': ['console'],
+              'level': 'INFO',  # Зміна з DEBUG на INFO
+              'propagate': False,
+          },
+          'core': {  # Для вашого додатку
+              'handlers': ['console'],
+              'level': 'DEBUG',
+          },
+      },
+  }
