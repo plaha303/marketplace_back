@@ -7,8 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django_filters.rest_framework import DjangoFilterBackend
-from .filters import ProductFilter, OrderFilter, UserFilter, CartFilter, ReviewFilter, AuctionBidFilter, FavoriteFilter, \
-    CategoryFilter, PaymentFilter, ShippingFilter
+from .filters import ProductFilter, OrderFilter, UserFilter, CartFilter, ReviewFilter, AuctionBidFilter, FavoriteFilter, CategoryFilter, PaymentFilter, ShippingFilter
 from django.contrib.auth import get_user_model
 from .permissions import HasRolePermission
 from .models import Product, Order, Cart, Review, AuctionBid, Favorite, Category, Payment, Shipping
@@ -16,8 +15,7 @@ from .serializers import (ProductSerializer, OrderSerializer, UserSerializer,
                           RegisterSerializer, PasswordResetRequestSerializer,
                           PasswordResetConfirmSerializer, VerifyEmailSerializer, LoginSerializer,
                           CartSerializer, ResendVerificationCodeSerializer, OrderItem, CartRemoveSerializer,
-                          ReviewSerializer,
-                          AuctionBidSerializer, FavoriteSerializer, CategorySerializer, PaymentSerializer,
+                          ReviewSerializer, AuctionBidSerializer, FavoriteSerializer, CategorySerializer, PaymentSerializer,
                           ShippingSerializer, UserProfileSerializer)
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
@@ -122,38 +120,16 @@ class RegisterView(generics.CreateAPIView):
 class VerifyEmailView(GenericAPIView):
     serializer_class = VerifyEmailSerializer
 
-    def post(self, request):
-        serializer = self.get_serializer(data=request.data)
+    def get(self, request, uidb64, token):
+        serializer = self.get_serializer(data={'uidb64': uidb64, 'token': token})
         if not serializer.is_valid():
             return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-        email = serializer.validated_data.get("email")
-        code = serializer.validated_data.get("verification_code")
-
         try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            return Response({"success": False, "errors": {"email": ["Користувача не знайдено"]}},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        if user.verification_code != code:
-            return Response({"success": False, "errors": {"code": ["Невірний код"]}},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        if user.verification_expires_at and now() > user.verification_expires_at:
-            return Response(
-                {"success": False, "errors": {
-                    "code": ["Код прострочений. Відправте новий код через /api/auth/resend-verification-code/"]}},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        user.is_verified = True
-        user.is_active = True
-        user.verification_code = None
-        user.verification_expires_at = None
-        user.save()
-
-        return Response({"success": True}, status=status.HTTP_200_OK)
+            serializer.save()
+            return Response({"success": True, "message": "Email успішно підтверджено."}, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({"success": False, "errors": {"detail": str(e)}}, status=status.HTTP_400_BAD_REQUEST)
 
 class PasswordResetRequestView(GenericAPIView):
     serializer_class = PasswordResetRequestSerializer

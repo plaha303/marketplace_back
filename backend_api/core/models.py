@@ -18,14 +18,7 @@ class User(AbstractUser):
         db_index=True
     )
     is_verified = models.BooleanField(default=False, db_index=True)
-    verification_code = models.CharField(max_length=6, blank=True, null=True, validators=[RegexValidator(r'^\d{6}$', message='Код має бути 6-значним числом')])
-    verification_expires_at = models.DateTimeField(null=True, blank=True)
     surname = models.CharField(max_length=255, blank=True, null=True)
-
-    def generate_verification_code(self):
-        self.verification_code = str(random.randint(100000, 999999))
-        self.verification_expires_at = now() + timedelta(hours=1)
-        self.save()
 
     def save(self, *args, **kwargs):
         if not self.roles:
