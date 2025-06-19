@@ -45,7 +45,7 @@ function HeaderActions() {
         </Link>
       </div>
       <div className={`${styled.menuAction} lg:order-4 order-0`}>
-        <Link to={AppRoute.REGISTRATION} className="flex items-center">
+        <Link to={AppRoute.LOGIN} className="flex items-center">
           <UserIcon className="text-snow hover:text-accent-600 duration-500" />
           <span className="lg:hidden text-size-body-3 ml-2 text-snow block font-bold">Вхід</span>
         </Link>

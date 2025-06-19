@@ -1,9 +1,18 @@
+import AuthLayout from "@/layout/AuthLayout/AuthLayout";
+import AppRoute from "@/routers/enums/routers-enums";
+import { Button } from "@/UI/Button/Button";
+import HintIcon from "@/UI/Icons/HintIcon";
+import BaseInput from "@/UI/Input/BaseInput";
+import { forgotPasSchema } from "@/utils/validation/forgotPassSchema";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm } from "react-hook-form";
+import { Link } from "react-router";
 
 function ForgotPassword() {
 
-  const {register, handleSubmit, formState: {errors}} = useForm<ForgotPassProps>();
-
+  const {register, handleSubmit, formState: {errors}} = useForm<ForgotPassProps>({
+		resolver: yupResolver(forgotPasSchema),
+	});
 
   type ForgotPassProps = {
     email: string
@@ -12,60 +21,51 @@ function ForgotPassword() {
     console.log('data', data)
   }
   return (
-    <>
-     <div className="modal-header mb-[36px]">
-				<h2 className="text-2xl font-semibold mb-2 pe-[40px]">Забули пароль?</h2>
-				<div className="modalSubtitle font-medium text-base">
-          Ви забули свій пароль? Не хвилюйтеся, це трапляється з кожним! 
-          Для відновлення доступу до Вашого облікового запису введіть Вашу пошту.
-				</div>
-			</div> 
-
-      <div className="modal-body">
-        <form onSubmit={handleSubmit(handleSubmitForgotPass)}>
-          <div className="mb-[32px]">
+    <AuthLayout title="Забули пароль?">
+      <div className="forgotPass__body">
+        <form onSubmit={handleSubmit(handleSubmitForgotPass)} className="lg:mb-12 mb-6">
+          <div className="lg:mb-12 mb-6">
             <div className="mb-4">
-              <div className="mb-2">Email</div>
-              <input
-                {...register("email", {required: true})}
-                name="email"
-                type="email"
-                autoComplete="off"
-                placeholder="ivan.kosak@gmail.com"
-                className={`block w-full rounded-lg bg-white 
-                  placeholder:text-gray-400 input h-[37px] ps-4 pe-4 pt-2 pb-2 
-                  focus:border-grey-600 duration-500 border-[#616163] border
-                  shadow-[0_2px_4px_0_rgba(0,0,0,0.15);]
-                  ${errors.email ? '!input-error' : '' }
-                `}
-              />
-              {errors.email &&
-                <div className="flex items-center text-red-600 font-medium mt-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 shrink-0 stroke-current"
-                    fill="none"
-                    viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  This field is required
-                </div>
-              }
-            </div>
+							<label className="block mb-1 font-size-body-4 leading-130 font-secondary">Електронна адреса <sup className="text-red-200 font-size-body-4">*</sup></label>
+							<BaseInput 
+								id="email"
+								type="text"
+								inputMode="email"
+								hasError={!!errors.email}
+								{...register('email')}
+								placeholder="Email"
+								className="rounded-5xl font-secondary"
+							/>
+							{errors.email && (
+								<div className="flex items-center  mt-1">
+									<HintIcon className="text-red-200 flex items-center mr-1"/>
+									<span className="text-red-600 text-size-body-4 leading-130 font-secondary">{errors.email.message}</span>
+								</div>
+							)}
+						</div>
           </div>
-          <button
+          <Button
 						type="submit"
-						className="w-full rounded-lg text-white font-semibold text-2xl p-2 leading-[1.5] btn-blue"
+						className="w-full btn-primary h-14 text-size-body-2 font-bold"
 					>
-						Відправити
-					</button>
+						Відправити підтвердження
+					</Button>
         </form>
+
+				<div className="formBottom">
+					<div className="flex justify-center items-center lg:flex-row flex-col ">
+						<div className="text-size-body-3 leading-130 lg:mb-0 mb-2 font-secondary">
+							Ще не зареєстровані?
+						</div>
+						<Link to={AppRoute.REGISTRATION}
+							className="text-primary-600 text-size-link-1 ml-2 leading-100"
+						>
+							Реєстрація
+						</Link>
+					</div>
+				</div>
       </div>
-    </>
+    </AuthLayout>
   );
 }
 
