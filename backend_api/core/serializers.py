@@ -2,21 +2,18 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from .models import Product, ProductImage, Order, OrderItem, Category, Cart, Review, AuctionBid, Favorite, Payment, \
-    Shipping
+from .models import Product, ProductImage, Order, OrderItem, Category, Cart, Review, AuctionBid, Favorite, Payment, Shipping
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 import os
 import certifi
-from django.utils.timezone import timezone
-from django.utils.crypto import get_random_string
+from django.utils.timezone import now
 from datetime import timedelta
 
 User = get_user_model()
 os.environ['SSL_CERT_FILE'] = certifi.where()
-
 
 class UserSerializer(serializers.ModelSerializer):
     roles = serializers.ListField(child=serializers.ChoiceField(choices=User.ROLE_CHOICES), required=False)
@@ -25,18 +22,15 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'surname', 'email', 'roles']
 
-
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ['id', 'name', 'parent', 'category_image', 'category_href']
 
-
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
         fields = ['id', 'image_url']
-
 
 class ProductSerializer(serializers.ModelSerializer):
     vendor = UserSerializer(read_only=True)
@@ -61,12 +55,10 @@ class ProductSerializer(serializers.ModelSerializer):
             validated_data['vendor'] = request.user
         return super().create(validated_data)
 
-
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
         fields = ['id', 'product', 'quantity', 'price']
-
 
 class OrderSerializer(serializers.ModelSerializer):
     customer = UserSerializer(read_only=True)
@@ -81,7 +73,6 @@ class OrderSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             validated_data['customer'] = request.user
         return super().create(validated_data)
-
 
 class RegisterSerializer(serializers.ModelSerializer):
     password_confirm = serializers.CharField(write_only=True)
@@ -107,12 +98,17 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.is_active = False
         user.is_verified = False
         user.save()
-        user.generate_verification_code()
+
+        # Generate verification link
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        verification_url = f"{settings.FRONTEND_URL}/verify-email/{uid}/{token}/"
 
         send_mail(
             'Підтвердження реєстрації',
             f'Вітаємо, {user.username}!\n\n'
-            f'Ваш код підтвердження: {user.verification_code} (дійсний 1 годину).\n',
+            f'Будь ласка, перейдіть за посиланням для підтвердження вашого email: {verification_url}\n'
+            f'Посилання дійсне протягом 1 години.\n',
             settings.DEFAULT_FROM_EMAIL,
             [user.email],
             fail_silently=False,
@@ -120,37 +116,36 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         return user
 
-
 class VerifyEmailSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
-    verification_code = serializers.CharField(required=True)
+    uidb64 = serializers.CharField(required=True)
+    token = serializers.CharField(required=True)
 
     def validate(self, data):
-        email = data.get('email')
-        verification_code = data.get('verification_code')
+        uidb64 = data.get('uidb64')
+        token = data.get('token')
 
         try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            raise serializers.ValidationError("Користувач із таким email не існує.")
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (User.DoesNotExist, ValueError, TypeError):
+            raise serializers.ValidationError({"non_field_errors": ["Невірне посилання для підтвердження."]})
 
-        if user.verification_code != verification_code:
-            raise serializers.ValidationError("Неправильний код підтвердження.")
+        if not default_token_generator.check_token(user, token):
+            raise serializers.ValidationError({"non_field_errors": ["Невірне посилання для підтвердження."]})
 
-        if user.verification_expires_at < timezone.now():
-            raise serializers.ValidationError("Код підтвердження прострочений.")
+        if user.is_verified:
+            raise serializers.ValidationError({"non_field_errors": ["Email вже підтверджений."]})
 
         return data
 
     def save(self):
-        email = self.validated_data['email']
-        user = User.objects.get(email=email)
+        uidb64 = self.validated_data['uidb64']
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
         user.is_active = True
-        user.verification_code = None
-        user.verification_expires_at = None
+        user.is_verified = True
         user.save()
         return user
-
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -165,7 +160,7 @@ class PasswordResetRequestSerializer(serializers.Serializer):
         user = User.objects.get(email=email)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
-        reset_url = f"localhost:8000/api/auth/password-reset-confirm/{uid}/{token}"
+        reset_url = f"{settings.FRONTEND_URL}/password-reset-confirm/{uid}/{token}/"
 
         send_mail(
             subject="Скидання пароля",
@@ -174,7 +169,6 @@ class PasswordResetRequestSerializer(serializers.Serializer):
             recipient_list=[email],
             fail_silently=False,
         )
-
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
     new_password = serializers.CharField(write_only=True, min_length=8)
@@ -197,7 +191,6 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
         user.set_password(self.validated_data['new_password'])
         user.save()
-
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
@@ -225,7 +218,6 @@ class LoginSerializer(serializers.Serializer):
         data['user'] = user
         return data
 
-
 class CartSerializer(serializers.ModelSerializer):
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
 
@@ -245,10 +237,8 @@ class CartSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"quantity": "Недостатньо товару в наявності."})
         return data
 
-
 class CartRemoveSerializer(serializers.Serializer):
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
-
 
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
@@ -260,24 +250,20 @@ class ReviewSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Рейтинг має бути від 1 до 5.")
         return value
 
-
 class AuctionBidSerializer(serializers.ModelSerializer):
     class Meta:
         model = AuctionBid
         fields = ['id', 'product', 'user', 'amount', 'created_at']
-
 
 class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = ['id', 'user', 'product']
 
-
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = ['id', 'order', 'user', 'amount', 'payment_method', 'status', 'created_at']
-
 
 class ShippingSerializer(serializers.ModelSerializer):
     class Meta:
@@ -285,12 +271,10 @@ class ShippingSerializer(serializers.ModelSerializer):
         fields = ['id', 'order', 'recipient_name', 'address', 'city', 'postal_code', 'country', 'tracking_number',
                   'shipped_at']
 
-
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['username', 'surname', 'email', 'roles']
-
 
 class ResendVerificationCodeSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
@@ -310,13 +294,15 @@ class ResendVerificationCodeSerializer(serializers.Serializer):
     def save(self):
         email = self.validated_data['email']
         user = User.objects.get(email=email)
-        user.verification_code = get_random_string(length=6, allowed_chars='1234567890')
-        user.verification_expires_at = timezone.now() + timedelta(minutes=30)
-        user.save()
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        verification_url = f"{settings.FRONTEND_URL}/verify-email/{uid}/{token}/"
 
         send_mail(
             'Новий код підтвердження',
-            f'Ваш новий код підтвердження: {user.verification_code} (дійсний 30 хвилин).',
+            f'Вітаємо, {user.username}!\n\n'
+            f'Будь ласка, перейдіть за посиланням для підтвердження вашого email: {verification_url}\n'
+            f'Посилання дійсне протягом 1 години.\n',
             settings.DEFAULT_FROM_EMAIL,
             [user.email],
             fail_silently=False,

@@ -6,7 +6,7 @@ from .views import CartListView, ProductViewSet, ResendVerificationCodeView, Cus
 urlpatterns = [
     # Аутентифікаційні маршрути
     path('auth/register/', views.RegisterView.as_view(), name='register'),
-    path('auth/verify-email/', views.VerifyEmailView.as_view(), name='verify-email'),
+    path('auth/verify-email/<str:uidb64>/<str:token>/', views.VerifyEmailView.as_view(), name='verify-email'),
     path('auth/resend-verification-code/', ResendVerificationCodeView.as_view(), name='resend-verification-code'),
     path('auth/login/', views.LoginView.as_view(), name='login'),
     path('auth/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
