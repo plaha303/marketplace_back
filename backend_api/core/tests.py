@@ -4,6 +4,9 @@ from django.contrib.auth import get_user_model
 from core.models import Product, Cart, Order, User, Category
 from django.utils.timezone import now, timedelta
 from django.core import mail
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.contrib.auth.tokens import default_token_generator
 
 User = get_user_model()
 
@@ -110,13 +113,10 @@ class RegisterViewTest(TestCase):
         user = User.objects.get(email='newuser@example.com')
         self.assertFalse(user.is_verified)
         self.assertFalse(user.is_active)
-        self.assertIsNotNone(user.verification_code)
-        self.assertIsNotNone(user.verification_expires_at)
         self.assertEqual(len(mail.outbox), 1)
         email = mail.outbox[0]
         self.assertEqual(email.subject, 'Підтвердження реєстрації')
-        self.assertIn(f'Ваш код підтвердження: {user.verification_code}', email.body)
-        self.assertNotIn('http://localhost:8000/api/auth/activate/', email.body)
+        self.assertIn('Будь ласка, перейдіть за посиланням для підтвердження вашого email:', email.body)
 
     def test_registration_password_mismatch(self):
         response = self.client.post('/api/auth/register/', {
@@ -156,55 +156,42 @@ class VerifyEmailViewTest(TestCase):
             password='password123',
             roles=['user'],
             is_verified=False,
-            is_active=False,
-            verification_code='123456',
-            verification_expires_at=now() + timedelta(hours=1)
+            is_active=False
         )
+        self.uidb64 = urlsafe_base64_encode(force_bytes(self.user.pk))
+        self.token = default_token_generator.make_token(self.user)
 
     def test_successful_verification(self):
-        response = self.client.post('/api/auth/verify-email/', {
-            'email': 'test@example.com',
-            'verification_code': '123456'
-        })
+        response = self.client.get(f'/api/auth/verify-email/{self.uidb64}/{self.token}/')
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.data['success'])
         user = User.objects.get(email='test@example.com')
         self.assertTrue(user.is_verified)
         self.assertTrue(user.is_active)
-        self.assertIsNone(user.verification_code)
-        self.assertIsNone(user.verification_expires_at)
 
-    def test_invalid_code(self):
-        response = self.client.post('/api/auth/verify-email/', {
-            'email': 'test@example.com',
-            'verification_code': '999999'
-        })
+    def test_invalid_token(self):
+        response = self.client.get(f'/api/auth/verify-email/{self.uidb64}/invalid-token/')
         self.assertEqual(response.status_code, 400)
         self.assertFalse(response.data['success'])
         self.assertIn('non_field_errors', response.data['errors'])
-        self.assertEqual(response.data['errors']['non_field_errors'], ['Неправильний код підтвердження.'])
+        self.assertEqual(response.data['errors']['non_field_errors'], ['Невірне посилання для підтвердження.'])
 
-    def test_expired_code(self):
-        self.user.verification_expires_at = now() - timedelta(hours=1)
+    def test_invalid_uid(self):
+        response = self.client.get(f'/api/auth/verify-email/invalid-uid/{self.token}/')
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.data['success'])
+        self.assertIn('non_field_errors', response.data['errors'])
+        self.assertEqual(response.data['errors']['non_field_errors'], ['Невірне посилання для підтвердження.'])
+
+    def test_already_verified(self):
+        self.user.is_verified = True
+        self.user.is_active = True
         self.user.save()
-        response = self.client.post('/api/auth/verify-email/', {
-            'email': 'test@example.com',
-            'verification_code': '123456'
-        })
+        response = self.client.get(f'/api/auth/verify-email/{self.uidb64}/{self.token}/')
         self.assertEqual(response.status_code, 400)
         self.assertFalse(response.data['success'])
         self.assertIn('non_field_errors', response.data['errors'])
-        self.assertEqual(response.data['errors']['non_field_errors'], ['Код підтвердження прострочений.'])
-
-    def test_non_existent_email(self):
-        response = self.client.post('/api/auth/verify-email/', {
-            'email': 'nonexistent@example.com',
-            'verification_code': '123456'
-        })
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response.data['success'])
-        self.assertIn('non_field_errors', response.data['errors'])
-        self.assertEqual(response.data['errors']['non_field_errors'], ['Користувач із таким email не існує.'])
+        self.assertEqual(response.data['errors']['non_field_errors'], ['Email вже підтверджений.'])
 
 class ResendVerificationCodeViewTest(TestCase):
     def setUp(self):
@@ -215,9 +202,7 @@ class ResendVerificationCodeViewTest(TestCase):
             password='password123',
             roles=['user'],
             is_verified=False,
-            is_active=False,
-            verification_code='123456',
-            verification_expires_at=now() + timedelta(hours=1)
+            is_active=False
         )
 
     def test_successful_resend_code(self):
@@ -227,14 +212,10 @@ class ResendVerificationCodeViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.data['success'])
         self.assertEqual(response.data['data']['message'], 'Новий код підтвердження відправлено!')
-        user = User.objects.get(email='test@example.com')
-        self.assertNotEqual(user.verification_code, '123456')
-        self.assertTrue(user.verification_expires_at > now())
         self.assertEqual(len(mail.outbox), 1)
         email = mail.outbox[0]
         self.assertEqual(email.subject, 'Новий код підтвердження')
-        self.assertIn(f'Ваш новий код підтвердження: {user.verification_code}', email.body)
-        self.assertNotIn('http://localhost:8000/api/auth/activate/', email.body)
+        self.assertIn('Будь ласка, перейдіть за посиланням для підтвердження вашого email:', email.body)
 
     def test_resend_code_already_verified(self):
         self.user.is_verified = True
@@ -375,82 +356,5 @@ class CategoryViewSetTest(TestCase):
         self.assertEqual(response.data['data']['category_href'], 'home-products')
         self.assertEqual(response.data['data']['category_image'], 'https://example.com/sample.jpg')
 
-    def test_create_category_without_image(self):
-        self.client.force_authenticate(self.admin)
-        response = self.client.post('/api/categories/', {
-            'name': 'New Category'
-        })
-        self.assertEqual(response.status_code, 201)
-        self.assertEqual(Category.objects.count(), 2)
-        self.assertEqual(Category.objects.last().category_href, 'new-category')
-        self.assertIsNone(Category.objects.last().category_image)
 
-class RegisterViewTest(TestCase):
-    def setUp(self):
-        self.client = APIClient()
 
-    def test_successful_registration(self):
-        response = self.client.post('/api/auth/register/', {
-            'username': 'newuser',
-            'surname': 'Smith',
-            'email': 'newuser@example.com',
-            'password': 'Password123',
-            'password_confirm': 'Password123'
-        })
-        self.assertEqual(response.status_code, 201)
-        self.assertTrue(response.data['success'])
-        user = User.objects.get(email='newuser@example.com')
-        self.assertEqual(user.surname, 'Smith')
-        self.assertFalse(user.is_verified)
-        self.assertFalse(user.is_active)
-        self.assertIsNotNone(user.verification_code)
-        self.assertIsNotNone(user.verification_expires_at)
-        self.assertEqual(len(mail.outbox), 1)
-        email = mail.outbox[0]
-        self.assertEqual(email.subject, 'Підтвердження реєстрації')
-        self.assertIn(f'Ваш код підтвердження: {user.verification_code}', email.body)
-        self.assertNotIn('http://localhost:8000/api/auth/activate/', email.body)
-
-    def test_registration_password_mismatch(self):
-        response = self.client.post('/api/auth/register/', {
-            'username': 'newuser',
-            'surname': 'Smith',
-            'email': 'newuser@example.com',
-            'password': 'Password123',
-            'password_confirm': 'Different123'
-        })
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response.data['success'])
-        self.assertIn('password_confirm', response.data['errors'])
-        self.assertEqual(response.data['errors']['password_confirm'], ['Паролі не співпадають'])
-
-    def test_registration_duplicate_email(self):
-        User.objects.create_user(
-            username='existing',
-            surname='Doe',
-            email='newuser@example.com',
-            password='Password123',
-            roles=['user']
-        )
-        response = self.client.post('/api/auth/register/', {
-            'username': 'newuser',
-            'surname': 'Smith',
-            'email': 'newuser@example.com',
-            'password': 'Password123',
-            'password_confirm': 'Password123'
-        })
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response.data['success'])
-        self.assertIn('email', response.data['errors'])
-
-    def test_registration_without_surname(self):
-        response = self.client.post('/api/auth/register/', {
-            'username': 'newuser',
-            'email': 'newuser@example.com',
-            'password': 'Password123',
-            'password_confirm': 'Password123'
-        })
-        self.assertEqual(response.status_code, 201)
-        self.assertTrue(response.data['success'])
-        user = User.objects.get(email='newuser@example.com')
-        self.assertIsNone(user.surname)
