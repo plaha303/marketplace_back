@@ -17,6 +17,7 @@ import { CustomError, SignUpRequestDTO } from "@/utils/packages/auth/type/interf
 import { Link, useNavigate } from "react-router";
 import AppRoute from "@/routers/enums/routers-enums";
 import AuthLayout from "@/layout/AuthLayout/AuthLayout";
+import { toast } from "react-toastify";
 
 
 function SignUp() {
@@ -39,9 +40,10 @@ function SignUp() {
 		console.log('signUp', data)
 		mutateSignUp(data, {
 			onSuccess: () => {
-				navigate(AppRoute.CONFIRM_EMAIL, {
-					state: { email: data.email },
-				});
+				// navigate(AppRoute.CONFIRM_EMAIL, {
+				// 	state: { email: data.email },
+				// });
+				toast.success('Перевірте Вашу пошту')
 			},
 			onError: (error: Error) => {
 				console.log('error', error)
@@ -225,7 +227,7 @@ function SignUp() {
 
 					<Button
 						disabled={!agreeTerms ? true : false}
-						type="submit"
+						type="button"
 						size="md"
 						className="w-full btn-primary h-[55px] font-secondary text-size-body-2 font-bold leading-100"
 					>
