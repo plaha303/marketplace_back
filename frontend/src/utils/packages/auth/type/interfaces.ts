@@ -22,3 +22,7 @@ export interface CustomError {
   original?: Record<string, string>,
   message: string
 }
+
+export interface EmailConfirmDTO {
+  verification_code: string
+}

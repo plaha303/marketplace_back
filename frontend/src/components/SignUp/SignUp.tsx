@@ -1,7 +1,5 @@
 import { useForm } from "react-hook-form"
 
-import styled from "@/UI/Modal/Modal.module.scss"
-
 import PlatformsButtons from "../PlatformsButtons/PlatformsButtons";
 import useSignUpMutation from "./hook/useSignUpMutation";
 import BaseInput from "@/UI/Input/BaseInput";
@@ -16,12 +14,13 @@ import ErrorCheckIcon from "@/UI/Icons/ErrorCheckIcon";
 import { Checkbox } from "@/UI/Checkbox/Checkbox";
 import { Button } from "@/UI/Button/Button";
 import { CustomError, SignUpRequestDTO } from "@/utils/packages/auth/type/interfaces";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import AppRoute from "@/routers/enums/routers-enums";
 import AuthLayout from "@/layout/AuthLayout/AuthLayout";
 
 
 function SignUp() {
+	const navigate = useNavigate();
 	const [showPassword, setShowPassword] = useState(false);
 	const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
 	const [agreeTerms, setAgreeTerms] = useState(false);
@@ -37,7 +36,13 @@ function SignUp() {
 	});
 
   function onSubmit(data: SignUpRequestDTO) {
+		console.log('signUp', data)
 		mutateSignUp(data, {
+			onSuccess: () => {
+				navigate(AppRoute.CONFIRM_EMAIL, {
+					state: { email: data.email },
+				});
+			},
 			onError: (error: Error) => {
 				console.log('error', error)
 				const customError = error as CustomError;
@@ -228,7 +233,7 @@ function SignUp() {
 					</Button>
 				</form>
 
-				<div className={`${styled.separateBlock} relative text-center mb-6`}>
+				<div className="separateBlock relative text-center mb-6">
 					<span className="bg-transparent relative z-10 px-2 text-primary-400 separateBlock__text leading-130 inline-block">
 						або зареєструватися з
 					</span>
