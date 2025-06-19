@@ -3,7 +3,6 @@ import { useForm } from "react-hook-form";
 import useLogInMutation from "./hook/useLogInMutation";
 import { yupResolver } from "@hookform/resolvers/yup"
 
-import styled from "./Login.module.scss"
 import { useState } from "react";
 
 import BaseInput from "@/UI/Input/BaseInput";
@@ -122,7 +121,7 @@ function LogIn() {
 					</Button>
 				</form>
 
-				<div className={`${styled.separateBlock} relative text-center mb-6`}>
+				<div className="separateBlock relative text-center mb-6">
 					<span className="bg-transparent relative z-10 px-2 text-primary-400 separateBlock__text leading-130 inline-block">
 						або увійти з
 					</span>

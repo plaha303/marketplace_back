@@ -9,6 +9,7 @@ import UserProfile from "@/pages/UserProfile/UserProfile";
 import LogInPage from "@/pages/LogInPage/LogInPage";
 import SignUpPage from "@/pages/SignUpPage/SignUpPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage/ForgotPasswordPage";
+import EmailConfirm from "@/components/EmailConfirm/EmailConfirm";
 
 
 export const routers = createBrowserRouter([
@@ -32,6 +33,10 @@ export const routers = createBrowserRouter([
       {
         path: AppRoute.REGISTRATION,
         element: <SignUpPage />
+      },
+      {
+        path: AppRoute.CONFIRM_EMAIL,
+        element: <EmailConfirm />
       },
       {
         path: AppRoute.RESET_PASSWORD,
