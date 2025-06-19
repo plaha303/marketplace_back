@@ -1,163 +1,123 @@
 import { useForm, Controller } from "react-hook-form";
 import useEmailConfirmMutation from "./hook/useEmailConfirmMutation";
+import AuthLayout from "@/layout/AuthLayout/AuthLayout";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/UI/InputOTP/InputOTP";
+import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp"
+import { useLocation, useNavigate } from "react-router";
+import { useEffect, useState } from "react";
+import { CustomError, EmailConfirmDTO } from "@/utils/packages/auth/type/interfaces";
+import { Button } from "@/UI/Button/Button";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { emailConfirmSchema } from "@/utils/validation/emailConfirmSchema";
+import AppRoute from "@/routers/enums/routers-enums";
+import HintIcon from "@/UI/Icons/HintIcon";
 
 function EmailConfirm() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const email = location.state?.email;
+
+   useEffect(() => {
+    if (!email) {
+      navigate('/register');
+    }
+  }, [email]);
+
   const {emailConfirm, emailConfirmPending, isError, error} = useEmailConfirmMutation();
 
-  const {control, handleSubmit, formState: { errors }, setValue, trigger, clearErrors} = useForm({
+  const {control, handleSubmit, formState: { errors }, setError} = useForm<EmailConfirmDTO>({
     defaultValues: {
-      code: ['', '', '', '', '', ''],
+      verification_code: '',
     },
-    mode: 'onSubmit'
+    resolver: yupResolver(emailConfirmSchema),
   });
 
-  async function handlePutCode(e: React.ChangeEvent<HTMLInputElement> | React.KeyboardEvent<HTMLInputElement> | React.ClipboardEvent<HTMLInputElement>, index: number) {
-    if ('clipboardData' in e) {
-      if (e.type === 'paste') {
-        e.preventDefault();
-        const pastedData = e.clipboardData.getData('text');
-        const digits = pastedData.match(/\d/g);
-  
-        if (digits) {
-          digits.forEach((digit, i) => {
-            if (index + i < 6) {
-              setValue(`code.${index + i}` , digit);
-              clearErrors(`code.${index + i}`);
-            }
+
+  const [globalError, setGlobalError] = useState('');
+
+  function onSubmitPassword(data: EmailConfirmDTO) {
+    console.log('Submitted code:', data);
+
+    emailConfirm(data, {
+      onSuccess: () => {
+				navigate(AppRoute.SUCCESSFULLY_EMAIL_CONFIRM);
+			},
+      onError: (error: Error) => {
+        console.log('error', error)
+        const customError = error as CustomError;
+        let hasFieldErrors = false;
+
+        if(customError.original) {
+          Object.entries(customError.original).forEach(([field, message]) => {
+            const errorMessage = Array.isArray(message) ? message[0] : message;
+            setError(field as keyof EmailConfirmDTO, {
+              type: 'server',
+              message: errorMessage,
+            });
+            hasFieldErrors = true;
           });
-          const nextIndex = Math.min(index + digits.length, 5);
-          const nextInput = document.getElementById(`input-${nextIndex}`);
-          if (nextInput) {
-            nextInput.focus();
-          }
         }
-        return;
-      }
-    }
-    
-    if ('key' in e && e.key === 'Backspace') {
-      if (e.key === 'Backspace') {
-        if ((e.target as HTMLInputElement).value === '') {
-          if (index > 0) {
-            setValue(`code.${index - 1}` as const, '');
-            clearErrors(`code.${index - 1}` as const);
-            const prevInput = document.getElementById(`input-${index - 1}`);
-            if (prevInput) {
-              prevInput.focus();
-            }
-          }
-        } else {
-          setValue(`code.${index}`, '');
-          clearErrors(`code.${index}`);
+
+        if(!hasFieldErrors && customError.message) {
+          setGlobalError(customError.message);
         }
-        return;
-      }
-    }
-
-    
-    if ('target' in e) {
-      const value = (e.target as HTMLInputElement).value;
-      if (value === '' || (value.length === 1 && /^[0-9]$/.test(value))) {
-        setValue(`code.${index}`, value);
-        clearErrors(`code.${index}`);
-
-        if (value.length === 1 && index < 5) {
-          const nextInput = document.getElementById(`input-${index + 1}`);
-          if (nextInput) {
-            nextInput.focus();
-          }
         }
-      }
-    }
-
-    await trigger();
+    })
   }
-
-
-  type EmailConfirmProps = {
-    code: string[]
-  }
-  function onSubmitPassword(data: EmailConfirmProps) {
-    console.log(data)
-    const code = data.code.join('');
-    console.log('Submitted code:', code);
-
-    emailConfirm({code})
-  }
-
-  // const handleChange = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
-  //   handlePutCode(e, index);
-  //   await trigger();
-  // }
 
   return (
-    <>
-      <div className="modal-header mb-[36px]">
-				<h2 className="text-2xl font-semibold mb-2 pe-[40px]">Введіть код підтвердження</h2>
-				<div className="modalSubtitle font-medium text-base">
-          Для завершення процесу входу введіть шестизначний код підтвердження, надісланий на вашу електронну пошту.
-				</div>
-			</div>
-
+    <AuthLayout title="Введіть код підтвердження" subtitle="Для завершення процесу входу введіть шестизначний код підтвердження, надісланий на вашу електронну пошту.">
       <div className="modal-body">
         <form onSubmit={handleSubmit(onSubmitPassword)}>
           <div className="md:p-[40px] p-[20px]">
             <div className="font-medium lg:leading-[1.5] leading lg:text-2xl text-[19px] text-center lg:mb-[40px] mb-[20px]">
               Введіть код підтвердження
             </div>
-            <div className="flex justify-center lg:mb-[40px] mb-[20px]">
-              <div className="flex justify-center gap-x-[20px]  max-w-[245px]">
-                {[...Array(6)].map((_, index) => (
-                  <div className="inputCode w-[24px] h-[40px]" key={index}>
-                    <Controller
-                      name={`code.${index}` as const}
-                      control={control}
-                      rules={{
-                        required: 'Этот код обязательный',
-                        validate: {
-                          // length: (value) => value.length === 6 || 'Код должен содержать 6 цифр',
-                          validate: (value) => value.length === 1 || 'Каждое поле должно быть заполнено цифрой',
-                        },
-                        pattern: {
-                          value: /^[0-9]$/,
-                          message: 'Код должен содержать только цифры',
-                        },
-                      }}
-                      render={({ field }) => (
-                        <input
-                          {...field}
-                          type="text"
-                          maxLength={1}
-                          id={`input-${index}`}
-                          onChange={(e) => {
-                            handlePutCode(e, index);
-                            field.onChange(e);
-                          }}
-                          onKeyDown={(e) => handlePutCode(e, index)}
-                          onPaste={(e) => handlePutCode(e, index)}
-                          className="bg-[#f9fafb] border border-[#01060b] rounded-xs w-full h-full text-center font-medium"
-                        />
-                      )}
-                    />
-                  </div>
-                ))}
+            <div className="mb-4">
+              <div className="flex justify-center">
+                <Controller 
+                  control={control}
+                  name="verification_code"
+                  render={({ field }) => (
+                    <InputOTP maxLength={6} pattern={REGEXP_ONLY_DIGITS_AND_CHARS} {...field}>
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} />
+                        <InputOTPSlot index={1} />
+                        <InputOTPSlot index={2} />
+                        <InputOTPSlot index={3} />
+                        <InputOTPSlot index={4} />
+                        <InputOTPSlot index={5} />
+                      </InputOTPGroup>
+                    </InputOTP>
+                  )}
+                />
               </div>
-              {errors.code && (
-              <div className="text-red-500">
-                {errors.code[0]?.message || 'Пожалуйста, введите корректный код'}
-              </div>
+
+              {errors?.verification_code && (
+                <div className="flex items-center text-red-600 font-medium mb-2">
+                  <HintIcon className="text-red-200 flex items-center mr-1" />
+                  <span className="text-red-600 text-size-body-4 leading-130 font-secondary">{errors.verification_code.message}</span>
+                </div>
+              )}
+            </div>
+
+            {globalError && (
+              <p style={{ color: "red" }} className="mb-4">
+                {globalError}
+              </p>
             )}
-            </div>
-            <div>
-              {isError && error && <div className="error-message">{error.message || 'An unknown error occurred'}</div>}
-            </div>
-            <div className="lg:w-[240px] w-full mx-auto">
-              <button type="submit" disabled={emailConfirmPending} className="w-full rounded-lg text-white font-semibold text-2xl p-2 leading-[1.5] btn-blue">Відправити</button>
+            
+
+            <div className="">
+              <Button type="submit" disabled={emailConfirmPending} className="w-full font-bold leading-100 text-size-body-2 btn-primary h-14">
+                Відправити
+              </Button>
             </div>
           </div>
         </form>
       </div>
-    </>
+    </AuthLayout>
   );
 }
 

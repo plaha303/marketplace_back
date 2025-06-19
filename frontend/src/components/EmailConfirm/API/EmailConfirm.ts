@@ -1,13 +1,10 @@
 import { ApiEndpoint } from "@/utils/http/enums/api-endpoint"
 import { HttpMethod } from "@/utils/http/enums/http-method"
 import { request } from "@/utils/http/http-request"
+import { EmailConfirmDTO } from "@/utils/packages/auth/type/interfaces"
 
 
-export interface EmailConfirmProps {
-  code: string
-}
-
-export async function EmailConfirm(code: EmailConfirmProps) {
+export async function EmailConfirm(code: EmailConfirmDTO) {
   console.log('qwer', code)
 
   return request({
