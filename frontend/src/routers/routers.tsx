@@ -34,10 +34,10 @@ export const routers = createBrowserRouter([
         path: AppRoute.REGISTRATION,
         element: <SignUpPage />
       },
-      {
-        path: AppRoute.CONFIRM_EMAIL,
-        element: <EmailConfirm />
-      },
+      // {
+      //   path: AppRoute.CONFIRM_EMAIL,
+      //   element: <EmailConfirm />
+      // },
       {
         path: AppRoute.RESET_PASSWORD,
         element: <ForgotPasswordPage />

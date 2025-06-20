@@ -20,7 +20,8 @@ export interface SignUpResponseDTO {
 
 export interface CustomError {
   original?: Record<string, string>,
-  message: string
+  message: string,
+  fieldErrors?: Record<string, string>
 }
 
 export interface EmailConfirmDTO {

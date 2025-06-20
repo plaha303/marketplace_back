@@ -30,7 +30,7 @@ function Layout() {
 				<Modal setIsOpenModal={isModalOpen} onClose={() => dispatch(closeAuthModal())} modalType={modalType}>
 					{modalType == 'LogIn' &&  <LogIn />}
 					{modalType == 'SignUp' && <SignUp />}
-					{modalType == 'EmailConfirm' && <EmailConfirm />}
+					{/* {modalType == 'EmailConfirm' && <EmailConfirm />} */}
 					{modalType == 'ForgotPassword' && <ForgotPassword />}
 				</Modal>
 			}

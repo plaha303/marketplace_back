@@ -36,13 +36,11 @@ function SignUp() {
 		resolver: yupResolver(signupSchema),
 	});
 
-  function onSubmit(data: SignUpRequestDTO) {
+  function onSubmit(data: SignUpRequestDTO, event?: React.BaseSyntheticEvent) {
+		event?.preventDefault();
 		console.log('signUp', data)
 		mutateSignUp(data, {
 			onSuccess: () => {
-				// navigate(AppRoute.CONFIRM_EMAIL, {
-				// 	state: { email: data.email },
-				// });
 				toast.success('Перевірте Вашу пошту')
 			},
 			onError: (error: Error) => {
@@ -50,8 +48,8 @@ function SignUp() {
 				const customError = error as CustomError;
 				let hasFieldErrors = false;
 
-				if(customError.original) {
-					Object.entries(customError.original).forEach(([field, message]) => {
+				if(customError.fieldErrors) {
+					Object.entries(customError.fieldErrors).forEach(([field, message]) => {
 						const errorMessage = Array.isArray(message) ? message[0] : message;
 						setError(field as keyof SignUpRequestDTO, {
 							type: 'server',
@@ -227,7 +225,7 @@ function SignUp() {
 
 					<Button
 						disabled={!agreeTerms ? true : false}
-						type="button"
+						type="submit"
 						size="md"
 						className="w-full btn-primary h-[55px] font-secondary text-size-body-2 font-bold leading-100"
 					>
