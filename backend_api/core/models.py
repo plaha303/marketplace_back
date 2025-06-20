@@ -5,12 +5,19 @@ from django.utils.timezone import now, timedelta
 from django.core.validators import RegexValidator
 from django.contrib.postgres.fields import ArrayField
 
+name_validator = RegexValidator(
+    regex=r'^(?!-)([A-Za-zА-Яа-яїЇіІєЄґҐ]+)(?<!-)$',
+    message="Ім'я та прізвище можуть містити лише кирилицю, латиницю, дефіс (не на початку чи в кінці).",
+    code='invalid_name'
+)
+
 class User(AbstractUser):
     ROLE_CHOICES = [
         ('user', 'User'),
         ('admin', 'Admin'),
     ]
     email = models.EmailField(unique=True)
+    username = models.CharField(max_length=50, validators=[name_validator], unique=True)
     roles = ArrayField(
         models.CharField(max_length=10, choices=ROLE_CHOICES),
         default=list,
@@ -18,7 +25,7 @@ class User(AbstractUser):
         db_index=True
     )
     is_verified = models.BooleanField(default=False, db_index=True)
-    surname = models.CharField(max_length=255, blank=True, null=True)
+    surname = models.CharField(max_length=50, validators=[name_validator])
 
     def save(self, *args, **kwargs):
         if not self.roles:
