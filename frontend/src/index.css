@@ -133,9 +133,9 @@ body {
   background: rgba(0, 0, 0, 0.8);
 }
 
-a:hover {
+/* a:hover {
   text-decoration: underline;
-}
+} */
 
 .separateBlock {
   gap: 8px;
@@ -157,9 +157,13 @@ a:hover {
   right: 0;
 }
 
+p + p {
+  margin-top: 16px;
+}
+
 @media (min-width: 1536px) {
   .container {
-    max-width: 1436px;
+    max-width: 1422px;
   }
 }
 

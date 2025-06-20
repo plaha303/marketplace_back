@@ -1,8 +1,9 @@
+import HomeBanner from "@/components/HomeBanner/HomeBanner";
+
 function Home() {
 	return (
-		<div>
-      <h1 className="text-size-h1 block leading-130">Home</h1>
-
+		<div className="home-page">
+      <HomeBanner />
 		</div>
 	);
 }
