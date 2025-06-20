@@ -22,7 +22,7 @@ class User(AbstractUser):
 
     def save(self, *args, **kwargs):
         if not self.roles:
-            self.roles = ['user']  # За замовчуванням роль user
+            self.roles = ['user']
         super().save(*args, **kwargs)
 
     def __str__(self):
