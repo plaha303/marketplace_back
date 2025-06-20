@@ -1,0 +1,15 @@
+.infoBlock {
+  position: absolute;
+  &.one {
+    top: 120px;
+    left: 25px;
+  }
+  &.two {
+    top: 24px;
+    right: 24px;
+  }
+  &.three {
+    bottom: 0;
+    right: 24px;
+  }
+}

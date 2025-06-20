@@ -14,6 +14,7 @@
 7. Axios
 8. @reduxjs/toolkit
 9. react-hook-form
+10. vite-plugin-svgr
 
 
 
