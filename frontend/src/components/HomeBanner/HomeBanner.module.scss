@@ -3,13 +3,80 @@
   &.one {
     top: 120px;
     left: 25px;
+    animation: moveUp 5s linear infinite;
+    @media (max-width: 575px) {
+      left: 0;
+      top: 70px;
+    }
   }
   &.two {
     top: 24px;
     right: 24px;
+    animation: moveUp 5s linear infinite;
+    @media (max-width: 575px) {
+      top: 55px;
+      right: 0;
+    }
   }
   &.three {
     bottom: 0;
     right: 24px;
+    animation: moveUp 5s linear infinite;
+    @media (max-width: 575px) {
+      right: 0;
+    }
+  }
+}
+
+@keyframes moveUp {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes moveUpDown_1 {
+  0% {
+    transform: translateY(0%);
+  }
+  50% {
+    transform: translateY(-60%);
+  }
+  100% {
+    transform: translateY(0%);
+  }
+}
+
+@keyframes moveDownUp_2 {
+  0% {
+    transform: translateY(0%);
+  }
+  50% {
+    transform: translateY(50%);
+  }
+  100% {
+    transform: translateY(0%);
+  }
+}
+
+@keyframes moveUpDown_3 {
+  0% {
+    transform: translateY(0%);
+  }
+  50% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(0%);
   }
 }
