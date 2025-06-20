@@ -9,13 +9,13 @@ import 'swiper/css/pagination';
 
 import './generalSliderStyle.scss'
 
-function BaseSlider({children, className, ...props}: BaseSliderProps) {
+function BaseSlider({children, className, pagination, ...props}: BaseSliderProps) {
   return (
     <div className='relative'>
       <Swiper
         modules={[Navigation, Pagination]}
         navigation={props.navigation ? true : false}
-        pagination={props.pagination ? { clickable: true } : false}
+        pagination={pagination ? { clickable: true } : false}
         className={className}
         {...props}
       >
