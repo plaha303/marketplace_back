@@ -2,6 +2,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.validators import RegexValidator
 from .models import Product, ProductImage, Order, OrderItem, Category, Cart, Review, AuctionBid, Favorite, Payment, Shipping
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
@@ -9,6 +10,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 import os
 import certifi
+import re
 from django.utils.timezone import now
 from datetime import timedelta
 
@@ -74,16 +76,69 @@ class OrderSerializer(serializers.ModelSerializer):
             validated_data['customer'] = request.user
         return super().create(validated_data)
 
+name_validator = RegexValidator(
+    regex=r'^(?!-)([A-Za-zА-Яа-яїЇіІєЄґҐ]+)(?<!-)$',
+    message="Ім'я та прізвище можуть містити лише кирилицю, латиницю, дефіс (не на початку чи в кінці).",
+    code='invalid_name'
+)
+
+email_local_part_validator = RegexValidator(
+    regex=r'^(?![\.])([A-Za-z0-9._%+-]+)(?<!\.)$',
+    message="Локальна частина email може містити латиницю, цифри, спеціальні символи, крапку (не на початку чи в кінці).",
+    code='invalid_email_local_part'
+)
+
+email_domain_validator = RegexValidator(
+    regex=r'^(?!-|\.)([A-Za-z0-9-]+)(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$',
+    message="Доменна частина email може містити латиницю, цифри, дефіс (не на початку чи в кінці), крапку.",
+    code='invalid_email_domain'
+)
+
+password_validator = RegexValidator(
+    regex=r'^[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};:"\\\',.<>?/]{8,16}$',
+    message="Пароль може містити латиницю, цифри, спеціальні символи та мати довжину від 8 до 16 символів.",
+    code='invalid_password'
+)
+
 class RegisterSerializer(serializers.ModelSerializer):
-    password_confirm = serializers.CharField(write_only=True)
+    password_confirm = serializers.CharField(write_only=True, min_length=8, max_length=16, validators=[password_validator])
 
     class Meta:
         model = User
         fields = ['username', 'surname', 'email', 'password', 'password_confirm']
+        extra_kwargs = {
+            'username': {'validators': [name_validator], 'min_length': 1, 'max_length': 50},
+            'surname': {'validators': [name_validator], 'min_length': 1, 'max_length': 50},
+            'email': {'min_length': 1, 'max_length': 70},
+            'password': {'write_only': True, 'validators': [password_validator], 'min_length': 8, 'max_length': 16},
+        }
+
+    def validate_email(self, value):
+        if len(value) > 70:
+            raise ValidationError("Загальна довжина email не може перевищувати 70 символів.")
+
+        try:
+            local_part, domain = value.split('@')
+        except ValueError:
+            raise ValidationError("Email повинен містити символ '@'.")
+
+        if len(local_part) < 1 or len(local_part) > 35:
+            raise ValidationError("Локальна частина email повинна мати від 1 до 35 символів.")
+        if not re.match(r'^(?![\.])([A-Za-z0-9._%+-]+)(?<!\.)$', local_part):
+            raise ValidationError("Локальна частина email містить некоректні символи або крапки на початку/кінці.")
+        if re.search(r'\.{2,}', local_part):
+            raise ValidationError("Локальна частина email не може містити послідовні крапки.")
+
+        if len(domain) < 3 or len(domain) > 35:
+            raise ValidationError("Доменна частина email повинна мати від 3 до 35 символів.")
+        if not re.match(r'^(?!-|\.)([A-Za-z0-9-]+)(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$', domain):
+            raise ValidationError("Доменна частина email містить некоректні символи або крапки/дефіси на початку/кінці.")
+
+        return value
 
     def validate(self, data):
         if data['password'] != data['password_confirm']:
-            raise serializers.ValidationError({'password_confirm': 'Паролі не співпадають'})
+            raise ValidationError({'password_confirm': 'Паролі не співпадають.'})
         return data
 
     def create(self, validated_data):
@@ -99,7 +154,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.is_verified = False
         user.save()
 
-        # Generate verification link
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
         verification_url = f"{settings.FRONTEND_URL}/verify-email/{uid}/{token}/"
@@ -171,8 +225,8 @@ class PasswordResetRequestSerializer(serializers.Serializer):
         )
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
-    new_password = serializers.CharField(write_only=True, min_length=8)
-    confirm_password = serializers.CharField(write_only=True, min_length=8)
+    new_password = serializers.CharField(write_only=True, min_length=8, max_length=16, validators=[password_validator])
+    confirm_password = serializers.CharField(write_only=True, min_length=8, max_length=16, validators=[password_validator])
 
     def validate(self, data):
         if data['new_password'] != data['confirm_password']:
