@@ -13,12 +13,15 @@ In command line:
 2. make migrate :
    migrate all changes in db structure
 
-3. make super :
+3. make work:
+   stark celery applications
+
+4. make super :
    create superuser in db
 
-4. make run :
+5. make run :
    start django server
 
-5. make down :
+6. make down :
    stop and delete docker containers
 
