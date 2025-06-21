@@ -13,6 +13,8 @@ import certifi
 import re
 from django.utils.timezone import now
 from datetime import timedelta
+import logging
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 os.environ['SSL_CERT_FILE'] = certifi.where()
@@ -152,10 +154,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
         user.is_active = False
         user.is_verified = False
-        user.save()
 
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
+        user.verification_token_created_at = now()
+        user.save()
         verification_url = f"{settings.FRONTEND_URL}/verify-email/{uid}/{token}/"
 
         send_mail(
@@ -177,19 +180,28 @@ class VerifyEmailSerializer(serializers.Serializer):
     def validate(self, data):
         uidb64 = data.get('uidb64')
         token = data.get('token')
+        logger.info(f"Attempting to verify email with uidb64: {uidb64}")
 
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
             user = User.objects.get(pk=uid)
         except (User.DoesNotExist, ValueError, TypeError):
+            logger.error(f"Invalid uidb64: {uidb64}")
             raise serializers.ValidationError({"non_field_errors": ["Невірне посилання для підтвердження."]})
 
         if not default_token_generator.check_token(user, token):
+            logger.error(f"Invalid or expired token for user {user.email}")
             raise serializers.ValidationError({"non_field_errors": ["Невірне посилання для підтвердження."]})
 
         if user.is_verified:
+            logger.info(f"Email {user.email} already verified")
             raise serializers.ValidationError({"non_field_errors": ["Email вже підтверджений."]})
 
+        if user.verification_token_created_at and (now() - user.verification_token_created_at) > timedelta(hours=1):
+            logger.warning(f"Verification token expired for user {user.email}")
+            raise serializers.ValidationError({"non_field_errors": ["Посилання для підтвердження застаріло."]})
+
+        logger.info(f"Verification successful for user {user.email}")
         return data
 
     def save(self):
@@ -350,6 +362,8 @@ class ResendVerificationCodeSerializer(serializers.Serializer):
         user = User.objects.get(email=email)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
+        user.verification_token_created_at = now()
+        user.save()
         verification_url = f"{settings.FRONTEND_URL}/verify-email/{uid}/{token}/"
 
         send_mail(
