@@ -123,7 +123,11 @@ class VerifyEmailView(GenericAPIView):
     def get(self, request, uidb64, token):
         serializer = self.get_serializer(data={'uidb64': uidb64, 'token': token})
         if not serializer.is_valid():
-            return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            errors = serializer.errors
+            if "Посилання для підтвердження застаріло" in str(errors):
+                errors["non_field_errors"] = [
+                    "Посилання для підтвердження застаріло. Надішліть новий код через /auth/resend-verification-code/."]
+            return Response({"success": False, "errors": errors}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             serializer.save()

@@ -27,6 +27,8 @@ class User(AbstractUser):
     is_verified = models.BooleanField(default=False, db_index=True)
     surname = models.CharField(max_length=50, validators=[name_validator])
 
+    verification_token_created_at = models.DateTimeField(null=True, blank=True)
+
     def save(self, *args, **kwargs):
         if not self.roles:
             self.roles = ['user']
