@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'django_filters',
     'fakeusers',
+    'django_celery_beat',
     # Web app
     'core',
 ]
@@ -212,7 +213,7 @@ EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
 
 CELERY_BROKER_URL = "redis://localhost:6379/0"
-CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = 'json'
