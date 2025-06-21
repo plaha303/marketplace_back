@@ -6,4 +6,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         from backend_api.celery import celery_app
-        celery_app.start(['flower', '--port=5556'])
+        celery_app.start(['flower', '--port=5556', '--address=0.0.0.0'])
