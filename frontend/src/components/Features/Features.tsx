@@ -6,7 +6,7 @@ function Features() {
       <div className="container px-4 m-auto">
         <div className="features__header max-w-[800px] mx-auto lg:mb-16 mb-9">
           <div className="features__header-title uppercase text-size-h3 lg:mb-10 mb-4 leading-130 text-center text-snow">Про платформу</div>
-          <div className="features__header-subtitle text-size-body-1  lg:text-center text-snow leading-130">
+          <div className="features__header-subtitle lg:text-size-body-1 text-size-body-2 lg:text-center text-snow leading-130">
             ArtLance – простір автентичних продуктів,<br/> де майстри та цінителі хендмейду зустрічаються,<br/>  щоб створювати, продавати та знаходити унікальні речі. 
           </div>
         </div>
