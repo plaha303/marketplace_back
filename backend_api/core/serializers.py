@@ -118,24 +118,20 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate_email(self, value):
         if len(value) > 70:
             raise ValidationError("Загальна довжина email не може перевищувати 70 символів.")
-
         try:
             local_part, domain = value.split('@')
         except ValueError:
             raise ValidationError("Email повинен містити символ '@'.")
-
         if len(local_part) < 1 or len(local_part) > 35:
             raise ValidationError("Локальна частина email повинна мати від 1 до 35 символів.")
         if not re.match(r'^(?![\.])([A-Za-z0-9._%+-]+)(?<!\.)$', local_part):
             raise ValidationError("Локальна частина email містить некоректні символи або крапки на початку/кінці.")
         if re.search(r'\.{2,}', local_part):
             raise ValidationError("Локальна частина email не може містити послідовні крапки.")
-
         if len(domain) < 3 or len(domain) > 35:
             raise ValidationError("Доменна частина email повинна мати від 3 до 35 символів.")
         if not re.match(r'^(?!-|\.)([A-Za-z0-9-]+)(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$', domain):
             raise ValidationError("Доменна частина email містить некоректні символи або крапки/дефіси на початку/кінці.")
-
         return value
 
     def validate(self, data):
@@ -146,8 +142,8 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         user = User.objects.create_user(
+            email=validated_data['email'],  # Передаємо email як перший аргумент
             username=validated_data['username'],
-            email=validated_data['email'],
             password=validated_data['password'],
             surname=validated_data.get('surname'),
             roles=['user']
@@ -163,7 +159,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         send_mail(
             'Підтвердження реєстрації',
-            f'Вітаємо, {user.username}!\n\n'
+            f'Вітаємо, {user.username} ({user.email})!\n\n'
             f'Будь ласка, перейдіть за посиланням для підтвердження вашого email: {verification_url}\n'
             f'Посилання дійсне протягом 1 години.\n',
             settings.DEFAULT_FROM_EMAIL,
@@ -368,7 +364,7 @@ class ResendVerificationCodeSerializer(serializers.Serializer):
 
         send_mail(
             'Новий код підтвердження',
-            f'Вітаємо, {user.username}!\n\n'
+            f'Вітаємо, {user.username} ({user.email})!\n\n'
             f'Будь ласка, перейдіть за посиланням для підтвердження вашого email: {verification_url}\n'
             f'Посилання дійсне протягом 1 години.\n',
             settings.DEFAULT_FROM_EMAIL,

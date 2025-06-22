@@ -17,7 +17,7 @@ class User(AbstractUser):
         ('admin', 'Admin'),
     ]
     email = models.EmailField(unique=True)
-    username = models.CharField(max_length=50, validators=[name_validator], unique=True)
+    username = models.CharField(max_length=50, validators=[name_validator])
     roles = ArrayField(
         models.CharField(max_length=10, choices=ROLE_CHOICES),
         default=list,
@@ -29,13 +29,16 @@ class User(AbstractUser):
 
     verification_token_created_at = models.DateTimeField(null=True, blank=True)
 
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'surname']
+
     def save(self, *args, **kwargs):
         if not self.roles:
             self.roles = ['user']
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.username
+        return f"{self.username} (ID: {self.id})"
 
 class Category(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -104,7 +107,7 @@ class AuctionBid(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     def __str__(self):
-        return f"Bid of {self.amount} by {self.user.username} on {self.product.name}"
+        return f"Bid of {self.amount} by {self.user.username} (ID: {self.user.id}) on {self.product.name}"
 
 class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cart_items')
@@ -112,7 +115,7 @@ class Cart(models.Model):
     quantity = models.PositiveIntegerField()
 
     def __str__(self):
-        return f"{self.quantity} of {self.product.name} in {self.user.username}'s cart"
+        return f"{self.quantity} of {self.product.name} in {self.user.username} (ID: {self.user.id})'s cart"
 
 class Order(models.Model):
     STATUS_CHOICES = [
@@ -129,7 +132,7 @@ class Order(models.Model):
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
 
     def __str__(self):
-        return f"Order #{self.id} by {self.customer.username} - {self.status}"
+        return f"Order #{self.id} by {self.customer.username} (ID: {self.customer.id}) - {self.status}"
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
@@ -158,7 +161,7 @@ class Payment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     def __str__(self):
-        return f"Payment for order #{self.order.id} - {self.status}"
+        return f"Payment for order #{self.order.id} by {self.user.username} (ID: {self.user.id}) - {self.status}"
 
 class Shipping(models.Model):
     order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='shipping')
@@ -181,7 +184,7 @@ class Review(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     def __str__(self):
-        return f"Review by {self.user.username} for {self.product.name}"
+        return f"Review by {self.user.username} (ID: {self.user.id}) for {self.product.name}"
 
 class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
@@ -190,4 +193,4 @@ class Favorite(models.Model):
         unique_together = ['user', 'product']
 
     def __str__(self):
-        return f"{self.user.username}'s favorite for {self.product.name}"
+        return f"{self.user.username} (ID: {self.user.id})'s favorite for {self.product.name}"
