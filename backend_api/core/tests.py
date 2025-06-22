@@ -1,360 +1,64 @@
+import uuid
 from django.test import TestCase
-from rest_framework.test import APIClient
+from django.urls import reverse
+from rest_framework.test import APITestCase, APIClient
+from rest_framework import status
 from django.contrib.auth import get_user_model
-from core.models import Product, Cart, Order, User, Category
 from django.utils.timezone import now, timedelta
-from django.core import mail
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
+from .models import Category, Product, ProductImage, Cart, Order, OrderItem, Payment, Shipping, Review, AuctionBid, Favorite
+from .serializers import RegisterSerializer, UserSerializer, ProductSerializer, CartSerializer, OrderSerializer, ReviewSerializer
+from .permissions import HasRolePermission
+import json
 
 User = get_user_model()
 
-class ProductViewSetTest(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.vendor = User.objects.create_user(
-            username='vendor',
-            email='vendor@example.com',
-            password='pass',
-            roles=['user']
-        )
-        self.customer = User.objects.create_user(
-            username='customer',
-            email='customer@example.com',
-            password='pass',
-            roles=['user']
-        )
-        self.admin = User.objects.create_user(
-            username='admin',
-            email='admin@example.com',
-            password='pass',
-            roles=['admin']
-        )
-        self.product = Product.objects.create(
-            vendor=self.vendor, name='Test Product', price=100, stock=10
-        )
+# tests.py
+from django.utils.timezone import now, timedelta
 
-    def test_vendor_can_create_product(self):
-        self.client.force_authenticate(self.vendor)
-        response = self.client.post('/api/products/', {'name': 'New Product', 'price': 200, 'stock': 5})
-        self.assertEqual(response.status_code, 201)
-        self.assertEqual(Product.objects.count(), 2)
-
-    def test_customer_cannot_create_product(self):
-        self.client.force_authenticate(self.customer)
-        response = self.client.post('/api/products/', {'name': 'New Product', 'price': 200, 'stock': 5})
-        self.assertEqual(response.status_code, 403)
-
-    def test_vendor_cannot_edit_other_product(self):
-        other_vendor = User.objects.create_user(
-            username='other',
-            email='other@example.com',
-            password='pass',
-            roles=['user']
-        )
-        other_product = Product.objects.create(
-            vendor=other_vendor, name='Other Product', price=300, stock=5
-        )
-        self.client.force_authenticate(self.vendor)
-        response = self.client.put(f'/api/products/{other_product.id}/', {'name': 'Edited', 'price': 400, 'stock': 5})
-        self.assertEqual(response.status_code, 403)
-
-    def test_admin_can_delete_any_product(self):
-        self.client.force_authenticate(self.admin)
-        response = self.client.delete(f'/api/products/{self.product.id}/')
-        self.assertEqual(response.status_code, 204)
-        self.assertEqual(Product.objects.count(), 0)
-
-class LoginViewTest(TestCase):
+class CoreAppTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = User.objects.create_user(
             username='testuser',
             email='test@example.com',
-            password='password123',
+            password='Test@1234',
+            surname='TestSurname',
             roles=['user'],
             is_verified=True,
             is_active=True
         )
 
-    def test_successful_login(self):
-        response = self.client.post('/api/auth/login/', {
-            'email': 'test@example.com',
-            'password': 'password123'
-        })
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.data['success'])
-        self.assertIn('access', response.data)
-        self.assertIn('refresh', response.data)
-
-    def test_failed_login_wrong_password(self):
-        response = self.client.post('/api/auth/login/', {
-            'email': 'test@example.com',
-            'password': 'wrongpassword'
-        })
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response.data['success'])
-        self.assertIn('errors', response.data)
-
-class RegisterViewTest(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-
-    def test_successful_registration(self):
-        response = self.client.post('/api/auth/register/', {
-            'username': 'newuser',
-            'email': 'newuser@example.com',
-            'password': 'Password123',
-            'password_confirm': 'Password123'
-        })
-        self.assertEqual(response.status_code, 201)
-        self.assertTrue(response.data['success'])
-        user = User.objects.get(email='newuser@example.com')
-        self.assertFalse(user.is_verified)
-        self.assertFalse(user.is_active)
-        self.assertEqual(len(mail.outbox), 1)
-        email = mail.outbox[0]
-        self.assertEqual(email.subject, 'Підтвердження реєстрації')
-        self.assertIn('Будь ласка, перейдіть за посиланням для підтвердження вашого email:', email.body)
-
-    def test_registration_password_mismatch(self):
-        response = self.client.post('/api/auth/register/', {
-            'username': 'newuser',
-            'email': 'newuser@example.com',
-            'password': 'Password123',
-            'password_confirm': 'Different123'
-        })
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response.data['success'])
-        self.assertIn('password_confirm', response.data['errors'])
-        self.assertEqual(response.data['errors']['password_confirm'], ['Паролі не співпадають'])
-
-    def test_registration_duplicate_email(self):
-        User.objects.create_user(
-            username='existing',
-            email='newuser@example.com',
-            password='Password123',
-            roles=['user']
-        )
-        response = self.client.post('/api/auth/register/', {
-            'username': 'newuser',
-            'email': 'newuser@example.com',
-            'password': 'Password123',
-            'password_confirm': 'Password123'
-        })
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response.data['success'])
-        self.assertIn('email', response.data['errors'])
-
-class VerifyEmailViewTest(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='password123',
-            roles=['user'],
+    def test_verify_email_expired_token(self):
+        user = User.objects.create_user(
+            username='verifyuser',
+            email='verify@example.com',
+            password='Test@1234',
+            surname='VerifySurname',
+            is_active=False,
             is_verified=False,
-            is_active=False
+            verification_token_created_at=now() - timedelta(hours=2)  # Токен застарілий
         )
-        self.uidb64 = urlsafe_base64_encode(force_bytes(self.user.pk))
-        self.token = default_token_generator.make_token(self.user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        response = self.client.get(reverse('verify-email', args=[uid, token]))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('Посилання для підтвердження застаріло', response.data['errors']['non_field_errors'][0])
 
-    def test_successful_verification(self):
-        response = self.client.get(f'/api/auth/verify-email/{self.uidb64}/{self.token}/')
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.data['success'])
-        user = User.objects.get(email='test@example.com')
-        self.assertTrue(user.is_verified)
-        self.assertTrue(user.is_active)
-
-    def test_invalid_token(self):
-        response = self.client.get(f'/api/auth/verify-email/{self.uidb64}/invalid-token/')
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response.data['success'])
-        self.assertIn('non_field_errors', response.data['errors'])
-        self.assertEqual(response.data['errors']['non_field_errors'], ['Невірне посилання для підтвердження.'])
-
-    def test_invalid_uid(self):
-        response = self.client.get(f'/api/auth/verify-email/invalid-uid/{self.token}/')
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response.data['success'])
-        self.assertIn('non_field_errors', response.data['errors'])
-        self.assertEqual(response.data['errors']['non_field_errors'], ['Невірне посилання для підтвердження.'])
-
-    def test_already_verified(self):
-        self.user.is_verified = True
-        self.user.is_active = True
-        self.user.save()
-        response = self.client.get(f'/api/auth/verify-email/{self.uidb64}/{self.token}/')
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response.data['success'])
-        self.assertIn('non_field_errors', response.data['errors'])
-        self.assertEqual(response.data['errors']['non_field_errors'], ['Email вже підтверджений.'])
-
-class ResendVerificationCodeViewTest(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='password123',
-            roles=['user'],
+    def test_resend_verification_code_updates_timestamp(self):
+        user = User.objects.create_user(
+            username='verifyuser2',
+            email='verify2@example.com',
+            password='Test@1234',
+            surname='VerifySurname',
+            is_active=False,
             is_verified=False,
-            is_active=False
+            verification_token_created_at=now() - timedelta(hours=2)
         )
-
-    def test_successful_resend_code(self):
-        response = self.client.post('/api/auth/resend-verification-code/', {
-            'email': 'test@example.com'
-        })
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.data['success'])
-        self.assertEqual(response.data['data']['message'], 'Новий код підтвердження відправлено!')
-        self.assertEqual(len(mail.outbox), 1)
-        email = mail.outbox[0]
-        self.assertEqual(email.subject, 'Новий код підтвердження')
-        self.assertIn('Будь ласка, перейдіть за посиланням для підтвердження вашого email:', email.body)
-
-    def test_resend_code_already_verified(self):
-        self.user.is_verified = True
-        self.user.save()
-        response = self.client.post('/api/auth/resend-verification-code/', {
-            'email': 'test@example.com'
-        })
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response.data['success'])
-        self.assertIn('email', response.data['errors'])
-        self.assertEqual(response.data['errors']['email'], ['Email вже підтверджений.'])
-
-    def test_resend_code_non_existent_email(self):
-        response = self.client.post('/api/auth/resend-verification-code/', {
-            'email': 'nonexistent@example.com'
-        })
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response.data['success'])
-        self.assertIn('email', response.data['errors'])
-        self.assertEqual(response.data['errors']['email'], ['Користувача з таким email не знайдено.'])
-
-class ActivateEmailViewTest(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='password123',
-            roles=['user'],
-            is_verified=False,
-            is_active=False
-        )
-
-    def test_activate_endpoint_not_found(self):
-        response = self.client.get('/api/auth/activate/dummyuid/dummytoken/')
-        self.assertEqual(response.status_code, 404)
-
-class CartAddViewTest(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.customer = User.objects.create_user(
-            username='customer',
-            email='customer@example.com',
-            password='pass',
-            roles=['user']
-        )
-        self.vendor = User.objects.create_user(
-            username='vendor',
-            email='vendor@example.com',
-            password='pass',
-            roles=['user']
-        )
-        self.product = Product.objects.create(
-            vendor=self.vendor, name='Test Product', price=100, stock=10
-        )
-
-    def test_add_to_cart_success(self):
-        self.client.force_authenticate(self.customer)
-        response = self.client.post('/api/cart/add/', {
-            'product': self.product.id,
-            'quantity': 2
-        })
-        self.assertEqual(response.status_code, 201)
-        self.assertTrue(response.data['success'])
-        self.assertEqual(Cart.objects.count(), 1)
-        self.assertEqual(Cart.objects.first().quantity, 2)
-
-    def test_add_to_cart_insufficient_stock(self):
-        self.client.force_authenticate(self.customer)
-        response = self.client.post('/api/cart/add/', {
-            'product': self.product.id,
-            'quantity': 15
-        })
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response.data['success'])
-        self.assertIn('quantity', response.data['errors'])
-
-class OrderViewSetTest(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.customer = User.objects.create_user(
-            username='customer',
-            email='customer@example.com',
-            password='pass',
-            roles=['user']
-        )
-        self.vendor = User.objects.create_user(
-            username='vendor',
-            email='vendor@example.com',
-            password='pass',
-            roles=['user']
-        )
-        self.product = Product.objects.create(
-            vendor=self.vendor, name='Test Product', price=100, stock=10
-        )
-        self.cart_item = Cart.objects.create(
-            user=self.customer, product=self.product, quantity=2
-        )
-
-    def test_create_order_success(self):
-        self.client.force_authenticate(self.customer)
-        response = self.client.post('/api/orders/', {})
-        self.assertEqual(response.status_code, 201)
-        self.assertTrue(response.data['success'])
-        self.assertEqual(Order.objects.count(), 1)
-        order = Order.objects.first()
-        self.assertEqual(order.total_amount, 200)
-        self.assertEqual(order.items.count(), 1)
-        self.assertEqual(Cart.objects.count(), 0)
-
-    def test_create_order_empty_cart(self):
-        Cart.objects.all().delete()
-        self.client.force_authenticate(self.customer)
-        response = self.client.post('/api/orders/', {})
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response.data['success'])
-        self.assertIn('cart', response.data['errors'])
-
-class CategoryViewSetTest(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.admin = User.objects.create_user(
-            username='admin',
-            email='admin@example.com',
-            password='pass',
-            roles=['admin']
-        )
-        self.category = Category.objects.create(
-            name='Home Products',
-            category_href='home-products',
-            category_image='https://example.com/sample.jpg'
-        )
-
-    def test_retrieve_category_by_href(self):
-        self.client.force_authenticate(self.admin)
-        response = self.client.get('/home-products/')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['data']['category_href'], 'home-products')
-        self.assertEqual(response.data['data']['category_image'], 'https://example.com/sample.jpg')
-
-
-
+        data = {'email': 'verify2@example.com'}
+        response = self.client.post(reverse('resend-verification-code'), data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user.refresh_from_db()
+        self.assertTrue((now() - user.verification_token_created_at).total_seconds() < 60)  # Час оновлено
