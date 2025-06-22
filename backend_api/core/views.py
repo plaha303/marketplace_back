@@ -20,6 +20,7 @@ from .serializers import (ProductSerializer, OrderSerializer, UserSerializer,
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
+from django.db import transaction
 import logging
 
 logger = logging.getLogger(__name__)
@@ -51,7 +52,30 @@ class ProductViewSet(viewsets.ModelViewSet):
         serializer.save(vendor=self.request.user)
 
     def perform_update(self, serializer):
-        serializer.save()
+        try:
+            with transaction.atomic():
+                # Блокуємо продукт
+                instance = Product.objects.select_for_update().get(id=serializer.instance.id)
+                if instance.stock < 0:
+                    logger.error(f"Invalid stock update for product {instance.id} by user {self.request.user.id}")
+                    return Response(
+                        {"success": False, "errors": {"stock": ["Запас не може бути від’ємним"]}},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                serializer.save()
+                logger.info(f"Product {instance.id} updated by user {self.request.user.id}")
+        except Product.DoesNotExist:
+            logger.error(f"Product {serializer.instance.id} not found for user {self.request.user.id}")
+            return Response(
+                {"success": False, "errors": {"detail": "Продукт не знайдено"}},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logger.error(f"Error updating product for user {self.request.user.id}: {str(e)}")
+            return Response(
+                {"success": False, "errors": {"detail": str(e)}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     def perform_destroy(self, instance):
         instance.delete()
@@ -72,6 +96,26 @@ class OrderViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = OrderFilter
 
+    def perform_update(self, serializer):
+        try:
+            with transaction.atomic():
+                # Блокуємо замовлення
+                instance = Order.objects.select_for_update().get(id=serializer.instance.id)
+                serializer.save()
+                logger.info(f"Order {instance.id} updated by user {self.request.user.id}")
+        except Order.DoesNotExist:
+            logger.error(f"Order {serializer.instance.id} not found for user {self.request.user.id}")
+            return Response(
+                {"success": False, "errors": {"detail": "Замовлення не знайдено"}},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logger.error(f"Error updating order for user {self.request.user.id}: {str(e)}")
+            return Response(
+                {"success": False, "errors": {"detail": str(e)}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
     def get_queryset(self):
         if 'admin' in self.request.user.roles:
             return Order.objects.all()
@@ -80,24 +124,58 @@ class OrderViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         cart_items = Cart.objects.filter(user=self.request.user)
         if not cart_items.exists():
+            logger.warning(f"User {request.user.id} attempted to create order with empty cart")
             return Response({"success": False, "errors": {"cart": "Кошик порожній."}},
                             status=status.HTTP_400_BAD_REQUEST)
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        total_amount = sum(item.product.price * item.quantity for item in cart_items if item.product.price is not None)
-        order = serializer.save(customer=self.request.user, total_amount=total_amount)
+        try:
+            with transaction.atomic():
+                # Блокуємо продукти для перевірки stock
+                product_ids = [item.product.id for item in cart_items]
+                products = Product.objects.select_for_update().filter(id__in=product_ids)
+                product_dict = {p.id: p for p in products}
 
-        for item in cart_items:
-            OrderItem.objects.create(
-                order=order,
-                product=item.product,
-                quantity=item.quantity,
-                price=item.product.price
-            )
-        cart_items.delete()
-        return Response({"success": True, "data": serializer.data}, status=status.HTTP_201_CREATED)
+                # Перевіряємо stock
+                for item in cart_items:
+                    product = product_dict.get(item.product.id)
+                    if not product or product.stock < item.quantity:
+                        logger.error(f"Insufficient stock for product {item.product.id} for user {request.user.id}")
+                        return Response(
+                            {"success": False,
+                             "errors": {"quantity": f"Недостатньо товару {item.product.name} на складі"}},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+
+                # Обчислюємо total_amount
+                total_amount = sum(
+                    item.product.price * item.quantity for item in cart_items if item.product.price is not None)
+
+                # Створюємо замовлення
+                order = serializer.save(customer=self.request.user, total_amount=total_amount)
+
+                # Створюємо OrderItem і оновлюємо stock
+                for item in cart_items:
+                    product = product_dict[item.product.id]
+                    OrderItem.objects.create(
+                        order=order,
+                        product=product,
+                        quantity=item.quantity,
+                        price=product.price
+                    )
+                    product.stock -= item.quantity
+                    product.save()
+
+                # Видаляємо елементи з кошика
+                cart_items.delete()
+                logger.info(f"Order {order.id} created successfully for user {request.user.id}")
+
+            return Response({"success": True, "data": serializer.data}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            logger.error(f"Error creating order for user {request.user.id}: {str(e)}")
+            return Response({"success": False, "errors": {"detail": str(e)}}, status=status.HTTP_400_BAD_REQUEST)
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -223,36 +301,60 @@ class CartAddView(generics.GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            product = serializer.validated_data['product']
-            quantity = serializer.validated_data['quantity']
-            if product.stock < quantity:
-                return Response(
-                    {"success": False, "errors": {"quantity": ["Недостатньо товару на складі"]}},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            cart_item, created = Cart.objects.get_or_create(
-                user=request.user,
-                product=product,
-                defaults={'quantity': quantity}
+        if not serializer.is_valid():
+            logger.error(f"Invalid cart data for user {request.user.id}: {serializer.errors}")
+            return Response(
+                {"success": False, "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
             )
-            if not created:
-                new_quantity = cart_item.quantity + quantity
-                if product.stock < new_quantity:
+
+        product = serializer.validated_data['product']
+        quantity = serializer.validated_data['quantity']
+
+        try:
+            with transaction.atomic():
+                # Блокуємо продукт
+                product = Product.objects.select_for_update().get(id=product.id)
+                if product.stock < quantity:
+                    logger.error(f"Insufficient stock for product {product.id} for user {request.user.id}")
                     return Response(
                         {"success": False, "errors": {"quantity": ["Недостатньо товару на складі"]}},
                         status=status.HTTP_400_BAD_REQUEST
                     )
-                cart_item.quantity = new_quantity
-                cart_item.save()
+
+                cart_item, created = Cart.objects.get_or_create(
+                    user=request.user,
+                    product=product,
+                    defaults={'quantity': quantity}
+                )
+                if not created:
+                    new_quantity = cart_item.quantity + quantity
+                    if product.stock < new_quantity:
+                        logger.error(f"Insufficient stock for product {product.id} for user {request.user.id}")
+                        return Response(
+                            {"success": False, "errors": {"quantity": ["Недостатньо товару на складі"]}},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                    cart_item.quantity = new_quantity
+                    cart_item.save()
+
+                logger.info(f"Cart updated for user {request.user.id}, product {product.id}, quantity {quantity}")
             return Response(
                 {"success": True, "message": "Товар додано до кошика"},
                 status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
             )
-        return Response(
-            {"success": False, "errors": serializer.errors},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        except Product.DoesNotExist:
+            logger.error(f"Product {product.id} not found for user {request.user.id}")
+            return Response(
+                {"success": False, "errors": {"product": ["Товар не знайдено"]}},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logger.error(f"Error adding to cart for user {request.user.id}: {str(e)}")
+            return Response(
+                {"success": False, "errors": {"detail": str(e)}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class CartRemoveView(generics.GenericAPIView):
     serializer_class = CartRemoveSerializer
@@ -261,33 +363,48 @@ class CartRemoveView(generics.GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            product = serializer.validated_data['product']
-            quantity_to_remove = serializer.validated_data.get('quantity', 1)
-            try:
-                cart_item = Cart.objects.get(user=request.user, product=product)
+        if not serializer.is_valid():
+            logger.error(f"Invalid cart remove data for user {request.user.id}: {serializer.errors}")
+            return Response(
+                {"success": False, "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        product = serializer.validated_data['product']
+        quantity_to_remove = serializer.validated_data.get('quantity', 1)
+
+        try:
+            with transaction.atomic():
+                # Блокуємо запис кошика
+                cart_item = Cart.objects.select_for_update().get(user=request.user, product=product)
                 if cart_item.quantity > quantity_to_remove:
                     cart_item.quantity -= quantity_to_remove
                     cart_item.save()
+                    logger.info(f"Reduced quantity by {quantity_to_remove} for product {product.id} in cart for user {request.user.id}")
                     return Response(
                         {"success": True, "message": f"Кількість товару зменшено на {quantity_to_remove}"},
                         status=status.HTTP_200_OK
                     )
                 else:
                     cart_item.delete()
+                    logger.info(f"Removed product {product.id} from cart for user {request.user.id}")
                     return Response(
                         {"success": True, "message": "Товар видалено з кошика"},
                         status=status.HTTP_200_OK
                     )
-            except Cart.DoesNotExist:
-                return Response(
-                    {"success": False, "errors": {"product": ["Товар не знайдено в кошику"]}},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-        return Response(
-            {"success": False, "errors": serializer.errors},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        except Cart.DoesNotExist:
+            logger.error(f"Cart item for product {product.id} not found for user {request.user.id}")
+            return Response(
+                {"success": False, "errors": {"product": ["Товар не знайдено в кошику"]}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"Error removing from cart for user {request.user.id}: {str(e)}")
+            return Response(
+                {"success": False, "errors": {"detail": str(e)}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 class CartListView(generics.GenericAPIView):
     serializer_class = CartSerializer
@@ -327,6 +444,59 @@ class AuctionBidViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return AuctionBid.objects.filter(user=self.request.user)
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            logger.error(f"Invalid auction bid data for user {request.user.id}: {serializer.errors}")
+            return Response(
+                {"success": False, "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        product = serializer.validated_data['product']
+        amount = serializer.validated_data['amount']
+
+        try:
+            with transaction.atomic():
+                # Блокуємо продукт
+                product = Product.objects.select_for_update().get(id=product.id)
+                if product.sale_type != 'auction' or product.auction_end_time < now():
+                    logger.error(f"Invalid auction for product {product.id} for user {request.user.id}")
+                    return Response(
+                        {"success": False, "errors": {"product": ["Аукціон завершено або недоступний"]}},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                max_bid = product.bids.order_by('-amount').first()
+                min_bid = product.start_price or 0
+                if max_bid:
+                    min_bid = max_bid.amount
+
+                if amount <= min_bid:
+                    logger.error(f"Bid {amount} too low for product {product.id} for user {request.user.id}")
+                    return Response(
+                        {"success": False, "errors": {"amount": ["Ставка повинна перевищувати поточну максимальну"]}},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                serializer.save(user=self.request.user)
+                logger.info(f"Bid {amount} placed on product {product.id} by user {request.user.id}")
+
+            return Response({"success": True, "data": serializer.data}, status=status.HTTP_201_CREATED)
+        except Product.DoesNotExist:
+            logger.error(f"Product {product.id} not found for user {request.user.id}")
+            return Response(
+                {"success": False, "errors": {"product": ["Товар не знайдено"]}},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logger.error(f"Error placing bid for user {request.user.id}: {str(e)}")
+            return Response(
+                {"success": False, "errors": {"detail": str(e)}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
 class FavoriteViewSet(viewsets.ModelViewSet):
     queryset = Favorite.objects.all()
     serializer_class = FavoriteSerializer
@@ -365,6 +535,52 @@ class PaymentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Payment.objects.filter(user=self.request.user)
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            logger.error(f"Invalid payment data for user {request.user.id}: {serializer.errors}")
+            return Response(
+                {"success": False, "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        order = serializer.validated_data['order']
+        amount = serializer.validated_data['amount']
+
+        try:
+            with transaction.atomic():
+                # Блокуємо замовлення
+                order = Order.objects.select_for_update().get(id=order.id)
+                if order.status != 'pending':
+                    logger.error(f"Invalid order status {order.status} for payment by user {request.user.id}")
+                    return Response(
+                        {"success": False, "errors": {"order": ["Замовлення не в статусі pending"]}},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                if order.total_amount != amount:
+                    logger.error(f"Invalid payment amount {amount} for order {order.id} by user {request.user.id}")
+                    return Response(
+                        {"success": False, "errors": {"amount": ["Сума платежу не відповідає сумі замовлення"]}},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                serializer.save(user=self.request.user)
+                logger.info(f"Payment created for order {order.id} by user {request.user.id}")
+
+            return Response({"success": True, "data": serializer.data}, status=status.HTTP_201_CREATED)
+        except Order.DoesNotExist:
+            logger.error(f"Order {order.id} not found for user {request.user.id}")
+            return Response(
+                {"success": False, "errors": {"order": ["Замовлення не знайдено"]}},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logger.error(f"Error creating payment for user {request.user.id}: {str(e)}")
+            return Response(
+                {"success": False, "errors": {"detail": str(e)}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 class ShippingViewSet(viewsets.ModelViewSet):
     queryset = Shipping.objects.all()
     serializer_class = ShippingSerializer
@@ -375,6 +591,51 @@ class ShippingViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Shipping.objects.filter(order__customer=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            logger.error(f"Invalid shipping data for user {request.user.id}: {serializer.errors}")
+            return Response(
+                {"success": False, "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        order = serializer.validated_data['order']
+
+        try:
+            with transaction.atomic():
+                # Блокуємо замовлення
+                order = Order.objects.select_for_update().get(id=order.id)
+                if order.status != 'paid':
+                    logger.error(f"Invalid order status {order.status} for shipping by user {request.user.id}")
+                    return Response(
+                        {"success": False, "errors": {"order": ["Замовлення не оплачено"]}},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                if Shipping.objects.filter(order=order).exists():
+                    logger.error(f"Shipping already exists for order {order.id} by user {request.user.id}")
+                    return Response(
+                        {"success": False, "errors": {"order": ["Доставка вже створена для цього замовлення"]}},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                serializer.save()
+                logger.info(f"Shipping created for order {order.id} by user {request.user.id}")
+
+            return Response({"success": True, "data": serializer.data}, status=status.HTTP_201_CREATED)
+        except Order.DoesNotExist:
+            logger.error(f"Order {order.id} not found for user {request.user.id}")
+            return Response(
+                {"success": False, "errors": {"order": ["Замовлення не знайдено"]}},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logger.error(f"Error creating shipping for user {request.user.id}: {str(e)}")
+            return Response(
+                {"success": False, "errors": {"detail": str(e)}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class UserProfileView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
