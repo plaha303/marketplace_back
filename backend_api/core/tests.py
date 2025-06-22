@@ -280,3 +280,20 @@ class APITests(APITestCase):
         logger.debug(f"Password reset request response: {response.status_code}, {response.data}")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['success'])
+
+    def test_product_is_available(self):
+        self.client.force_authenticate(user=self.user)
+        product_available = Product.objects.create(
+            vendor=self.user, category=self.category, name="Available Product", stock=5, price=10.00
+        )
+        product_unavailable = Product.objects.create(
+            vendor=self.user, category=self.category, name="Unavailable Product", stock=0, price=10.00
+        )
+
+        response = self.client.get(f'/api/products/{product_available.id}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['isAvailable'])
+
+        response = self.client.get(f'/api/products/{product_unavailable.id}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['isAvailable'])
