@@ -90,6 +90,9 @@ class Product(models.Model):
                 counter += 1
         super().save(*args, **kwargs)
 
+    def is_available(self):
+        return self.stock > 0
+
     def __str__(self):
         return self.name
 
