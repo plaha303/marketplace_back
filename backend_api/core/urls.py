@@ -1,7 +1,12 @@
 from django.urls import path
 from . import views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import CartListView, ProductViewSet, ResendVerificationCodeView, CustomTokenRefreshView
+from .views import (
+    RegisterView, VerifyEmailView, ResendVerificationCodeView, LoginView, CustomTokenRefreshView,
+    PasswordResetRequestView, PasswordResetConfirmView, UserViewSet, UserProfileView,
+    CategoryViewSet, ProductViewSet, OrderViewSet, CartAddView, CartRemoveView, CartListView,
+    ReviewViewSet, AuctionBidViewSet, FavoriteViewSet, PaymentViewSet, ShippingViewSet
+)
 
 urlpatterns = [
     # Аутентифікаційні маршрути
@@ -22,11 +27,6 @@ urlpatterns = [
     path('categories/', views.CategoryViewSet.as_view({'get': 'list', 'post': 'create'}), name='category-list'),
     path('categories/<int:pk>/', views.CategoryViewSet.as_view(
         {'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='category-detail'),
-    path('<slug:category_href>/', views.CategoryViewSet.as_view({'get': 'retrieve_by_href'}),
-         name='category-detail-by-href'),
-    path('<slug:category_href>/<slug:product_href>/', views.ProductViewSet.as_view(
-        {'get': 'retrieve_by_href', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}),
-         name='product-detail-by-href'),
     path('products/', views.ProductViewSet.as_view({'get': 'list', 'post': 'create'}), name='product-list'),
     path('products/<int:pk>/', views.ProductViewSet.as_view(
         {'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='product-detail'),
@@ -51,5 +51,10 @@ urlpatterns = [
         {'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='payment-detail'),
     path('shipping/', views.ShippingViewSet.as_view({'get': 'list', 'post': 'create'}), name = 'shipping-list'),
     path('shipping/<int:pk>/', views.ShippingViewSet.as_view(
-        {'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='shipping-detail')
+        {'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='shipping-detail'),
+    path('<slug:category_href>/', views.CategoryViewSet.as_view({'get': 'retrieve_by_href'}),
+         name='category-detail-by-href'),
+    path('<slug:category_href>/<slug:product_href>/', views.ProductViewSet.as_view(
+        {'get': 'retrieve_by_href', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}),
+         name='product-detail-by-href')
 ]

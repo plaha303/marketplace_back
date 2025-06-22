@@ -303,9 +303,12 @@ class CartRemoveSerializer(serializers.Serializer):
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
 
 class ReviewSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)  # Додаємо read_only і UserSerializer
+
     class Meta:
         model = Review
         fields = ['id', 'product', 'user', 'rating', 'comment', 'created_at']
+        read_only_fields = ['user', 'created_at']  # Додаємо user до read_only_fields
 
     def validate_rating(self, value):
         if value < 1 or value > 5:
@@ -313,14 +316,21 @@ class ReviewSerializer(serializers.ModelSerializer):
         return value
 
 class AuctionBidSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
     class Meta:
         model = AuctionBid
         fields = ['id', 'product', 'user', 'amount', 'created_at']
+        read_only_fields = ['user', 'created_at']
+
 
 class FavoriteSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
     class Meta:
         model = Favorite
         fields = ['id', 'user', 'product']
+        read_only_fields = ['user']
 
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
