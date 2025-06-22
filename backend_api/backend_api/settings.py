@@ -24,11 +24,11 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-0gos56jbkua+tptfdw5j#(ipe%^%kwt2)ekc@$8!*9++o166wx'
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-from decouple import config
+#from decouple import config
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'django_filters',
     'fakeusers',
+    'django_celery_beat',
     # Web app
     'core',
 ]
@@ -211,11 +212,23 @@ EMAIL_PORT = 587
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
 
-CELERY_BROKER_URL = "redis://localhost:6379/0"
-CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
-CELERY_ACCEPT_CONTENT = ["json"]
-CELERY_TASK_SERIALIZER = "json"
+#CELERY_BROKER_URL = "redis://marketplace_redis:6379/0"
+#CELERY_RESULT_BACKEND = "redis://marketplace_redis:6379/0"
+CELERY_BROKER_URL = env('REDIS_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = env('REDIS_URL', default='redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # Додано для Celery 6.0 сумісності
+
+# Налаштування Celery Beat
+from celery.schedules import crontab
+CELERY_BEAT_SCHEDULE = {
+    'delete-unverified-users': {
+        'task': 'backend_api.core.tasks.delete_unverified_users',
+        'schedule': crontab(minute=0, hour=0),  # Щодня опівночі
+    },
+}
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),  # Access token діє 2 години
@@ -229,25 +242,41 @@ SESSION_COOKIE_SECURE = False  # У продакшні  True для HTTPS
 
 
 LOGGING = {
-      'version': 1,
-      'disable_existing_loggers': False,
-      'handlers': {
-          'console': {
-              'class': 'logging.StreamHandler',
-          },
-      },
-      'loggers': {
-          'django': {
-              'handlers': ['console'],
-              'level': 'INFO',  # Зміна з DEBUG на INFO
-              'propagate': False,
-          },
-          'core': {  # Для вашого додатку
-              'handlers': ['console'],
-              'level': 'DEBUG',
-          },
-      },
-  }
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'celery.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'core': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'backend_api.core.tasks': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'celery': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+
 
 
 FRONTEND_URL = 'http://localhost:5173'

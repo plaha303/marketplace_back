@@ -40,10 +40,8 @@ install: check_venv
 up: install ## Повний автоматичний запуск усіх контейнерів
 	@echo "🚀 Запуск усіх контейнерів..."
 	$(DOCKER_COMPOSE_BIN) -f docker-compose.yml up -d
-
 	@echo "⏳ Очікування запуску сервісів..."
 	@sleep 10
-
 	@echo "✅ Всі сервіси запущені!"
 
 down: ## Зупиняє всі контейнери
@@ -82,3 +80,18 @@ test: check_venv ## Запускає тести Django
 	@echo "🧪 Запуск тестів Django..."
 	$(PYTHON_BIN) backend_api/manage.py test core
 
+work: check_venv ## Запускає Celery Worker, Beat і Flower локально
+	@echo "🚀 Запуск Celery Worker, Beat і Flower локально..."
+	sh -c '\
+  $(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO & \
+  $(PYTHON_BIN) backend_api/manage.py run_beat --loglevel=INFO & \
+  $(PYTHON_BIN) backend_api/manage.py run_flower & \
+  echo "✅ Celery Worker, Beat і Flower запущені у фоновому режимі!" \
+'
+
+
+nowork: ## Зупинка локальних Celery Worker, Beat і Flower
+	@echo "🛑 Зупинка Celery Worker, Beat і Flower..."
+	@ps aux | grep "python backend_api/manage.py run_worker" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "Worker не був запущений."
+	@ps aux | grep "python backend_api/manage.py run_beat" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "Beat не був запущений."
+	@ps aux | grep "python backend_api/manage.py run_flower" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "Flower не був запущений."
