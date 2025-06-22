@@ -10,6 +10,7 @@ class ProductFilter(filters.FilterSet):
     max_price = filters.NumberFilter(field_name='price', lookup_expr='lte')
     vendor = filters.NumberFilter(field_name='vendor__id', lookup_expr='exact')
     in_stock = filters.BooleanFilter(method='filter_in_stock')
+    isAvailable = filters.BooleanFilter(method='filter_in_stock')
     name = filters.CharFilter(field_name='name', lookup_expr='icontains')
     is_active_auction = filters.BooleanFilter(method='filter_active_auction')
     created_after = filters.DateTimeFilter(field_name='created_at', lookup_expr='gte')

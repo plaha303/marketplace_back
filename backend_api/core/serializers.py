@@ -39,12 +39,16 @@ class ProductImageSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     vendor = UserSerializer(read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
+    isAvailable = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = ['id', 'vendor', 'category', 'name', 'description',
                   'sale_type', 'price', 'start_price', 'auction_end_time',
-                  'stock', 'created_at', 'images', 'product_href']
+                  'stock', 'created_at', 'images', 'product_href', 'isAvailable']
+
+    def get_isAvailable(self, obj):
+        return obj.is_available()
 
     def validate(self, data):
         sale_type = data.get('sale_type', self.instance.sale_type if self.instance else 'fixed')
