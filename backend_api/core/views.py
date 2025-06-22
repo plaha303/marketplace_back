@@ -96,10 +96,13 @@ class OrderViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = OrderFilter
 
+    def list(self, request, *args, **kwargs):
+        logger.debug(f"OrderViewSet list called by user {request.user.id if request.user.is_authenticated else 'anonymous'}")
+        return super().list(request, *args, **kwargs)
+
     def perform_update(self, serializer):
         try:
             with transaction.atomic():
-                # Блокуємо замовлення
                 instance = Order.objects.select_for_update().get(id=serializer.instance.id)
                 serializer.save()
                 logger.info(f"Order {instance.id} updated by user {self.request.user.id}")
@@ -117,11 +120,13 @@ class OrderViewSet(viewsets.ModelViewSet):
             )
 
     def get_queryset(self):
+        logger.debug(f"OrderViewSet get_queryset for user {self.request.user.id if self.request.user.is_authenticated else 'anonymous'}")
         if 'admin' in self.request.user.roles:
             return Order.objects.all()
         return Order.objects.filter(customer=self.request.user)
 
     def create(self, request, *args, **kwargs):
+        logger.debug(f"OrderViewSet create called by user {request.user.id} with data: {request.data}")
         cart_items = Cart.objects.filter(user=self.request.user)
         if not cart_items.exists():
             logger.warning(f"User {request.user.id} attempted to create order with empty cart")
@@ -133,12 +138,10 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         try:
             with transaction.atomic():
-                # Блокуємо продукти для перевірки stock
                 product_ids = [item.product.id for item in cart_items]
                 products = Product.objects.select_for_update().filter(id__in=product_ids)
                 product_dict = {p.id: p for p in products}
 
-                # Перевіряємо stock
                 for item in cart_items:
                     product = product_dict.get(item.product.id)
                     if not product or product.stock < item.quantity:
@@ -149,14 +152,11 @@ class OrderViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST
                         )
 
-                # Обчислюємо total_amount
                 total_amount = sum(
                     item.product.price * item.quantity for item in cart_items if item.product.price is not None)
 
-                # Створюємо замовлення
                 order = serializer.save(customer=self.request.user, total_amount=total_amount)
 
-                # Створюємо OrderItem і оновлюємо stock
                 for item in cart_items:
                     product = product_dict[item.product.id]
                     OrderItem.objects.create(
@@ -168,7 +168,6 @@ class OrderViewSet(viewsets.ModelViewSet):
                     product.stock -= item.quantity
                     product.save()
 
-                # Видаляємо елементи з кошика
                 cart_items.delete()
                 logger.info(f"Order {order.id} created successfully for user {request.user.id}")
 
@@ -294,12 +293,13 @@ class CustomTokenRefreshView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-class CartAddView(generics.GenericAPIView):
+class CartAddView(GenericAPIView):
     serializer_class = CartSerializer
     permission_classes = [HasRolePermission]
     allowed_roles = ['user']
 
     def post(self, request, *args, **kwargs):
+        logger.debug(f"CartAddView POST request by user {request.user.id} with data: {request.data}")
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             logger.error(f"Invalid cart data for user {request.user.id}: {serializer.errors}")
@@ -313,7 +313,6 @@ class CartAddView(generics.GenericAPIView):
 
         try:
             with transaction.atomic():
-                # Блокуємо продукт
                 product = Product.objects.select_for_update().get(id=product.id)
                 if product.stock < quantity:
                     logger.error(f"Insufficient stock for product {product.id} for user {request.user.id}")
@@ -356,12 +355,13 @@ class CartAddView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-class CartRemoveView(generics.GenericAPIView):
+class CartRemoveView(GenericAPIView):
     serializer_class = CartRemoveSerializer
     permission_classes = [HasRolePermission]
     allowed_roles = ['user']
 
     def post(self, request, *args, **kwargs):
+        logger.debug(f"CartRemoveView POST request by user {request.user.id} with data: {request.data}")
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             logger.error(f"Invalid cart remove data for user {request.user.id}: {serializer.errors}")
@@ -375,7 +375,6 @@ class CartRemoveView(generics.GenericAPIView):
 
         try:
             with transaction.atomic():
-                # Блокуємо запис кошика
                 cart_item = Cart.objects.select_for_update().get(user=request.user, product=product)
                 if cart_item.quantity > quantity_to_remove:
                     cart_item.quantity -= quantity_to_remove
@@ -405,7 +404,6 @@ class CartRemoveView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-
 class CartListView(generics.GenericAPIView):
     serializer_class = CartSerializer
     permission_classes = [HasRolePermission]
@@ -432,6 +430,27 @@ class ReviewViewSet(viewsets.ModelViewSet):
     allowed_roles = ['user']
     filter_backends = [DjangoFilterBackend]
     filterset_class = ReviewFilter
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            logger.error(f"Invalid review data for user {request.user.id}: {serializer.errors}")
+            return Response(
+                {"success": False, "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            with transaction.atomic():
+                serializer.save(user=self.request.user)  # Явно передаємо user
+                logger.info(f"Review created for product {serializer.validated_data['product'].id} by user {request.user.id}")
+            return Response({"success": True, "data": serializer.data}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            logger.error(f"Error creating review for user {request.user.id}: {str(e)}")
+            return Response(
+                {"success": False, "errors": {"detail": str(e)}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class AuctionBidViewSet(viewsets.ModelViewSet):
     queryset = AuctionBid.objects.all()
@@ -507,6 +526,9 @@ class FavoriteViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Favorite.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
