@@ -268,24 +268,41 @@ SESSION_COOKIE_SECURE = False  # У продакшні  True для HTTPS
 
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': False,
+    'filters': {
+        'sensitive_data': {
+            '()': 'core.log_filters.SensitiveDataFilter',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'filters': ['sensitive_data'],  # Залишаємо для логерів, які можуть містити чутливі дані
         },
         'file': {
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'celery.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 5,
+            'filters': ['sensitive_data'],
+        },
+        'console_no_sensitive': {
+            'class': 'logging.StreamHandler',
+            # Без фільтра sensitive_data
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['console'],
+            'handlers': ['console_no_sensitive'],  # Використовуємо handler без фільтра
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.utils.autoreload': {
+            'handlers': ['console_no_sensitive'],  # Явно вказуємо для autoreload
             'level': 'INFO',
             'propagate': False,
         },
         'core': {
-            'handlers': ['console'],
+            'handlers': ['console', 'file'],  # Фільтр потрібен для core
             'level': 'DEBUG',
             'propagate': False,
         },
