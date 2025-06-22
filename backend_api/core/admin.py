@@ -1,22 +1,24 @@
 from django.contrib import admin
 from django import forms
+from django.contrib.auth.forms import AuthenticationForm
 from .models import User, Category, Product, Cart
+
+class AdminAuthenticationForm(AuthenticationForm):
+    username = forms.EmailField(label="Email", max_length=254)
 
 class UserAdminForm(forms.ModelForm):
     class Meta:
         model = User
         fields = '__all__'
 
+@admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     form = UserAdminForm
-    list_display = ['username', 'email', 'is_verified', 'is_active']
-    list_filter = ['is_verified', 'is_active']
-    search_fields = ['username', 'email']
-    fieldsets = (
-        (None, {'fields': ('username', 'email', 'password', 'surname', 'roles', 'is_verified', 'is_active')}),
-    )
+    login_form = AdminAuthenticationForm
+    list_display = ['id', 'username', 'email', 'surname', 'is_verified', 'is_active']
+    search_fields = ['id', 'username', 'email']
+    list_filter = ['is_verified', 'is_active', 'email']
 
-admin.site.register(User, UserAdmin)
 admin.site.register(Category)
 admin.site.register(Product)
 admin.site.register(Cart)
