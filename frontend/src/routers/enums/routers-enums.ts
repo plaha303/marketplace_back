@@ -5,9 +5,12 @@ const AppRoute = {
   SUPPORT: '/support',
 
   REGISTRATION: '/registration',
+  CONFIRM_EMAIL: '/confirm_email',
+  SUCCESSFULLY_EMAIL_CONFIRM: '/confirm_email_done',
   LOGIN: '/login',
   LOGOUT: '/logout',
   RESET_PASSWORD: '/reset_password',
+
 
   PROFILE: '/profile',
   FAVORITE: '/favorite',
