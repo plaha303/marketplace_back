@@ -1,6 +1,10 @@
 from django.contrib import admin
 from django import forms
+from django.contrib.auth.forms import AuthenticationForm
 from .models import User, Category, Product, Cart
+
+class AdminAuthenticationForm(AuthenticationForm):
+    username = forms.EmailField(label="Email", max_length=254)
 
 class UserAdminForm(forms.ModelForm):
     class Meta:
@@ -9,9 +13,11 @@ class UserAdminForm(forms.ModelForm):
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
+    form = UserAdminForm
+    login_form = AdminAuthenticationForm
     list_display = ['id', 'username', 'email', 'surname', 'is_verified', 'is_active']
     search_fields = ['id', 'username', 'email']
-    list_filter = ['is_verified', 'is_active', 'email']  # Додано фільтр за email
+    list_filter = ['is_verified', 'is_active', 'email']
 
 admin.site.register(Category)
 admin.site.register(Product)

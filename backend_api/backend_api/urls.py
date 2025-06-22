@@ -21,8 +21,8 @@ from drf_spectacular.views import (SpectacularAPIView,
                                    SpectacularRedocView)
 from django.contrib.auth import views as auth_views
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path('api/', include('core.urls')),
+    path('admin/', admin.site.urls),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/', include('social_django.urls', namespace='social')),
