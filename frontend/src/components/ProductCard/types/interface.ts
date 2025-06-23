@@ -9,16 +9,20 @@ export interface ProductCardProps {
     id: number;
     username: string;
     email: string;
-    role: string;
+    role: string[];
   }
   category: number;
   name: string;
   description: string;
   sale_type: string;
   price: number;
+  stock: number;
+  created_at: string;
+  images: ProductImages[],
+  product_href: string
+}
+
+export interface ProductCardAuctionProps extends ProductCardProps {
   start_price: number;
   auction_end_time: string;
-  stock: boolean;
-  created_at: string;
-  images: ProductImages[]
 }

@@ -126,6 +126,7 @@ body {
 
 .overlay {
   position: fixed;
+  z-index: 9;
   top: 0;
   left: 0;
   width: 100vw;
@@ -291,6 +292,9 @@ p + p {
 
   --color-blue-10: #2DA5F3;
   --color-blue-100: #2DA5F3;
+
+  --shadow-custom1: 0 0 4px 0 rgba(40, 40, 40, 0.1);
+  --shadow-custom2: 0 0 8px 0 rgba(160, 134, 77, 0.1);
 }
 
 .dark {

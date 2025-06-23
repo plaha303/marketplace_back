@@ -42,3 +42,12 @@ export function shallowStringify(obj: Record<string, unknown>, maxArrayLength = 
   return JSON.stringify(obj, replacer, '\t');
 };
 
+
+export function formatTimeForAuction(isoString: string): { hours: string, minutes: string, seconds: string } {
+  const date = new Date(isoString);
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const seconds = date.getSeconds().toString().padStart(2, '0');
+
+  return { hours, minutes, seconds };
+}
