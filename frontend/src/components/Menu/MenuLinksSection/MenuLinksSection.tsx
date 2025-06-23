@@ -12,17 +12,16 @@ function MenuLinksSection({handleOpenMenuCatalog, openMenuCatalog, buttonRef}: M
   return (
     <>
      <div className={classNames('xl:mr-9 lg:mr-7 lg:py-0 py-2', styled.menuCatalog__btn)}>
-        <Button ref={buttonRef} className={classNames(
-          `bg-transparent text-primary-900 hover:bg-transparent flex items-center 
+        <Button variant="link" ref={buttonRef} className={classNames(
+          `bg-transparent hover:bg-transparent flex items-center 
           lg:px-5 min-w-[165px] min-h-[40px] border-1 border-transparent font-normal 
-           duration-500 rounded-[64px] py-2 !px-3 text-size-body-3 shadow-none
-          `, 
+           duration-500 rounded-[64px] py-2 !px-3 shadow-none menu-catalog-link`, 
           openMenuCatalog ? 'lg:shadow-custom1 shadow-none lg:border-primary-100 duration-500' : ''
         )} 
           onClick={handleOpenMenuCatalog}
         >
           <CatalogIcon className="text-primary-900" />
-          Категорія
+            Категорія
           <ArrowDown className="text-primary-700 -rotate-90" />
         </Button>
       </div>

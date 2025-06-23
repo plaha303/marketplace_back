@@ -19,7 +19,7 @@ function MenuCatalog() {
   const categoryCols = columnsCategory(catalogLinks, minSizeCol);
 
   return (
-    <div className="menu-catalog xl:absolute z-50">
+    <div className="menu-catalog xl:absolute z-[99]">
       <div className="container mx-auto lg:px-4">
         <div className="menu-catalog__inner lg:shadow-custom1 lg:p-6 lg:rounded-sm bg-snow">
           <div className="xl:flex gap-6 flex-wrap">

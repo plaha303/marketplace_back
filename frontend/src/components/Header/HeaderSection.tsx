@@ -43,7 +43,7 @@ function HeaderSection() {
 					animate={{ opacity: 1, x: 0 }}
 					exit={{ opacity: 0, x: -285 }}
 					transition={{ duration: 0.25 }}
-					className="fixed z-[9] top-0 w-[285px] h-full"
+					className="fixed z-[10] top-0 w-[285px] h-full"
 				>
 					<HeaderMobileMenu handleOpenMenuCatalog={handleOpenMenuCatalog} openMenuCatalog={openMenuCatalog} handleCloseMobileMenu={handleCloseMobileMenu} />
 				</motion.div>)}
