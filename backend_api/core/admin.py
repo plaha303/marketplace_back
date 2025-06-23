@@ -18,6 +18,14 @@ class UserAdmin(admin.ModelAdmin):
     list_display = ['id', 'username', 'email', 'surname', 'is_verified', 'is_active']
     search_fields = ['id', 'username', 'email']
     list_filter = ['is_verified', 'is_active', 'email']
+from django.contrib import admin
+from .models import EmailLog
+
+@admin.register(EmailLog)
+class EmailLogAdmin(admin.ModelAdmin):
+    list_display = ('order', 'recipient', 'subject', 'status', 'sent_at')
+    list_filter = ('status', 'sent_at')
+    search_fields = ('recipient', 'subject')
 
 admin.site.register(Category)
 admin.site.register(Product)

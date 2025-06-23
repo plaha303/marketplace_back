@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Оновлення статусу замовлення</title>
+    <style>
+        body { font-family: Arial, sans-serif; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #f8f8f8; padding: 10px; text-align: center; }
+        .button { display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Оновлення статусу замовлення #{{ order_id }}</h2>
+        </div>
+        <p>Вітаємо, {{ user.username }}!</p>
+        <p>Статус вашого замовлення #{{ order_id }} змінено на: <strong>{{ new_status }}</strong>.</p>
+        <p>Перегляньте деталі замовлення за посиланням:</p>
+        <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin-top:10px;">
+  <tr>
+    <td align="center" bgcolor="#007BFF" style="border-radius:6px;">
+      <a href="{{ frontend_url }}/orders/{{ order_id }}/" target="_blank"
+         style="
+           display: inline-block;
+           padding: 12px 24px;
+           font-size: 16px;
+           color: #ffffff !important;
+           text-decoration: none;
+           font-weight: bold;
+           border-radius: 6px;
+           ">
+        Переглянути замовлення
+      </a>
+    </td>
+  </tr>
+</table>
+        <p>Дякуємо, що обираєте наш маркетплейс!</p>
+    </div>
+</body>
+</html>
