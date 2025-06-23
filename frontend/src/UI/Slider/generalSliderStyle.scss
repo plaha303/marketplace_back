@@ -10,3 +10,50 @@
 .swiper-pagination-bullet-active {
   background: var(--color-primary-400);
 }
+
+.home-banner {
+  @media (max-width: 1280px) {
+    .swiper-pagination {
+      margin-top: 36px;
+    }
+  }
+}
+
+.auction-slider {
+  .product-card__auction {
+    width: 448px;
+    height: 522px;
+    @media (max-width: 1280px) {
+      width: auto;
+      height: auto;
+    }
+  }
+  
+  .product-card__auction-top,
+  .product-card__auction-footer {
+    opacity: 0;
+    @media (max-width: 1280px) {
+      opacity: 1;
+    }
+  }
+
+  .swiper-slide-fully-visible.swiper-slide-active {
+    .product-card__auction-top,
+    .product-card__auction-footer {
+      opacity: 1;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .swiper-slide  {
+      width: 320px !important;
+      height: 373px;
+    }
+    .slider-controls  {
+      padding: 0 16px;
+    }
+    .home-auction-slider {
+      padding: 0 16px;
+    }
+  }
+}

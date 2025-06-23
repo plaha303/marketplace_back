@@ -10,7 +10,7 @@ function HomeBanner() {
   return (
     <div className="home-banner pattern-bg lg:py-6 py-12">
       <div className="container px-4 mx-auto">
-        <BaseSlider pagination={true}>
+        <BaseSlider pagination={true} className="home-banner">
           <div className="home-banner__slide slide">
             <div className="slide__inner flex items-center justify-between lg:gap-6 gap-9 lg:flex-row flex-col">
               <div className="slide__left lg:order-1 order-2">
@@ -25,10 +25,10 @@ function HomeBanner() {
                     </div>
                   </div>
                   <div className="slide__content-btns flex md:gap-4 gap-2 lg:mt-14 mt-8">
-                    <Button asChild className="btn-primary md:text-size-body-2 text-size-body-3 font-bold leading-100 md:py-[18px] md:px-10 p-4">
+                    <Button asChild variant="default" className="md:text-size-body-2 text-size-body-3 font-bold leading-100 md:py-[18px] md:px-10 p-4">
                       <Link to={AppRoute.REGISTRATION}>Реєстрація</Link>
                     </Button>
-                    <Button asChild className="btn-secondary md:text-size-body-2 text-size-body-3 font-bold leading-100 md:py-[18px] md:px-10 p-4">
+                    <Button asChild variant="secondary" className="md:text-size-body-2 text-size-body-3 font-bold leading-100 md:py-[18px] md:px-10 p-4">
                       <Link to={AppRoute.ROOT}>Аукціон</Link>
                     </Button>
                   </div>
