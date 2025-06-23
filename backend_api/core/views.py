@@ -106,8 +106,15 @@ class OrderViewSet(viewsets.ModelViewSet):
         try:
             with transaction.atomic():
                 instance = Order.objects.select_for_update().get(id=serializer.instance.id)
+                old_status = instance.status
                 serializer.save()
+                new_status = serializer.validated_data.get('status', instance.status)
                 logger.info(f"Order {instance.id} updated by user {self.request.user.id}")
+
+                # Виклик Celery завдання для надсилання email, якщо статус змінився
+                if old_status != new_status:
+                    from .tasks import send_order_status_update_email
+                    send_order_status_update_email.delay(instance.id, new_status)
         except Order.DoesNotExist:
             logger.error(f"Order {serializer.instance.id} not found for user {self.request.user.id}")
             return Response(

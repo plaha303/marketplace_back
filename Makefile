@@ -80,18 +80,19 @@ test: check_venv ## Запускає тести Django
 	@echo "🧪 Запуск тестів Django..."
 	$(PYTHON_BIN) backend_api/manage.py test core
 
-work: check_venv ## Запускає Celery Worker, Beat і Flower локально
-	@echo "🚀 Запуск Celery Worker, Beat і Flower локально..."
+work: check_venv ## Запускає Celery Workers (default і emails), Beat і Flower локально
+	@echo "🚀 Запуск Celery Workers (default і emails), Beat і Flower локально..."
 	sh -c '\
-  $(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO & \
-  $(PYTHON_BIN) backend_api/manage.py run_beat --loglevel=INFO & \
-  $(PYTHON_BIN) backend_api/manage.py run_flower & \
-  echo "✅ Celery Worker, Beat і Flower запущені у фоновому режимі!" \
-'
+	$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q default --hostname=worker-default@%h & \
+	$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q emails --hostname=worker-emails@%h & \
+	$(PYTHON_BIN) backend_api/manage.py run_beat --loglevel=INFO & \
+	$(PYTHON_BIN) backend_api/manage.py run_flower & \
+	echo "✅ Celery Workers (default, emails), Beat і Flower запущені у фоновому режимі!" \
+	'
 
-
-nowork: ## Зупинка локальних Celery Worker, Beat і Flower
-	@echo "🛑 Зупинка Celery Worker, Beat і Flower..."
-	@ps aux | grep "python backend_api/manage.py run_worker" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "Worker не був запущений."
+nowork: ## Зупинка локальних Celery Workers, Beat і Flower
+	@echo "🛑 Зупинка Celery Workers, Beat і Flower..."
+	@ps aux | grep "run_worker.*--hostname=worker-default" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "Default worker не був запущений."
+	@ps aux | grep "run_worker.*--hostname=worker-emails" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "Emails worker не був запущений."
 	@ps aux | grep "python backend_api/manage.py run_beat" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "Beat не був запущений."
 	@ps aux | grep "python backend_api/manage.py run_flower" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "Flower не був запущений."
