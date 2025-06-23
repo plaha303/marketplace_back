@@ -40,6 +40,25 @@ class User(AbstractUser):
     def __str__(self):
         return f"{self.username} (ID: {self.id})"
 
+class EmailLog(models.Model):
+    STATUS_CHOICES = [
+        ('sent', 'Sent'),
+        ('failed', 'Failed'),
+    ]
+    order = models.ForeignKey('Order', on_delete=models.SET_NULL, null=True, related_name='email_logs')
+    recipient = models.EmailField()
+    subject = models.CharField(max_length=255)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='sent')
+    error = models.TextField(blank=True, null=True)
+    sent_at = models.DateTimeField(db_index=True)
+
+    def __str__(self):
+        return f"EmailLog for order #{self.order.id if self.order else 'unknown'} - {self.status}"
+
+    class Meta:
+        verbose_name = 'Email Log'
+        verbose_name_plural = 'Email Logs'
+
 class Category(models.Model):
     name = models.CharField(max_length=255, unique=True)
     parent = models.ForeignKey('self', null=True, on_delete=models.SET_NULL, db_index=True)
