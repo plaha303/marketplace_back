@@ -24,13 +24,13 @@
       "@/*": ["src/*"],
       "@components/*": ["src/components/*"],
       "@assets/*": ["src/assets/*"]
-    },
+    }
   },
   "include": [
     "src"
   ],
   "exclude": [
-    "node_modules", 
+    "node_modules",
     "dist"
   ]
 }
