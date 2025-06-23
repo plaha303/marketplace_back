@@ -202,6 +202,31 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+    'DEFAULT_THROTTLE_CLASSES': [
+            'rest_framework.throttling.AnonRateThrottle',  # Для неавторизованих
+            'rest_framework.throttling.UserRateThrottle',  # Для авторизованих
+            'rest_framework.throttling.ScopedRateThrottle',  # Для специфічних ендпоінтів
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',  # 100 запитів на день для неавторизованих
+        'user': '1000/day',  # 1000 запитів на день для авторизованих
+        # Аутентифікаційні ендпоінти
+        'login': '10/hour',  # 10 спроб входу на годину
+        'register': '5/hour',  # 5 реєстрацій на годину
+        'password_reset': '3/hour',  # 3 запити на скидання пароля на годину
+        'password_reset_confirm': '5/hour',  # 5 підтверджень скидання пароля на годину
+        'resend_code': '5/hour',  # 5 повторних кодів верифікації на годину
+        # Ендпоінти створення об’єктів
+        'reviews': '20/hour',  # 20 відгуків на годину
+        'auction_bids': '30/hour',  # 30 ставок на аукціоні на годину
+        'cart_add': '50/hour',  # 50 додавань до кошика на годину
+        'orders': '10/hour',  # 10 замовлень на годину
+        # Ендпоінти з високим навантаженням
+        'products': '200/hour',  # 200 запитів до продуктів на годину
+        'categories': '200/hour',  # 200 запитів до категорій на годину
+    }
 }
 
 EMAIL_HOST = env('EMAIL_HOST')
@@ -243,24 +268,41 @@ SESSION_COOKIE_SECURE = False  # У продакшні  True для HTTPS
 
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': False,
+    'filters': {
+        'sensitive_data': {
+            '()': 'core.log_filters.SensitiveDataFilter',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'filters': ['sensitive_data'],  # Залишаємо для логерів, які можуть містити чутливі дані
         },
         'file': {
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'celery.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 5,
+            'filters': ['sensitive_data'],
+        },
+        'console_no_sensitive': {
+            'class': 'logging.StreamHandler',
+            # Без фільтра sensitive_data
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['console'],
+            'handlers': ['console_no_sensitive'],  # Використовуємо handler без фільтра
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.utils.autoreload': {
+            'handlers': ['console_no_sensitive'],  # Явно вказуємо для autoreload
             'level': 'INFO',
             'propagate': False,
         },
         'core': {
-            'handlers': ['console'],
+            'handlers': ['console', 'file'],  # Фільтр потрібен для core
             'level': 'DEBUG',
             'propagate': False,
         },

@@ -41,6 +41,7 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer.save()
 
 class ProductViewSet(viewsets.ModelViewSet):
+    throttle_scope = 'products'
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [HasRolePermission]
@@ -89,6 +90,7 @@ class ProductViewSet(viewsets.ModelViewSet):
             return Response({"success": False, "errors": {"detail": "Продукт не знайдено"}}, status=status.HTTP_404_NOT_FOUND)
 
 class OrderViewSet(viewsets.ModelViewSet):
+    throttle_scope = 'orders'
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [HasRolePermission]
@@ -177,6 +179,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Response({"success": False, "errors": {"detail": str(e)}}, status=status.HTTP_400_BAD_REQUEST)
 
 class RegisterView(generics.CreateAPIView):
+    throttle_scope = 'register'
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
@@ -213,6 +216,7 @@ class VerifyEmailView(GenericAPIView):
             return Response({"success": False, "errors": {"detail": str(e)}}, status=status.HTTP_400_BAD_REQUEST)
 
 class PasswordResetRequestView(GenericAPIView):
+    throttle_scope = 'password_reset'
     serializer_class = PasswordResetRequestSerializer
 
     def post(self, request, *args, **kwargs):
@@ -224,6 +228,7 @@ class PasswordResetRequestView(GenericAPIView):
                         status=status.HTTP_200_OK)
 
 class ResendVerificationCodeView(APIView):
+    throttle_scope = 'resend_code'
     def post(self, request):
         serializer = ResendVerificationCodeSerializer(data=request.data)
         if not serializer.is_valid():
@@ -234,6 +239,7 @@ class ResendVerificationCodeView(APIView):
                         status=status.HTTP_200_OK)
 
 class PasswordResetConfirmView(GenericAPIView):
+    throttle_scope = 'password_reset_confirm'
     serializer_class = PasswordResetConfirmSerializer
 
     def post(self, request, uidb64, token, *args, **kwargs):
@@ -247,6 +253,7 @@ class PasswordResetConfirmView(GenericAPIView):
             return Response({"success": False, "errors": {"detail": [str(e)]}}, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(generics.GenericAPIView):
+    throttle_scope = 'login'
     serializer_class = LoginSerializer
 
     def post(self, request, *args, **kwargs):
@@ -294,6 +301,7 @@ class CustomTokenRefreshView(APIView):
             )
 
 class CartAddView(GenericAPIView):
+    throttle_scope = 'cart_add'
     serializer_class = CartSerializer
     permission_classes = [HasRolePermission]
     allowed_roles = ['user']
@@ -424,6 +432,7 @@ class CartListView(generics.GenericAPIView):
             return Response({"success": False, "errors": {"detail": [str(e)]}}, status=status.HTTP_400_BAD_REQUEST)
 
 class ReviewViewSet(viewsets.ModelViewSet):
+    throttle_scope = 'reviews'
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     permission_classes = [HasRolePermission]
@@ -442,7 +451,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
         try:
             with transaction.atomic():
-                serializer.save(user=self.request.user)  # Явно передаємо user
+                serializer.save(user=self.request.user)
                 logger.info(f"Review created for product {serializer.validated_data['product'].id} by user {request.user.id}")
             return Response({"success": True, "data": serializer.data}, status=status.HTTP_201_CREATED)
         except Exception as e:
@@ -453,6 +462,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
             )
 
 class AuctionBidViewSet(viewsets.ModelViewSet):
+    throttle_scope = 'auction_bids'
     queryset = AuctionBid.objects.all()
     serializer_class = AuctionBidSerializer
     permission_classes = [HasRolePermission]
@@ -477,7 +487,6 @@ class AuctionBidViewSet(viewsets.ModelViewSet):
 
         try:
             with transaction.atomic():
-                # Блокуємо продукт
                 product = Product.objects.select_for_update().get(id=product.id)
                 if product.sale_type != 'auction' or product.auction_end_time < now():
                     logger.error(f"Invalid auction for product {product.id} for user {request.user.id}")
