@@ -2,7 +2,7 @@ import HeaderSection from "@/components/Header/HeaderSection";
 
 function Header() {
 	return (
-		<header className="header">
+		<header className="header relative z-10">
 			<HeaderSection />
 		</header>
 	);

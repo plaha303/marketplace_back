@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { setQueryClientInstance } from "./utils/helpers/getQueryClient";
 import { Bounce, ToastContainer } from "react-toastify";
 import { routers } from "./routers/routers";
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 function App() {
 	const queryClient = new QueryClient();
@@ -17,6 +18,7 @@ function App() {
 	return (
 		<>
 			<QueryClientProvider client={queryClient}>
+				<ReactQueryDevtools initialIsOpen={false} />
 				<Provider store={store}>
 					<RouterProvider router={routers} />
 				</Provider>
