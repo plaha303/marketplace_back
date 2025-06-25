@@ -146,8 +146,9 @@ class Product(models.Model):
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
-    image_url = models.URLField()
-    image = CloudinaryField('image')
+    user_id = models.IntegerField(null=True, blank=True)  # Якщо це поле також є
+    image_url = models.URLField(null=True, blank=True)  # Вже має null=True
+    image = CloudinaryField('image', null=True, blank=True)  # Додаємо null=True, blank=True
 
     def __str__(self):
         return f"Image for {self.product.name}"
