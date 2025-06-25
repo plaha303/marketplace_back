@@ -22,7 +22,7 @@ from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.db import transaction
-from .tasks import upload_image_to_imgbb
+from core.tasks import upload_image_to_cloudinary
 import logging
 
 logger = logging.getLogger(__name__)
@@ -453,7 +453,7 @@ class CategoryImageUploadView(APIView):
             try:
                 category_id = serializer.validated_data['category_id']
                 image = serializer.validated_data['image']
-                upload_image_to_imgbb.delay(
+                upload_image_to_cloudinary.delay(
                     model_type='category',
                     instance_id=category_id,
                     user_id=request.user.id,
@@ -500,7 +500,7 @@ class ProductImageUploadView(APIView):
                 image = serializer.validated_data['image']
 
                 # Викликаємо Celery задачу
-                upload_image_to_imgbb.delay(
+                upload_image_to_cloudinary(
                     model_type='product',
                     instance_id=product_id,
                     user_id=request.user.id,
