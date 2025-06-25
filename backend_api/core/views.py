@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework_simplejwt.tokens import RefreshToken
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import ProductFilter, OrderFilter, UserFilter, CartFilter, ReviewFilter, AuctionBidFilter, FavoriteFilter, CategoryFilter, PaymentFilter, ShippingFilter
@@ -16,11 +17,12 @@ from .serializers import (ProductSerializer, OrderSerializer, UserSerializer,
                           PasswordResetConfirmSerializer, VerifyEmailSerializer, LoginSerializer,
                           CartSerializer, ResendVerificationCodeSerializer, OrderItem, CartRemoveSerializer,
                           ReviewSerializer, AuctionBidSerializer, FavoriteSerializer, CategorySerializer, PaymentSerializer,
-                          ShippingSerializer, UserProfileSerializer)
+                          ShippingSerializer, UserProfileSerializer, CategoryImageUploadSerializer, ProductImageUploadSerializer)
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.db import transaction
+from .tasks import upload_image_to_imgbb
 import logging
 
 logger = logging.getLogger(__name__)
@@ -437,6 +439,93 @@ class CartListView(generics.GenericAPIView):
             return Response({"success": True, "data": serializer.data}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"success": False, "errors": {"detail": [str(e)]}}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CategoryImageUploadView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [HasRolePermission]
+    allowed_roles = ['admin']
+
+    def post(self, request, *args, **kwargs):
+        logger.debug(f"CategoryImageUploadView POST request by user {request.user.id} with data: {request.data}")
+        serializer = CategoryImageUploadSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                category_id = serializer.validated_data['category_id']
+                image = serializer.validated_data['image']
+                upload_image_to_imgbb.delay(
+                    model_type='category',
+                    instance_id=category_id,
+                    user_id=request.user.id,
+                    image_data=image.read(),
+                    image_name=image.name
+                )
+                logger.info(f"Image upload task queued for category {category_id} by user {request.user.id}")
+                return Response(
+                    {
+                        "success": True,
+                        "data": {"message": "Завантаження зображення розпочато, URL буде збережено асинхронно"}
+                    },
+                    status=status.HTTP_202_ACCEPTED
+                )
+            except Exception as e:
+                logger.error(f"Error queuing image upload for user {request.user.id}: {str(e)}")
+                return Response(
+                    {"success": False, "errors": {"detail": str(e)}},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        logger.error(f"Invalid category image upload data for user {request.user.id}: {serializer.errors}")
+        return Response(
+            {"success": False, "errors": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+class ProductImageUploadView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [HasRolePermission]
+    allowed_roles = ['user', 'admin']  # Vendors та адміни
+
+    @extend_schema(
+        request={'multipart/form-data': ProductImageUploadSerializer},
+        responses={202: None},
+        description="Upload an image for a product to ImgBB asynchronously"
+    )
+    def post(self, request, *args, **kwargs):
+        logger.debug(f"ProductImageUploadView POST request by user {request.user.id} with data: {request.data}")
+        serializer = ProductImageUploadSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                product_id = serializer.validated_data['product_id']
+                image = serializer.validated_data['image']
+
+                # Викликаємо Celery задачу
+                upload_image_to_imgbb.delay(
+                    model_type='product',
+                    instance_id=product_id,
+                    user_id=request.user.id,
+                    image_data=image.read(),
+                    image_name=image.name
+                )
+                logger.info(f"Image upload task queued for product {product_id} by user {request.user.id}")
+                return Response(
+                    {
+                        "success": True,
+                        "data": {"message": "Завантаження зображення розпочато, URL буде збережено асинхронно"}
+                    },
+                    status=status.HTTP_202_ACCEPTED
+                )
+            except Exception as e:
+                logger.error(f"Error queuing image upload for user {request.user.id}: {str(e)}")
+                return Response(
+                    {"success": False, "errors": {"detail": str(e)}},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        logger.error(f"Invalid product image upload data for user {request.user.id}: {serializer.errors}")
+        return Response(
+            {"success": False, "errors": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 class ReviewViewSet(viewsets.ModelViewSet):
     throttle_scope = 'reviews'

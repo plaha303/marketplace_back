@@ -36,6 +36,48 @@ class ProductImageSerializer(serializers.ModelSerializer):
         model = ProductImage
         fields = ['id', 'image_url']
 
+class CategoryImageUploadSerializer(serializers.Serializer):
+    category_id = serializers.IntegerField()
+    image = serializers.ImageField()
+
+    def validate(self, data):
+        category_id = data.get('category_id')
+        try:
+            Category.objects.get(id=category_id)
+        except Category.DoesNotExist:
+            logger.error(f"Category with ID {category_id} not found")
+            raise serializers.ValidationError({"category_id": "Категорія не знайдена"})
+
+        image = data.get('image')
+        if image.size > 32 * 1024 * 1024:  # Ліміт ImgBB - 32MB
+            raise serializers.ValidationError({"image": "Розмір зображення не може перевищувати 32MB"})
+        if not image.name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):  # Виправлено 'endwith' на 'endswith'
+            raise serializers.ValidationError({"image": "Дозволені формати: JPG, JPEG, PNG, GIF"})
+
+        return data
+
+class ProductImageUploadSerializer(serializers.Serializer):
+    product_id = serializers.IntegerField()
+    image = serializers.ImageField()
+
+    def validate(self, data):
+        product_id = data.get('product_id')
+        try:
+            Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            logger.error(f"Product with ID {product_id} not found")
+            raise serializers.ValidationError({"product_id": "Продукт не знайдений"})
+
+        image = data.get('image')
+        if image.size > 32 * 1024 * 1024:
+            raise serializers.ValidationError({"image": "Розмір зображення не може перевищувати 32MB"})
+        if not image.name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):  # Переконайтеся, що тут 'endswith'
+            raise serializers.ValidationError({"image": "Дозволені формати: JPG, JPEG, PNG, GIF"})
+
+        return data
+
+
+
 class ProductSerializer(serializers.ModelSerializer):
     vendor = UserSerializer(read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
