@@ -34,7 +34,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
-        fields = ['id', 'image_url']
+        fields = ['id', 'image_url', 'image', 'user_id']
 
 class CategoryImageUploadSerializer(serializers.Serializer):
     category_id = serializers.IntegerField()
@@ -116,7 +116,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'customer', 'total_amount', 'status', 'created_at', 'items']
+        fields = ['id', 'customer', 'total_amount', 'status', 'created_at', 'updated_at', 'items']
 
     def create(self, validated_data):
         request = self.context.get('request')
