@@ -1,14 +1,21 @@
 from celery import shared_task
 from django.utils.timezone import now
 from datetime import timedelta
+import cloudinary.uploader
 from django.core.mail import send_mail
 from django.conf import settings
 from django.core.cache import cache
-from .models import User, Order, EmailLog
+from .models import User, Order, EmailLog, Category, ProductImage
 from django.db import transaction
 from django.template.loader import render_to_string
 import logging
-import re
+
+cloudinary.config(
+    cloud_name=settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
+    api_key=settings.CLOUDINARY_STORAGE['API_KEY'],
+    api_secret=settings.CLOUDINARY_STORAGE['API_SECRET'],
+    secure=True
+)
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +81,6 @@ def send_order_status_update_email(self, order_id=None, new_status=None):
             order = Order.objects.select_for_update().get(id=order_id)
             user = order.customer
 
-            # Перевірка справжності статусу
             if order.status != new_status:
                 logger.warning(f"Requested status '{new_status}' does not match actual status '{order.status}' for order {order_id}")
                 return
@@ -92,14 +98,13 @@ def send_order_status_update_email(self, order_id=None, new_status=None):
             })
             send_mail(
                 subject=subject,
-                message='',  # Текстова версія порожня, оскільки використовуємо HTML
+                message='',
                 html_message=message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[user.email],
                 fail_silently=False,
             )
 
-            # Збереження логів email
             EmailLog.objects.create(
                 order=order,
                 recipient=user.email,
@@ -113,7 +118,6 @@ def send_order_status_update_email(self, order_id=None, new_status=None):
         logger.error(f"Order {order_id} not found for sending status update email")
     except Exception as e:
         logger.error(f"Error sending order status update email for order {order_id}: {str(e)}")
-        # Збереження логів у разі помилки
         try:
             EmailLog.objects.create(
                 order_id=order_id,
@@ -125,4 +129,42 @@ def send_order_status_update_email(self, order_id=None, new_status=None):
             )
         except:
             logger.error(f"Failed to log email error for order {order_id}")
+        raise self.retry(exc=e)
+
+@shared_task(
+    bind=True,
+    name="core.tasks.upload_image_to_cloudinary",
+    max_retries=3,
+    default_retry_delay=60,
+    queue="images"
+)
+def upload_image_to_cloudinary(self, model_type, instance_id, user_id, image_data, image_name):
+    try:
+        upload_result = cloudinary.uploader.upload(
+            image_data,
+            public_id=image_name.rsplit('.', 1)[0],  # Видаляємо розширення файлу
+            resource_type="image"
+        )
+        image_url = upload_result["url"]
+        logger.info(f"Image uploaded to Cloudinary: {image_url}")
+
+        with transaction.atomic():
+            if model_type == "category":
+                category = Category.objects.get(id=instance_id)
+                category.category_image = image_url
+                category.save()
+                logger.info(f"Updated category {instance_id} with image URL: {image_url}")
+            elif model_type == "product":
+                product_image = ProductImage.objects.create(
+                    product_id=instance_id,
+                    image_url=image_url
+                )
+                logger.info(f"Created ProductImage for product {instance_id} with URL: {image_url}")
+            else:
+                raise ValueError(f"Invalid model_type: {model_type}")
+
+        return {"success": True, "image_url": image_url}
+
+    except Exception as e:
+        logger.error(f"Error in upload_image_to_cloudinary for {model_type} {instance_id} by user {user_id}: {str(e)}")
         raise self.retry(exc=e)
