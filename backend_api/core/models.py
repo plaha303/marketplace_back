@@ -1,6 +1,6 @@
 import random
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.timezone import now, timedelta
 from django.core.validators import RegexValidator
 from django.contrib.postgres.fields import ArrayField
@@ -10,6 +10,30 @@ name_validator = RegexValidator(
     message="Ім'я та прізвище можуть містити лише кирилицю, латиницю, дефіс (не на початку чи в кінці).",
     code='invalid_name'
 )
+
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, username, surname, password=None, **extra_fields):
+        if not email:
+            raise ValueError('Email is required')
+        email = self.normalize_email(email)
+        user = self.model(email=email, username=username, surname=surname, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, username, surname, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
+        extra_fields.setdefault('is_verified', True)
+        extra_fields.setdefault('roles', ['admin'])
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+
+        return self.create_user(email, username, surname, password, **extra_fields)
 
 class User(AbstractUser):
     ROLE_CHOICES = [
@@ -29,11 +53,14 @@ class User(AbstractUser):
 
     verification_token_created_at = models.DateTimeField(null=True, blank=True)
 
+    objects = CustomUserManager()
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'surname']
 
     def save(self, *args, **kwargs):
-        if not self.roles:
+        # Уникаємо скидання roles для суперкористувачів
+        if not self.is_superuser and not self.roles:
             self.roles = ['user']
         super().save(*args, **kwargs)
 
