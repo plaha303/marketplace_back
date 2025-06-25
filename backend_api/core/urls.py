@@ -5,7 +5,8 @@ from .views import (
     RegisterView, VerifyEmailView, ResendVerificationCodeView, LoginView, CustomTokenRefreshView,
     PasswordResetRequestView, PasswordResetConfirmView, UserViewSet, UserProfileView,
     CategoryViewSet, ProductViewSet, OrderViewSet, CartAddView, CartRemoveView, CartListView,
-    ReviewViewSet, AuctionBidViewSet, FavoriteViewSet, PaymentViewSet, ShippingViewSet
+    ReviewViewSet, AuctionBidViewSet, FavoriteViewSet, PaymentViewSet, ShippingViewSet,
+    CategoryImageUploadView, ProductImageUploadView
 )
 
 urlpatterns = [
@@ -25,9 +26,11 @@ urlpatterns = [
     path('users/<int:pk>/', views.UserViewSet.as_view(
         {'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='user-detail'),
     path('categories/', views.CategoryViewSet.as_view({'get': 'list', 'post': 'create'}), name='category-list'),
+    path('categories/image-upload/', views.CategoryImageUploadView.as_view(), name='category-image-upload'),
     path('categories/<int:pk>/', views.CategoryViewSet.as_view(
         {'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='category-detail'),
     path('products/', views.ProductViewSet.as_view({'get': 'list', 'post': 'create'}), name='product-list'),
+    path('products/image-upload/', views.ProductImageUploadView.as_view(), name='product-image-upload'),
     path('products/<int:pk>/', views.ProductViewSet.as_view(
         {'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='product-detail'),
     path('orders/', views.OrderViewSet.as_view({'get': 'list', 'post': 'create'}), name='order-list'),
@@ -35,7 +38,7 @@ urlpatterns = [
         {'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='order-detail'),
     path('cart/add/', views.CartAddView.as_view(), name='cart-add'),
     path('cart/remove/', views.CartRemoveView.as_view(), name='cart-remove'),
-    path('cart/', CartListView.as_view(), name='cart-list'),
+    path('cart/', views.CartListView.as_view(), name='cart-list'),
     path('reviews/', views.ReviewViewSet.as_view({'get': 'list', 'post': 'create'}), name='review-list'),
     path('reviews/<int:pk>/', views.ReviewViewSet.as_view(
         {'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='review-detail'),
@@ -49,12 +52,12 @@ urlpatterns = [
     path('payments/', views.PaymentViewSet.as_view({'get': 'list', 'post': 'create'}), name='payment-list'),
     path('payments/<int:pk>/', views.PaymentViewSet.as_view(
         {'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='payment-detail'),
-    path('shipping/', views.ShippingViewSet.as_view({'get': 'list', 'post': 'create'}), name = 'shipping-list'),
+    path('shipping/', views.ShippingViewSet.as_view({'get': 'list', 'post': 'create'}), name='shipping-list'),
     path('shipping/<int:pk>/', views.ShippingViewSet.as_view(
         {'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='shipping-detail'),
     path('<slug:category_href>/', views.CategoryViewSet.as_view({'get': 'retrieve_by_href'}),
          name='category-detail-by-href'),
     path('<slug:category_href>/<slug:product_href>/', views.ProductViewSet.as_view(
         {'get': 'retrieve_by_href', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}),
-         name='product-detail-by-href')
+         name='product-detail-by-href'),
 ]

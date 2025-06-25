@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.timezone import now, timedelta
 from django.core.validators import RegexValidator
 from django.contrib.postgres.fields import ArrayField
+from cloudinary.models import CloudinaryField
 
 name_validator = RegexValidator(
     regex=r'^(?!-)([A-Za-zА-Яа-яїЇіІєЄґҐ]+)(?<!-)$',
@@ -89,8 +90,9 @@ class EmailLog(models.Model):
 class Category(models.Model):
     name = models.CharField(max_length=255, unique=True)
     parent = models.ForeignKey('self', null=True, on_delete=models.SET_NULL, db_index=True)
-    category_image = models.URLField(blank=True, null=True)
+    category_image = CloudinaryField('image', blank=True, null=True)
     category_href = models.SlugField(max_length=255, unique=True, blank=True)
+
 
     def save(self, *args, **kwargs):
         if not self.category_href:
@@ -144,7 +146,9 @@ class Product(models.Model):
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
-    image_url = models.URLField()
+    user_id = models.IntegerField(null=True, blank=True)  # Якщо це поле також є
+    image_url = models.URLField(null=True, blank=True)  # Вже має null=True
+    image = CloudinaryField('image', null=True, blank=True)  # Додаємо null=True, blank=True
 
     def __str__(self):
         return f"Image for {self.product.name}"

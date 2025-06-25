@@ -27,11 +27,20 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 #from decouple import config
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': env('CLOUD_NAME'),
+    'API_KEY': env('API_KEY'),
+    'API_SECRET': env('API_SECRET'),
+}
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+#IMGBB_API_KEY = env('IMGBB_API_KEY')
+#IMGBB_EXPIRATION = 15552000
 
 # Application definition
 
