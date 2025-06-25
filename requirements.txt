@@ -4,6 +4,8 @@ async-timeout==5.0.1
 attrs==25.1.0
 billiard==4.2.1
 boolean.py==5.0
+boto3==1.38.43
+botocore==1.38.43
 CacheControl==0.14.3
 celery==5.4.0
 certifi==2025.1.31
@@ -13,6 +15,7 @@ click==8.1.8
 click-didyoumean==0.3.1
 click-plugins==1.1.1
 click-repl==0.3.0
+cloudinary==1.44.1
 coverage==7.8.1
 cron-descriptor==1.4.5
 cryptography==44.0.2
@@ -24,6 +27,7 @@ django-cors-headers==4.7.0
 django-environ==0.12.0
 django-filter==23.5
 django-redis==6.0.0
+django-storages==1.14.6
 django-timezone-field==7.1
 djangorestframework==3.15.2
 djangorestframework_simplejwt==5.4.0
@@ -34,6 +38,7 @@ flower==2.0.1
 humanize==4.12.3
 idna==3.10
 inflection==0.5.1
+jmespath==1.0.1
 joblib==1.5.0
 jsonschema==4.23.0
 jsonschema-specifications==2024.10.1
@@ -46,6 +51,7 @@ numpy==2.2.5
 oauthlib==3.2.2
 packageurl-python==0.17.1
 packaging==25.0
+pillow==11.2.1
 pip-api==0.0.34
 pip-requirements-parser==32.0.1
 pip_audit==2.9.0
@@ -72,6 +78,7 @@ requests==2.32.3
 requests-oauthlib==2.0.0
 rich==14.0.0
 rpds-py==0.23.1
+s3transfer==0.13.0
 scikit-learn==1.6.1
 scipy==1.15.3
 sendgrid==6.11.0
