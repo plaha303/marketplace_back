@@ -1,4 +1,9 @@
+import useCategoryQuery from "@/hooks/useCategoryQuery";
+
 function TopCategories() {
+  const {allCategories} = useCategoryQuery();
+
+  
   return (
     <div className="top-categories">
       <div className="container px-4 mx-auto">
