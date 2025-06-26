@@ -22,7 +22,8 @@ html, body {
 main {
   flex-grow: 1;
 }
-button {
+button,
+a {
   cursor: pointer;
 }
 * {

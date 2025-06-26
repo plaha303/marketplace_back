@@ -1,6 +1,7 @@
 import AuctionBlock from "@/components/AuctionBlock/AuctionBlock";
 import Features from "@/components/Features/Features";
 import HomeBanner from "@/components/HomeBanner/HomeBanner";
+import TopCategories from "@/components/TopCategories/TopCategories";
 
 function Home() {
 	return (
@@ -8,6 +9,7 @@ function Home() {
       <HomeBanner />
 			<Features />
 			<AuctionBlock />
+			<TopCategories />
 		</div>
 	);
 }
