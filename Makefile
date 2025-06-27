@@ -80,14 +80,15 @@ test: check_venv ## Запускає тести Django
 	@echo "🧪 Запуск тестів Django..."
 	$(PYTHON_BIN) backend_api/manage.py test core
 
-work: check_venv ## Запускає Celery Workers (default і emails), Beat і Flower локально
-	@echo "🚀 Запуск Celery Workers (default і emails), Beat і Flower локально..."
+work: check_venv ## Запускає Celery Workers (default, emails, images), Beat і Flower локально
+	@echo "🚀 Запуск Celery Workers (default, emails, images), Beat і Flower локально..."
 	sh -c '\
 	$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q default --hostname=worker-default@%h & \
 	$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q emails --hostname=worker-emails@%h & \
+	$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q images --hostname=worker-images@%h & \
 	$(PYTHON_BIN) backend_api/manage.py run_beat --loglevel=INFO & \
 	$(PYTHON_BIN) backend_api/manage.py run_flower & \
-	echo "✅ Celery Workers (default, emails), Beat і Flower запущені у фоновому режимі!" \
+	echo "✅ Celery Workers (default, emails, images), Beat і Flower запущені у фоновому режимі!" \
 	'
 
 nowork: ## Зупинка локальних Celery Workers, Beat і Flower
