@@ -1,7 +1,7 @@
 import { Button } from '@/UI/Button/Button';
-import FacebookIcon from '@/UI/Icons/FacebookIcon';
+import FacebookIcon from "@/assets/Icons/FacebookIcon.svg?react";
 import GoogleIcon from '@/UI/Icons/GoogleIcon';
-import PinterestIcon from '@/UI/Icons/PinterestIcon';
+import PinterestIcon from "@/assets/Icons/PinterestIcon.svg?react";
 
 function PlatformsButtons() {
   return (
