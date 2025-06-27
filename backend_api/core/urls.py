@@ -19,6 +19,12 @@ urlpatterns = [
     path('auth/password-reset-confirm/<str:uidb64>/<str:token>/', views.PasswordResetConfirmView.as_view(),
          name='password_reset_confirm'),
 
+    # Нові маршрути для заглушок
+    path('hits/', views.HitsView.as_view(), name='hits'),
+    path('popular-categories/', views.PopularCategoriesView.as_view(), name='popular-categories'),
+
+
+
     # Інші маршрути
     path('users/', views.UserViewSet.as_view({'get': 'list', 'post': 'create'}), name='user-list'),
     path('user/', views.UserProfileView.as_view(), name='user-profile'),

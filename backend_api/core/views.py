@@ -682,3 +682,34 @@ class UserProfileView(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         serializer = self.get_serializer(request.user)
         return Response({"success": True, "data": serializer.data})
+
+
+class HitsView(APIView):
+    @extend_schema(
+        responses={501: None},
+        description="Тимчасова заглушка для хітів продажів. Функціонал у розробці."
+    )
+    def get(self, request, *args, **kwargs):
+        logger.info("HitsView accessed, functionality not implemented yet")
+        return Response(
+            {
+                "success": False,
+                "message": "Функціонал хітів продажів у розробці. Зверніться до /products/ для перегляду всіх товарів."
+            },
+            status=status.HTTP_501_NOT_IMPLEMENTED
+        )
+
+class PopularCategoriesView(APIView):
+    @extend_schema(
+        responses={501: None},
+        description="Тимчасова заглушка для популярних категорій. Функціонал у розробці."
+    )
+    def get(self, request, *args, **kwargs):
+        logger.info("PopularCategoriesView accessed, functionality not implemented yet")
+        return Response(
+            {
+                "success": False,
+                "message": "Функціонал популярних категорій у розробці. Зверніться до /categories/ для перегляду всіх категорій."
+            },
+            status=status.HTTP_501_NOT_IMPLEMENTED
+        )

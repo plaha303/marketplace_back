@@ -96,3 +96,12 @@ nowork: ## Зупинка локальних Celery Workers, Beat і Flower
 	@ps aux | grep "run_worker.*--hostname=worker-emails" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "Emails worker не був запущений."
 	@ps aux | grep "python backend_api/manage.py run_beat" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "Beat не був запущений."
 	@ps aux | grep "python backend_api/manage.py run_flower" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "Flower не був запущений."
+
+
+seed: check_venv ## Заповнення тестової бази даних
+	@echo "🌱 Заповнення тестової бази даних..."
+	$(PYTHON_BIN) backend_api/manage.py seed_database --users 10 --categories 5 --products 20 --min_hits 10 --orders 5 --reviews 10 --favorites 10
+
+flush: check_venv ## Очищення бази даних
+	@echo "🗑 Очищення бази даних..."
+	$(PYTHON_BIN) backend_api/manage.py flush --noinput
