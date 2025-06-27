@@ -771,3 +771,39 @@ class UserProfileView(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         serializer = self.get_serializer(request.user)
         return Response({"success": True, "data": serializer.data})
+
+class HitsView(APIView):
+    @extend_schema(
+        responses={200: ProductSerializer(many=True)},
+        description="Тимчасово повертає продукти з високим запасом (stock > 50) як хіти продажів."
+    )
+    def get(self, request, *args, **kwargs):
+        logger.info("HitsView accessed, returning temporary data")
+        products = Product.objects.filter(stock__gt=50)
+        serializer = ProductSerializer(products, many=True)
+        return Response(
+            {
+                "success": True,
+                "data": serializer.data,
+                "message": "Тимчасові дані для хітів продажів (продукти з stock > 50)."
+            },
+            status=status.HTTP_200_OK
+        )
+
+class PopularCategoriesView(APIView):
+    @extend_schema(
+        responses={200: CategorySerializer(many=True)},
+        description="Тимчасово повертає всі категорії як популярні."
+    )
+    def get(self, request, *args, **kwargs):
+        logger.info("PopularCategoriesView accessed, returning temporary data")
+        categories = Category.objects.all()
+        serializer = CategorySerializer(categories, many=True)
+        return Response(
+            {
+                "success": True,
+                "data": serializer.data,
+                "message": "Тимчасові дані для популярних категорій (всі категорії)."
+            },
+            status=status.HTTP_200_OK
+        )
