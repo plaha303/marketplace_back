@@ -7,7 +7,7 @@ interface SliderWithReviewsProps {
 
 function SliderWithReviews({title, watchAll}: SliderWithReviewsProps) {
   return (
-    <div className="slider-review">
+    <div className="slider-review lg:py-[80px] py-12">
       <div className="container px-4 mx-auto">
         <div className="slider-review__header lg:mb-16 mb-9 flex items-center justify-between md:flex-row flex-col md:gap-0 gap-4">
           <h3 className="m:text-size-h3 text-size-h2 uppercase text-accent-800 font-bold leading-130">{title}</h3>
