@@ -7,7 +7,7 @@ interface SliderWithBlogProps {
 
 function SliderWithBlog({title, watchAll}: SliderWithBlogProps) {
   return (
-    <div className="slider-block">
+    <div className="slider-block lg:py-[80px] py-12">
       <div className="container px-4 mx-auto">
         
         <div className="slider-review__header lg:mb-16 mb-9 flex items-center justify-between md:flex-row flex-col md:gap-0 gap-4">
