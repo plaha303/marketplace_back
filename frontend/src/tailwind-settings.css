@@ -78,6 +78,12 @@
 }
 
 @layer components {
+  .truncate-multiline {
+    @apply overflow-hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
   .regional_btn {
     font-size: var(--text-size-body-3);
     line-height: var(--leading-130);
