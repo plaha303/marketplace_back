@@ -7,7 +7,18 @@ import svgr from "vite-plugin-svgr";
 export default defineConfig({
   plugins: [
     react(),
-    svgr()
+    svgr({
+      svgrOptions: {
+        replaceAttrValues: {
+          '#000': 'currentColor',
+          '#000000': 'currentColor',
+          '#A0864D': 'currentColor',
+          '#fff': 'currentColor',
+          '#ffffff': 'currentColor'
+        },
+      },
+    
+    })
   ],
   resolve: {
     alias: {
