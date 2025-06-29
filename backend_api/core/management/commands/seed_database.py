@@ -81,11 +81,14 @@ class Command(BaseCommand):
                 stock=stock,
                 product_href=slugify(name)
             )
-            # Додавання зображення до продукту
+            # Додавання робочого зображення
+            image_url = "https://picsum.photos/150"  # Стабільний placeholder
             ProductImage.objects.create(
                 product=product,
-                image_url=f"https://via.placeholder.com/150?text={slugify(name)}"
+                image_url=image_url
             )
+            self.stdout.write(self.style.SUCCESS(f"Створено зображення для продукту: {name} з URL {image_url}"))
+
             products.append(product)
             if is_hit:
                 hit_count += 1
