@@ -42,14 +42,36 @@ class UserViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save()
 
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.utils.timezone import now
+from django.db.models import Count
+from django.db import transaction
+from .models import Product, Category
+from .serializers import ProductSerializer, ProductImageUploadSerializer
+from .filters import ProductFilter
+from rest_framework.permissions import IsAuthenticated
+from .permissions import HasRolePermission
+from django_filters.rest_framework import DjangoFilterBackend
+import logging
+
+logger = logging.getLogger(__name__)
+
 class ProductViewSet(viewsets.ModelViewSet):
-    throttle_scope = 'products'
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [HasRolePermission]
     allowed_roles = ['user', 'admin']
-    filter_backends = [DjangoFilterBackend]
     filterset_class = ProductFilter
+    filter_backends = [DjangoFilterBackend]
+    throttle_scope = 'products'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.action == 'list':
+            return queryset.filter(stock__gt=0)
+        return queryset
 
     def perform_create(self, serializer):
         serializer.save(vendor=self.request.user)
@@ -57,8 +79,13 @@ class ProductViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         try:
             with transaction.atomic():
-                # Блокуємо продукт
                 instance = Product.objects.select_for_update().get(id=serializer.instance.id)
+                if instance.vendor != self.request.user and 'admin' not in self.request.user.roles:
+                    logger.warning(f"User {self.request.user.id} attempted to update product {instance.id} without permission")
+                    return Response(
+                        {"success": False, "errors": {"detail": "Ви не маєте дозволу на редагування цього продукту"}},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
                 if instance.stock < 0:
                     logger.error(f"Invalid stock update for product {instance.id} by user {self.request.user.id}")
                     return Response(
@@ -80,16 +107,54 @@ class ProductViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    def perform_destroy(self, instance):
-        instance.delete()
-
     def retrieve_by_href(self, request, category_href=None, product_href=None):
+        logger.debug(f"retrieve_by_href called with category_href={category_href}, product_href={product_href}")
         try:
             product = Product.objects.get(product_href=product_href, category__category_href=category_href)
             serializer = self.get_serializer(product)
             return Response({"success": True, "data": serializer.data}, status=status.HTTP_200_OK)
         except Product.DoesNotExist:
+            logger.error(f"Product not found for category_href={category_href}, product_href={product_href}")
             return Response({"success": False, "errors": {"detail": "Продукт не знайдено"}}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def upload_image(self, request, pk=None):
+        product = self.get_object()
+        if product.vendor != request.user and 'admin' not in request.user.roles:
+            logger.warning(f"User {request.user.id} attempted to upload image for product {product.id} without permission")
+            return Response(
+                {"success": False, "errors": {"detail": "Ви не маєте дозволу на завантаження зображень для цього продукту"}},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        serializer = ProductImageUploadSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                product_id = serializer.validated_data['product_id']
+                image = serializer.validated_data['image']
+                from core.tasks import upload_image_to_cloudinary
+                upload_image_to_cloudinary.delay(
+                    model_type='product',
+                    instance_id=product_id,
+                    user_id=request.user.id,
+                    image_data=image.read(),
+                    image_name=image.name
+                )
+                logger.info(f"Image upload task queued for product {product_id} by user {request.user.id}")
+                return Response(
+                    {"success": True, "data": {"message": "Завантаження зображення розпочато, URL буде збережено асинхронно"}},
+                    status=status.HTTP_202_ACCEPTED
+                )
+            except Exception as e:
+                logger.error(f"Error queuing image upload for user {request.user.id}: {str(e)}")
+                return Response(
+                    {"success": False, "errors": {"detail": str(e)}},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        logger.error(f"Invalid product image upload data for user {request.user.id}: {serializer.errors}")
+        return Response(
+            {"success": False, "errors": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 class OrderViewSet(viewsets.ModelViewSet):
     throttle_scope = 'orders'
@@ -640,15 +705,17 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     permission_classes = [HasRolePermission]
     allowed_roles = ['admin']
-    filter_backends = [DjangoFilterBackend]
     filterset_class = CategoryFilter
+    filter_backends = [DjangoFilterBackend]
 
     def retrieve_by_href(self, request, category_href=None):
+        logger.debug(f"retrieve_by_href called with category_href={category_href}")
         try:
             category = Category.objects.get(category_href=category_href)
             serializer = self.get_serializer(category)
             return Response({"success": True, "data": serializer.data}, status=status.HTTP_200_OK)
         except Category.DoesNotExist:
+            logger.error(f"Category not found for category_href={category_href}")
             return Response({"success": False, "errors": {"detail": "Категорію не знайдено"}}, status=status.HTTP_404_NOT_FOUND)
 
 class PaymentViewSet(viewsets.ModelViewSet):
