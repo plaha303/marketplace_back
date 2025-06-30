@@ -847,8 +847,8 @@ class HitsView(viewsets.ReadOnlyModelViewSet):
         description="Повертає топ-10 продуктів за кількістю відгуків, виключаючи товари типу аукціон."
     )
     def get_queryset(self):
-        logger.info("HitsView accessed, returning top 10 products by review count, excluding auctions")
-        return Product.objects.filter(stock__gt=0, sale_type='fixed').annotate(review_count=Count('reviews')).order_by('-review_count')[:10]
+        logger.info("HitsView accessed, returning top 10 products by rating_count, excluding auctions")
+        return Product.objects.filter(stock__gt=0, sale_type='fixed').order_by('-rating_count')[:10]
 
 class PopularCategoriesView(APIView):
     @extend_schema(

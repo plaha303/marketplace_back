@@ -36,7 +36,7 @@ class ProductFilter(filters.FilterSet):
             return queryset.filter(sale_type='auction', auction_end_time__lt=now())
 
     def filter_min_rating_count(self, queryset, name, value):
-        return queryset.annotate(rating_count=Count('reviews')).filter(rating_count__gte=value)
+        return queryset.filter(rating_count__gte=value)
 
     def filter_has_discount(self, queryset, name, value):
         if value:
