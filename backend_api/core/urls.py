@@ -21,7 +21,7 @@ urlpatterns = [
          name='password_reset_confirm'),
 
     # Нові маршрути для заглушок
-    path('hits/', views.HitsView.as_view(), name='hits'),
+    path('hits/', views.HitsView.as_view({'get': 'list'}), name='hits'),
     path('popular-categories/', views.PopularCategoriesView.as_view(), name='popular-categories'),
 
     # Інші маршрути
