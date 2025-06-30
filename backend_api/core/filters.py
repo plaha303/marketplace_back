@@ -76,13 +76,12 @@ class UserFilter(filters.FilterSet):
 
 
 class CartFilter(filters.FilterSet):
-    product_id = filters.NumberFilter(field_name='product__id', lookup_expr='exact')
+    productId = filters.NumberFilter(field_name='product__id', lookup_expr='exact')
     min_quantity = filters.NumberFilter(field_name='quantity', lookup_expr='gte')
     max_quantity = filters.NumberFilter(field_name='quantity', lookup_expr='lte')
-
     class Meta:
         model = Cart
-        fields = ['product_id', 'min_quantity', 'max_quantity']
+        fields = ['productId', 'min_quantity', 'max_quantity']
 
 
 class ReviewFilter(filters.FilterSet):
