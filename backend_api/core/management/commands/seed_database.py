@@ -113,13 +113,14 @@ class Command(BaseCommand):
 
         # Створення ставок для аукціонів
         for product in products:
-            if product.sale_type == 'auction':
-                for _ in range(random.randint(0, 5)):
-                    AuctionBid.objects.create(
-                        product=product,
-                        user=random.choice(users),
-                        amount=round(random.uniform(product.start_price or 10, (product.start_price or 10) * 2), 2)
-                    )
+            for _ in range(random.randint(1, 3)):
+                # Тимчасовий URL із Lorem Picsum (безкоштовні зображення)
+                image_url = f"https://picsum.photos/seed/{slugify(product.name)}/300/300"
+                ProductImage.objects.create(
+                    product=product,
+                    user_id=product.vendor.id,
+                    image_url=image_url
+                )
 
         # Створення замовлень
         for _ in range(num_orders):
