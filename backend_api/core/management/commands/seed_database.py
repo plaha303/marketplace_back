@@ -139,7 +139,7 @@ class Command(BaseCommand):
             Review.objects.create(
                 product=product,
                 user=user,
-                rating=random.randint(3, 5),
+                rating=random.randint(0, 5),
                 comment=faker.text(max_nb_chars=100)
             )
             used_review_pairs.add(pair)

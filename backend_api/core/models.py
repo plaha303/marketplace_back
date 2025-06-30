@@ -232,7 +232,10 @@ class Shipping(models.Model):
 class Review(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    rating = models.IntegerField(db_index=True)
+    rating = models.IntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+        db_index=True
+    )
     comment = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
