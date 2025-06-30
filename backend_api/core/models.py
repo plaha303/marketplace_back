@@ -109,6 +109,11 @@ class Category(models.Model):
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
 
+name_validator = RegexValidator(
+    regex=r'^[A-Za-zА-Яа-я0-9\s\-\']+$',
+    message="Назва продукту може містити літери, цифри, пробіли, дефіси та одинарні лапки.",
+    code='invalid_product_name'
+)
 class Product(models.Model):
     SALE_TYPE_CHOICES = [
         ('fixed', 'Fixed Price'),
@@ -116,7 +121,7 @@ class Product(models.Model):
     ]
     vendor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='products')
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
-    name = models.CharField(max_length=255, db_index=True)
+    name = models.CharField(max_length=255, db_index=True, validators=[name_validator])
     description = models.TextField(blank=True)
     sale_type = models.CharField(max_length=10, choices=SALE_TYPE_CHOICES, default='fixed', db_index=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, db_index=True)
@@ -130,9 +135,12 @@ class Product(models.Model):
     product_href = models.SlugField(max_length=255, unique=True, blank=True)
 
     def save(self, *args, **kwargs):
+        if not self.name.strip():
+            raise ValueError("Назва продукту не може бути порожньою.")
         if not self.product_href:
-            from django.utils.text import slugify
             self.product_href = slugify(self.name)
+            if not self.product_href:  # Якщо slugify повертає порожній результат
+                self.product_href = f"product-{self.id or Product.objects.count() + 1}"
             base_href = self.product_href
             counter = 1
             while Product.objects.filter(product_href=self.product_href).exclude(id=self.id).exists():
