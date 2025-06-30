@@ -98,7 +98,7 @@ class Command(BaseCommand):
                 ProductImage.objects.create(
                     product=product,
                     user_id=product.vendor.id,
-                    image_url=f"https://example.com/images/{slugify(product.name)}.jpg"
+                    image_url=f"https://picsum.photos/seed/{slugify(product.name)}/300/300.jpg"
                 )
 
         # Створення відгуків
