@@ -120,8 +120,9 @@ class Product(models.Model):
     description = models.TextField(blank=True)
     sale_type = models.CharField(max_length=10, choices=SALE_TYPE_CHOICES, default='fixed', db_index=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, db_index=True)
-    discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, db_index=True)  # Нове поле
+    discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, db_index=True)
     start_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    rating_count = models.PositiveIntegerField(default=0, db_index=True)
     auction_end_time = models.DateTimeField(null=True, blank=True, db_index=True)
     stock = models.PositiveIntegerField(default=0, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
@@ -149,10 +150,6 @@ class Product(models.Model):
 
     def is_available(self):
         return self.stock > 0
-
-    @property
-    def rating_count(self):
-        return self.reviews.count()
 
     def __str__(self):
         return self.name
@@ -251,6 +248,17 @@ class Review(models.Model):
     )
     comment = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.product.rating_count = self.product.reviews.count()
+        self.product.save(update_fields=['rating_count'])
+
+    def delete(self, *args, **kwargs):
+        product = self.product
+        super().delete(*args, **kwargs)
+        product.rating_count = product.reviews.count()
+        product.save(update_fields=['rating_count'])
 
     def __str__(self):
         return f"Review by {self.user.username} (ID: {self.user.id}) for {self.product.name}"
