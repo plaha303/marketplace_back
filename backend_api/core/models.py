@@ -5,6 +5,7 @@ from django.utils.timezone import now, timedelta
 from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
 from django.contrib.postgres.fields import ArrayField
 from cloudinary.models import CloudinaryField
+from django.utils.text import slugify  # Переносимо імпорт на початок файлу
 
 name_validator = RegexValidator(
     regex=r'^(?!-)([A-Za-zА-Яа-яїЇіІєЄґҐ]+)(?<!-)$',
