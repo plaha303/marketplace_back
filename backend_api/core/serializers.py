@@ -357,8 +357,8 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only_fields = ['user', 'created_at']  # Додаємо user до read_only_fields
 
     def validate_rating(self, value):
-        if value < 1 or value > 5:
-            raise serializers.ValidationError("Рейтинг має бути від 1 до 5.")
+        if value < 0 or value > 5:
+            raise serializers.ValidationError("Рейтинг має бути від 0 до 5.")
         return value
 
 class AuctionBidSerializer(serializers.ModelSerializer):
