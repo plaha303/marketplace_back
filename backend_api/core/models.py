@@ -120,6 +120,7 @@ class Product(models.Model):
     description = models.TextField(blank=True)
     sale_type = models.CharField(max_length=10, choices=SALE_TYPE_CHOICES, default='fixed', db_index=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, db_index=True)
+    discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, db_index=True)  # Нове поле
     start_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     auction_end_time = models.DateTimeField(null=True, blank=True, db_index=True)
     stock = models.PositiveIntegerField(default=0, db_index=True)
@@ -136,6 +137,14 @@ class Product(models.Model):
             while Product.objects.filter(product_href=self.product_href).exclude(id=self.id).exists():
                 self.product_href = f"{base_href}-{counter}"
                 counter += 1
+        # Валідація: discount_price має сенс тільки для sale_type='fixed' і повинен бути <= price
+        if self.sale_type == 'fixed' and self.discount_price is not None:
+            if self.price is None:
+                raise ValueError("Для типу продажу 'fixed' ціна обов’язкова, якщо вказана знижка.")
+            if self.discount_price > self.price:
+                raise ValueError("Знижена ціна не може бути більшою за звичайну ціну.")
+        if self.sale_type == 'auction' and self.discount_price is not None:
+            self.discount_price = None  # Скидаємо знижку для аукціонів
         super().save(*args, **kwargs)
 
     def is_available(self):

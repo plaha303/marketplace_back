@@ -82,12 +82,12 @@ class ProductSerializer(serializers.ModelSerializer):
     vendor = UserSerializer(read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
     isAvailable = serializers.SerializerMethodField()
-    rating_count = serializers.IntegerField(read_only=True)  # Додаємо поле
+    rating_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Product
         fields = ['id', 'vendor', 'category', 'name', 'description',
-                  'sale_type', 'price', 'start_price', 'auction_end_time',
+                  'sale_type', 'price', 'discount_price', 'start_price', 'auction_end_time',
                   'stock', 'created_at', 'images', 'product_href', 'isAvailable', 'rating_count']
 
     def get_isAvailable(self, obj):
@@ -96,8 +96,17 @@ class ProductSerializer(serializers.ModelSerializer):
     def validate(self, data):
         sale_type = data.get('sale_type', self.instance.sale_type if self.instance else 'fixed')
         price = data.get('price', self.instance.price if self.instance else None)
+        discount_price = data.get('discount_price', self.instance.discount_price if self.instance else None)
+
         if sale_type == 'fixed' and price is None:
             raise serializers.ValidationError({"price": "Для типу продажу 'fixed' ціна обов’язкова."})
+        if sale_type == 'fixed' and discount_price is not None:
+            if price is None:
+                raise serializers.ValidationError({"price": "Ціна обов’язкова, якщо вказана знижка."})
+            if discount_price > price:
+                raise serializers.ValidationError({"discount_price": "Знижена ціна не може бути більшою за звичайну ціну."})
+        if sale_type == 'auction' and discount_price is not None:
+            raise serializers.ValidationError({"discount_price": "Знижена ціна не підтримується для аукціонів."})
         return data
 
     def create(self, validated_data):
