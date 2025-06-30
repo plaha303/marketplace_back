@@ -2,7 +2,7 @@ import random
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.timezone import now, timedelta
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
 from django.contrib.postgres.fields import ArrayField
 from cloudinary.models import CloudinaryField
 
