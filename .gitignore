@@ -168,3 +168,9 @@ cython_debug/
 .env
 
 second.md
+.pid
+worker-images.pid
+beat.pid
+flower.pid
+worker-default.pid
+worker-emails.pid
