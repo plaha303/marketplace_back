@@ -80,24 +80,27 @@ test: check_venv ## Запускає тести Django
 	@echo "🧪 Запуск тестів Django..."
 	$(PYTHON_BIN) backend_api/manage.py test core
 
-work: check_venv ## Запускає Celery Workers (default, emails, images), Beat і Flower локально
-	@echo "🚀 Запуск Celery Workers (default, emails, images), Beat і Flower локально..."
-	sh -c '\
-	$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q default --hostname=worker-default@%h & \
-	$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q emails --hostname=worker-emails@%h & \
-	$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q images --hostname=worker-images@%h & \
-	$(PYTHON_BIN) backend_api/manage.py run_beat --loglevel=INFO & \
-	$(PYTHON_BIN) backend_api/manage.py run_flower & \
-	echo "✅ Celery Workers (default, emails, images), Beat і Flower запущені у фоновому режимі!" \
-	'
 
-nowork: ## Зупинка локальних Celery Workers, Beat і Flower
-	@echo "🛑 Зупинка Celery Workers, Beat і Flower..."
-	@ps aux | grep "run_worker.*--hostname=worker-default" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "Default worker не був запущений."
-	@ps aux | grep "run_worker.*--hostname=worker-emails" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "Emails worker не був запущений."
-	@ps aux | grep "run_worker.*--hostname=worker-images" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "image worker не був запущений."
-	@ps aux | grep "python backend_api/manage.py run_beat" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "Beat не був запущений."
-	@ps aux | grep "python backend_api/manage.py run_flower" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "Flower не був запущений."
+PYTHON_BIN ?= python3
+
+# Команда для запуску Celery Workers, Beat і Flower
+work: check_venv
+	@echo "🚀 Запуск Celery Workers (default, emails, images), Beat і Flower локально..."
+	@$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q default --hostname=worker-default@%h & echo $$! > worker-default.pid
+	@$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q emails --hostname=worker-emails@%h & echo $$! > worker-emails.pid
+	@$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q images --hostname=worker-images@%h & echo $$! > worker-images.pid
+	@$(PYTHON_BIN) backend_api/manage.py run_beat --loglevel=INFO & echo $$! > beat.pid
+	@$(PYTHON_BIN) backend_api/manage.py run_flower & echo $$! > flower.pid
+	@echo "✅ Celery Workers (default, emails, images), Beat і Flower запущені у фоновому режимі!"
+
+# Команда для зупинки Celery Workers, Beat і Flower
+nowork:
+	@echo "🛑 Зупинка Celery..."
+	@if [ -f worker-default.pid ]; then kill `cat worker-default.pid` && rm worker-default.pid && echo "✅ Default worker зупинено." || echo "Default worker не був запущений."; fi
+	@if [ -f worker-emails.pid ]; then kill `cat worker-emails.pid` && rm worker-emails.pid && echo "✅ Emails worker зупинено." || echo "Emails worker не був запущений."; fi
+	@if [ -f worker-images.pid ]; then kill `cat worker-images.pid` && rm worker-images.pid && echo "✅ Image worker зупинено." || echo "Image worker не був запущений."; fi
+	@if [ -f beat.pid ]; then kill `cat beat.pid` && rm beat.pid && echo "✅ Beat зупинено." || echo "Beat не був запущений."; fi
+	@if [ -f flower.pid ]; then kill `cat flower.pid` && rm flower.pid && echo "✅ Flower зупинено." || echo "Flower не був запущений."; fi
 
 seed: check_venv ## Заповнення тестової бази даних
 	@echo "🌱 Заповнення тестової бази даних..."
