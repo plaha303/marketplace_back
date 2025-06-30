@@ -120,7 +120,9 @@ class Product(models.Model):
     description = models.TextField(blank=True)
     sale_type = models.CharField(max_length=10, choices=SALE_TYPE_CHOICES, default='fixed', db_index=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, db_index=True)
+    discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, db_index=True)
     start_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    rating_count = models.PositiveIntegerField(default=0, db_index=True)
     auction_end_time = models.DateTimeField(null=True, blank=True, db_index=True)
     stock = models.PositiveIntegerField(default=0, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
@@ -136,6 +138,14 @@ class Product(models.Model):
             while Product.objects.filter(product_href=self.product_href).exclude(id=self.id).exists():
                 self.product_href = f"{base_href}-{counter}"
                 counter += 1
+        # Валідація: discount_price має сенс тільки для sale_type='fixed' і повинен бути <= price
+        if self.sale_type == 'fixed' and self.discount_price is not None:
+            if self.price is None:
+                raise ValueError("Для типу продажу 'fixed' ціна обов’язкова, якщо вказана знижка.")
+            if self.discount_price > self.price:
+                raise ValueError("Знижена ціна не може бути більшою за звичайну ціну.")
+        if self.sale_type == 'auction' and self.discount_price is not None:
+            self.discount_price = None  # Скидаємо знижку для аукціонів
         super().save(*args, **kwargs)
 
     def is_available(self):
@@ -232,9 +242,23 @@ class Shipping(models.Model):
 class Review(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    rating = models.IntegerField(db_index=True)
+    rating = models.IntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+        db_index=True
+    )
     comment = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.product.rating_count = self.product.reviews.count()
+        self.product.save(update_fields=['rating_count'])
+
+    def delete(self, *args, **kwargs):
+        product = self.product
+        super().delete(*args, **kwargs)
+        product.rating_count = product.reviews.count()
+        product.save(update_fields=['rating_count'])
 
     def __str__(self):
         return f"Review by {self.user.username} (ID: {self.user.id}) for {self.product.name}"
