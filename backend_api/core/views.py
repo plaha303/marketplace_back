@@ -839,23 +839,16 @@ class UserProfileView(generics.GenericAPIView):
         serializer = self.get_serializer(request.user)
         return Response({"success": True, "data": serializer.data})
 
-class HitsView(APIView):
+class HitsView(viewsets.ReadOnlyModelViewSet):
+    serializer_class = ProductSerializer
+
     @extend_schema(
         responses={200: ProductSerializer(many=True)},
-        description="Тимчасово повертає продукти з високим запасом (stock > 50) як хіти продажів."
+        description="Повертає топ-10 продуктів за кількістю відгуків, виключаючи товари типу аукціон."
     )
-    def get(self, request, *args, **kwargs):
-        logger.info("HitsView accessed, returning temporary data")
-        products = Product.objects.filter(stock__gt=50)
-        serializer = ProductSerializer(products, many=True)
-        return Response(
-            {
-                "success": True,
-                "data": serializer.data,
-                "message": "Тимчасові дані для хітів продажів (продукти з stock > 50)."
-            },
-            status=status.HTTP_200_OK
-        )
+    def get_queryset(self):
+        logger.info("HitsView accessed, returning top 10 products by review count, excluding auctions")
+        return Product.objects.filter(stock__gt=0, sale_type='fixed').annotate(review_count=Count('reviews')).order_by('-review_count')[:10]
 
 class PopularCategoriesView(APIView):
     @extend_schema(
