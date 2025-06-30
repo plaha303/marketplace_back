@@ -49,9 +49,9 @@ class CategoryImageUploadSerializer(serializers.Serializer):
             raise serializers.ValidationError({"category_id": "Категорія не знайдена"})
 
         image = data.get('image')
-        if image.size > 32 * 1024 * 1024:  # Ліміт ImgBB - 32MB
+        if image.size > 32 * 1024 * 1024:
             raise serializers.ValidationError({"image": "Розмір зображення не може перевищувати 32MB"})
-        if not image.name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):  # Виправлено 'endwith' на 'endswith'
+        if not image.name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
             raise serializers.ValidationError({"image": "Дозволені формати: JPG, JPEG, PNG, GIF"})
 
         return data
@@ -71,27 +71,35 @@ class ProductImageUploadSerializer(serializers.Serializer):
         image = data.get('image')
         if image.size > 32 * 1024 * 1024:
             raise serializers.ValidationError({"image": "Розмір зображення не може перевищувати 32MB"})
-        if not image.name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):  # Переконайтеся, що тут 'endswith'
+        if not image.name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
             raise serializers.ValidationError({"image": "Дозволені формати: JPG, JPEG, PNG, GIF"})
 
         return data
-
-
 
 class ProductSerializer(serializers.ModelSerializer):
     vendor = UserSerializer(read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
     isAvailable = serializers.SerializerMethodField()
     rating_count = serializers.IntegerField(read_only=True)
+    productId = serializers.IntegerField(source='id')
+    categoryId = serializers.IntegerField(source='category.id', allow_null=True)
 
     class Meta:
         model = Product
-        fields = ['id', 'vendor', 'category', 'name', 'description',
+        fields = ['productId', 'vendor', 'categoryId', 'name', 'description',
                   'sale_type', 'price', 'discount_price', 'start_price', 'auction_end_time',
                   'stock', 'created_at', 'images', 'product_href', 'isAvailable', 'rating_count']
 
     def get_isAvailable(self, obj):
         return obj.is_available()
+
+    def validate_categoryId(self, value):
+        if value is not None:
+            try:
+                Category.objects.get(id=value)
+            except Category.DoesNotExist:
+                raise serializers.ValidationError({"categoryId": "Категорія з таким ID не існує."})
+        return value
 
     def validate(self, data):
         sale_type = data.get('sale_type', self.instance.sale_type if self.instance else 'fixed')
@@ -116,9 +124,11 @@ class ProductSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 class OrderItemSerializer(serializers.ModelSerializer):
+    productId = serializers.IntegerField(source='product.id', allow_null=True)
+
     class Meta:
         model = OrderItem
-        fields = ['id', 'product', 'quantity', 'price']
+        fields = ['id', 'productId', 'quantity', 'price']
 
 class OrderSerializer(serializers.ModelSerializer):
     customer = UserSerializer(read_only=True)
@@ -198,7 +208,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         user = User.objects.create_user(
-            email=validated_data['email'],  # Передаємо email як перший аргумент
+            email=validated_data['email'],
             username=validated_data['username'],
             password=validated_data['password'],
             surname=validated_data.get('surname'),
@@ -337,11 +347,11 @@ class LoginSerializer(serializers.Serializer):
         return data
 
 class CartSerializer(serializers.ModelSerializer):
-    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+    productId = serializers.IntegerField(source='product.id')
 
     class Meta:
         model = Cart
-        fields = ['product', 'quantity']
+        fields = ['productId', 'quantity']
 
     def validate_quantity(self, value):
         if value <= 0:
@@ -349,22 +359,34 @@ class CartSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, data):
-        product = data['product']
-        quantity = data['quantity']
+        product_id = data.get('product').id
+        quantity = data.get('quantity')
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            raise serializers.ValidationError({"productId": "Продукт не знайдений."})
         if product.stock < quantity:
             raise serializers.ValidationError({"quantity": "Недостатньо товару в наявності."})
         return data
 
 class CartRemoveSerializer(serializers.Serializer):
-    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+    productId = serializers.IntegerField(source='product.id')
+
+    def validate_productId(self, value):
+        try:
+            Product.objects.get(id=value)
+        except Product.DoesNotExist:
+            raise serializers.ValidationError({"productId": "Продукт не знайдений."})
+        return value
 
 class ReviewSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)  # Додаємо read_only і UserSerializer
+    user = UserSerializer(read_only=True)
+    productId = serializers.IntegerField(source='product.id')
 
     class Meta:
         model = Review
-        fields = ['id', 'product', 'user', 'rating', 'comment', 'created_at']
-        read_only_fields = ['user', 'created_at']  # Додаємо user до read_only_fields
+        fields = ['id', 'productId', 'user', 'rating', 'comment', 'created_at']
+        read_only_fields = ['user', 'created_at']
 
     def validate_rating(self, value):
         if value < 0 or value > 5:
@@ -373,19 +395,20 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class AuctionBidSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    productId = serializers.IntegerField(source='product.id')
 
     class Meta:
         model = AuctionBid
-        fields = ['id', 'product', 'user', 'amount', 'created_at']
+        fields = ['id', 'productId', 'user', 'amount', 'created_at']
         read_only_fields = ['user', 'created_at']
-
 
 class FavoriteSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    productId = serializers.IntegerField(source='product.id')
 
     class Meta:
         model = Favorite
-        fields = ['id', 'user', 'product']
+        fields = ['id', 'user', 'productId']
         read_only_fields = ['user']
 
 class PaymentSerializer(serializers.ModelSerializer):

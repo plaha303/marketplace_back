@@ -4,11 +4,11 @@ from django.utils.timezone import now
 
 
 class ProductFilter(filters.FilterSet):
-    category = filters.NumberFilter(field_name='category__id', lookup_expr='exact')
+    categoryId = filters.NumberFilter(field_name='category__id', lookup_expr='exact')
     sale_type = filters.ChoiceFilter(choices=Product.SALE_TYPE_CHOICES)
     min_price = filters.NumberFilter(field_name='price', lookup_expr='gte')
     max_price = filters.NumberFilter(field_name='price', lookup_expr='lte')
-    vendor = filters.NumberFilter(field_name='vendor__id', lookup_expr='exact')
+    vendorId = filters.NumberFilter(field_name='vendor__id', lookup_expr='exact')
     in_stock = filters.BooleanFilter(method='filter_in_stock')
     isAvailable = filters.BooleanFilter(method='filter_in_stock')
     name = filters.CharFilter(field_name='name', lookup_expr='icontains')
@@ -16,11 +16,11 @@ class ProductFilter(filters.FilterSet):
     created_after = filters.DateTimeFilter(field_name='created_at', lookup_expr='gte')
     stock_min = filters.NumberFilter(field_name='stock', lookup_expr='gte')
     min_rating_count = filters.NumberFilter(method='filter_min_rating_count')
-    has_discount = filters.BooleanFilter(method='filter_has_discount')  # Новий фільтр
+    has_discount = filters.BooleanFilter(method='filter_has_discount')
 
     class Meta:
         model = Product
-        fields = ['category', 'sale_type', 'min_price', 'max_price', 'vendor', 'in_stock', 'name', 'is_active_auction',
+        fields = ['categoryId', 'sale_type', 'min_price', 'max_price', 'vendorId', 'in_stock', 'name', 'is_active_auction',
                   'created_after', 'stock_min', 'min_rating_count', 'has_discount']
 
     def filter_in_stock(self, queryset, name, value):
