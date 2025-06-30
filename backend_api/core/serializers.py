@@ -13,6 +13,8 @@ import certifi
 import re
 from django.utils.timezone import now
 from datetime import timedelta
+
+from django.db.models import Avg
 import logging
 logger = logging.getLogger(__name__)
 
