@@ -72,16 +72,17 @@ class Command(BaseCommand):
 
         # Створення продуктів
         products = []
-        for _ in range(num_products):
+        for i in range(num_products):
             sale_type = random.choice(['fixed', 'auction'])
             price = round(random.uniform(10, 1000), 2) if sale_type == 'fixed' else None
             discount_price = None
             if sale_type == 'fixed' and random.choice([True, False]):
                 discount_price = round(price * random.uniform(0.7, 0.95), 2)
+            product_name = f"{fake.word().capitalize()} {fake.word().capitalize()} {i + 1}"  # Генеруємо назву з двох слів і номера
             product = Product.objects.create(
                 vendor=random.choice(users),
                 category=random.choice(categories),
-                name=fake.word().capitalize(),
+                name=product_name,
                 description=fake.text(max_nb_chars=200),
                 sale_type=sale_type,
                 price=price,
@@ -103,7 +104,7 @@ class Command(BaseCommand):
 
         # Створення відгуків
         for product in products:
-            for _ in range(random.randint(0, max_reviews)):
+            for _ in range(random.randint(1, max_reviews)):  # Змінено 0 на 1, щоб кожен продукт мав відгуки
                 Review.objects.create(
                     product=product,
                     user=random.choice(users),
@@ -113,14 +114,13 @@ class Command(BaseCommand):
 
         # Створення ставок для аукціонів
         for product in products:
-            for _ in range(random.randint(1, 3)):
-                # Тимчасовий URL із Lorem Picsum (безкоштовні зображення)
-                image_url = f"https://picsum.photos/seed/{slugify(product.name)}/300/300"
-                ProductImage.objects.create(
-                    product=product,
-                    user_id=product.vendor.id,
-                    image_url=image_url
-                )
+            if product.sale_type == 'auction':
+                for _ in range(random.randint(1, 3)):
+                    AuctionBid.objects.create(
+                        product=product,
+                        user=random.choice(users),
+                        amount=round(random.uniform(product.start_price or 10, 500), 2)
+                    )
 
         # Створення замовлень
         for _ in range(num_orders):

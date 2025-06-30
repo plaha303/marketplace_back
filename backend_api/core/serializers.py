@@ -80,18 +80,25 @@ class ProductSerializer(serializers.ModelSerializer):
     vendor = UserSerializer(read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
     isAvailable = serializers.SerializerMethodField()
-    rating_count = serializers.IntegerField(read_only=True)
+    reviews_count = serializers.IntegerField(read_only=True, source='rating_count')
     productId = serializers.IntegerField(source='id')
     categoryId = serializers.IntegerField(source='category.id', allow_null=True)
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = ['productId', 'vendor', 'categoryId', 'name', 'description',
                   'sale_type', 'price', 'discount_price', 'start_price', 'auction_end_time',
-                  'stock', 'created_at', 'images', 'product_href', 'isAvailable', 'rating_count']
+                  'stock', 'created_at', 'images', 'product_href', 'isAvailable', 'reviews_count', 'rating']
 
     def get_isAvailable(self, obj):
         return obj.is_available()
+
+    def get_rating(self, obj):
+        # Обчислюємо середній рейтинг на основі всіх відгуків продукту
+        average = obj.reviews.aggregate(Avg('rating'))['rating__avg']
+        # Повертаємо середній рейтинг з округленням до 2 знаків після коми, або null, якщо відгуків немає
+        return round(average, 2) if average is not None else None
 
     def validate_categoryId(self, value):
         if value is not None:
