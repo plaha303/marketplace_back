@@ -82,12 +82,13 @@ class ProductSerializer(serializers.ModelSerializer):
     vendor = UserSerializer(read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
     isAvailable = serializers.SerializerMethodField()
+    rating_count = serializers.IntegerField(read_only=True)  # Додаємо поле
 
     class Meta:
         model = Product
         fields = ['id', 'vendor', 'category', 'name', 'description',
                   'sale_type', 'price', 'start_price', 'auction_end_time',
-                  'stock', 'created_at', 'images', 'product_href', 'isAvailable']
+                  'stock', 'created_at', 'images', 'product_href', 'isAvailable', 'rating_count']
 
     def get_isAvailable(self, obj):
         return obj.is_available()

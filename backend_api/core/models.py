@@ -141,6 +141,10 @@ class Product(models.Model):
     def is_available(self):
         return self.stock > 0
 
+    @property
+    def rating_count(self):
+        return self.reviews.count()
+
     def __str__(self):
         return self.name
 
