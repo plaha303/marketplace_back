@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Swiper as SwiperType } from 'swiper';
 import { BaseSliderProps } from './type/interface';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -10,20 +10,30 @@ import 'swiper/css/pagination';
 
 import './generalSliderStyle.scss'
 import SliderCustomArrows from './SliderArrow/SliderCustomArrows';
+import classNames from 'classnames';
 
 
-function BaseSlider({children, className, pagination, navigation, modules = [], spaceBetween, breakpoints, ...props}: BaseSliderProps) {
+function BaseSlider({children, className, pagination = false, navigation, modules = [], spaceBetween, breakpoints, slidesPerView, ...props}: BaseSliderProps) {
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
   
   const swiperRef = useRef<SwiperType | null>(null);
+
+  useEffect(() => {
+    if (swiperRef.current) {
+      swiperRef.current.update();
+      setIsBeginning(swiperRef.current.isBeginning);
+      setIsEnd(swiperRef.current.isEnd);
+    }
+  }, [children]);
   return (
-    <div className='relative'>
+    <div className='relative overflow-hidden px-1'>
       <Swiper
         modules={[Navigation, Pagination, ...modules]}
         pagination={pagination ? { clickable: true } : false}
         breakpoints={breakpoints}
-        className={className}
+        className={classNames('!overflow-visible', className)}
+        slidesPerView={slidesPerView}
         spaceBetween={spaceBetween}
         onSwiper={(swiper) => {
           swiperRef.current = swiper;

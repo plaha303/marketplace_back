@@ -1,7 +1,10 @@
 import { Link } from "react-router";
 import { SliderWithProductsProps } from "./type/interface";
+import ProductCard from "../ProductCard/ProductCard";
+import BaseSlider from "@/UI/Slider/BaseSlider";
 
-function SliderWithProducts({title, watchAll}: SliderWithProductsProps) {
+function SliderWithProducts({title, watchAll, data}: SliderWithProductsProps) {
+  console.log('data', data)
   return (
     <div className="slider-products lg:py-[80px] py-12">
       <div className="container px-4 mx-auto">
@@ -10,7 +13,16 @@ function SliderWithProducts({title, watchAll}: SliderWithProductsProps) {
           <Link to={watchAll} className="font-secondary underline text-size-body-3 leading-100 text-primary-600">дивитися всі</Link>
         </div>
         <div className="slider-products__body">
-
+          <BaseSlider
+            spaceBetween={24}
+            navigation={true}
+            slidesPerView={4}
+          >
+            {data?.map(item => (
+              <ProductCard item={item} key={item.id} />
+            ))}
+          </BaseSlider>
+          
         </div>
       </div>
     </div>
