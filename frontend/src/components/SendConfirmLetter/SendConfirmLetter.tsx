@@ -5,7 +5,7 @@ import SuccessfullyChangePassIcon from "@/assets/Icons/SuccessfullyChangePassIco
 import { Link, useLocation, useNavigate } from "react-router";
 import { useEffect } from "react";
 
-function SuccessfullyEmailConfirm() {
+function SendConfirmLetter() {
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -50,4 +50,4 @@ function SuccessfullyEmailConfirm() {
   );
 }
 
-export default SuccessfullyEmailConfirm;
+export default SendConfirmLetter;

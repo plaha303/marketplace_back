@@ -20,9 +20,20 @@ export interface SignUpResponseDTO {
 
 export interface CustomError {
   original?: Record<string, string>,
-  message: string
+  message: string,
+  fieldErrors?: Record<string, string>
 }
 
 export interface EmailConfirmDTO {
   verification_code: string
+}
+
+export interface VerifyEmailRequestDTO {
+  uid: string; 
+  token: string
+}
+
+export interface VerifyEmailResponseDTO {
+  success: boolean,
+  message: string
 }

@@ -338,4 +338,4 @@ CACHES = {
     }
 }
 
-FRONTEND_URL = 'http://localhost:5173'
+FRONTEND_URL = 'http://localhost:3000'

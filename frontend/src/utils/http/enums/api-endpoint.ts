@@ -1,7 +1,7 @@
 const ApiEndpoint = {
   LOGIN: '/auth/login/',
   SIGNUP: '/auth/register/',
-  EMAILCONFIRM: '/auth/verify-email/',
+  VERIFYEMAIL: '/auth/verify-email',
   REFRESHTOKEN: '/auth/refresh/',
 
   CATEGORY: '/categories',
