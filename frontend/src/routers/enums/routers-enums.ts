@@ -5,8 +5,8 @@ const AppRoute = {
   SUPPORT: '/support',
 
   REGISTRATION: '/registration',
-  CONFIRM_EMAIL: '/confirm_email',
-  SUCCESSFULLY_EMAIL_CONFIRM: '/confirm_email_done',
+  SENDCONFIRMLETTER: '/confirm_email',
+  VERIFYEMAIL: '/verify-email/:uid/:token',
   LOGIN: '/login',
   LOGOUT: '/logout',
   RESET_PASSWORD: '/reset_password',

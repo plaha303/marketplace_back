@@ -9,7 +9,9 @@ import UserProfile from "@/pages/UserProfile/UserProfile";
 import LogInPage from "@/pages/LogInPage/LogInPage";
 import SignUpPage from "@/pages/SignUpPage/SignUpPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage/ForgotPasswordPage";
-import EmailConfirm from "@/components/EmailConfirm/EmailConfirm";
+import SendConfirmLetter from "@/components/SendConfirmLetter/SendConfirmLetter";
+import VerifyEmail from "@/components/VerifyEmail/VerifyEmail";
+
 
 
 export const routers = createBrowserRouter([
@@ -35,13 +37,18 @@ export const routers = createBrowserRouter([
         element: <SignUpPage />
       },
       {
-        path: AppRoute.CONFIRM_EMAIL,
-        element: <EmailConfirm />
+        path: AppRoute.VERIFYEMAIL,
+        element: <VerifyEmail />
+      },
+      {
+        path: AppRoute.SENDCONFIRMLETTER,
+        element: <SendConfirmLetter />
       },
       {
         path: AppRoute.RESET_PASSWORD,
         element: <ForgotPasswordPage />
       },
+
       {
         element: <ProtectedRoute />,
         children: [

@@ -17,7 +17,6 @@ import { CustomError, SignUpRequestDTO } from "@/utils/packages/auth/type/interf
 import { Link, useNavigate } from "react-router";
 import AppRoute from "@/routers/enums/routers-enums";
 import AuthLayout from "@/layout/AuthLayout/AuthLayout";
-import { toast } from "react-toastify";
 
 
 function SignUp() {
@@ -31,7 +30,7 @@ function SignUp() {
 	const togglePasswordConfirm = () => setShowPasswordConfirm((prev) => !prev);
 
 
-	const {mutateSignUp, mutateSignUpPenging, isError, error} = useSignUpMutation();
+	const {mutateSignUp, mutateSignUpPenging} = useSignUpMutation();
   const {handleSubmit, register, formState: {errors}, watch, setError} = useForm<SignUpRequestDTO>({
 		resolver: yupResolver(signupSchema),
 	});
@@ -40,25 +39,22 @@ function SignUp() {
 		console.log('signUp', data)
 		mutateSignUp(data, {
 			onSuccess: () => {
-				// navigate(AppRoute.CONFIRM_EMAIL, {
-				// 	state: { email: data.email },
-				// });
-				toast.success('Перевірте Вашу пошту')
+				navigate(AppRoute.SENDCONFIRMLETTER, { state: { fromSignUp: true } });
 			},
+
 			onError: (error: Error) => {
-				console.log('error', error)
+				// console.log('error', error)
 				const customError = error as CustomError;
 				let hasFieldErrors = false;
 
-				if(customError.original) {
-					Object.entries(customError.original).forEach(([field, message]) => {
-						const errorMessage = Array.isArray(message) ? message[0] : message;
-						setError(field as keyof SignUpRequestDTO, {
+				if (customError.fieldErrors) {
+					Object.entries(customError.fieldErrors).forEach(([key, message]) => {
+						setError(key as keyof SignUpRequestDTO, {
 							type: 'server',
-							message: errorMessage,
+							message: message as string,
 						});
-						hasFieldErrors = true;
 					});
+					hasFieldErrors = true;
 				}
 
 				if(!hasFieldErrors && customError.message) {
@@ -87,7 +83,7 @@ function SignUp() {
 									type="text"
 									autoComplete="username"
 									placeholder="Ім’я"
-									hasError={!!errors.email}
+									hasError={!!errors.username}
 									className="rounded-5xl font-secondary"
 								/>
 								{errors?.username && (
@@ -227,7 +223,7 @@ function SignUp() {
 
 					<Button
 						disabled={!agreeTerms ? true : false}
-						type="button"
+						type="submit"
 						size="md"
 						className="w-full btn-primary h-[55px] font-secondary text-size-body-2 font-bold leading-100"
 					>
