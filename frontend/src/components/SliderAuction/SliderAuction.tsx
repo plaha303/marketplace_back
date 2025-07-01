@@ -7,7 +7,7 @@ import { useMediaQuery } from "react-responsive";
 
 function SliderAuction() {
   const isMore1280 = useMediaQuery({query: '(min-width: 1280px)'})
-  console.log('isMore1280', isMore1280)
+
   return (
     <div className="auction-slider overflow-hidden sm:mr-0 sm:ml-0 -ml-4 -mr-4">
       <BaseSlider 
