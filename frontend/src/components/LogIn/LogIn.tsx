@@ -8,7 +8,7 @@ import { useState } from "react";
 import BaseInput from "@/UI/Input/BaseInput";
 import PasswordToggle from "@/UI/Input/PasswordToggle";
 import usePasswordToggle from "@/UI/Input/hook/usePasswordToggle";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import AppRoute from "@/routers/enums/routers-enums";
 import { Button } from "@/UI/Button/Button";
 import { logInSchema } from "@/utils/validation/loginSchema";
@@ -19,6 +19,7 @@ import AuthLayout from "@/layout/AuthLayout/AuthLayout";
 
 function LogIn() {
 	const [globalError, setGlobalError] = useState('');
+	const navigate = useNavigate();
 
 	const {passwordShow, togglePassword} = usePasswordToggle();
 	const {mutateLogIn, mutateLoginPending} = useLogInMutation();
@@ -28,21 +29,24 @@ function LogIn() {
 
 
   function onSubmit(data: LogInRequestDTO) {
+		console.log('log in', data)
 		mutateLogIn(data, {
+			onSuccess: () => {
+				navigate(AppRoute.ROOT)
+			},
 			onError: (error: Error) => {
 				console.log('error', error)
 				const customError = error as CustomError;
 				let hasFieldErrors = false;
 
-				if(customError.original) {
-					Object.entries(customError.original).forEach(([field, message]) => {
-						const errorMessage = Array.isArray(message) ? message[0] : message;
-						setError(field as keyof LogInRequestDTO, {
+				if (customError.fieldErrors) {
+					Object.entries(customError.fieldErrors).forEach(([key, message]) => {
+						setError(key as keyof LogInRequestDTO, {
 							type: 'server',
-							message: errorMessage,
+							message: message as string,
 						});
-						hasFieldErrors = true;
 					});
+					hasFieldErrors = true;
 				}
 
 				if(!hasFieldErrors && customError.message) {
