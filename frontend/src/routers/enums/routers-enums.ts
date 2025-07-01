@@ -11,6 +11,8 @@ const AppRoute = {
   LOGOUT: '/logout',
   RESET_PASSWORD: '/reset_password',
 
+  HITS: '/hits',
+
 
   PROFILE: '/profile',
   FAVORITE: '/favorite',

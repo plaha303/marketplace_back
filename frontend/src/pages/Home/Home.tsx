@@ -7,15 +7,21 @@ import SliderWithReviews from "@/components/SliderWithReviews/SliderWithReviews"
 import SpecialOffers from "@/components/SpecialOffers/SpecialOffers";
 import Subscription from "@/components/Subscription/Subscription";
 import TopCategories from "@/components/TopCategories/TopCategories";
+import useHitsProducts from "@/hooks/useHitsProducts";
+import AppRoute from "@/routers/enums/routers-enums";
 
 function Home() {
+
+	const {hitsProducts} = useHitsProducts();
+	console.log('hitsProducts', hitsProducts)
+
 	return (
 		<div className="home-page">
       <HomeBanner />
 			<Features />
 			<AuctionBlock />
 			<TopCategories />
-			<SliderWithProducts title="Хіти продаж" watchAll='/' />
+			<SliderWithProducts title="Хіти продаж" watchAll={AppRoute.HITS} data={hitsProducts?.results ?? []} />
 			<SpecialOffers />
 			<SliderWithProducts title="Товари зі знижками" watchAll='/' />
 			<Subscription />

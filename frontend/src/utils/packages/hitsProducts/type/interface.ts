@@ -3,7 +3,7 @@ export interface ProductImages {
   image_url: string;
 }
 
-export interface ProductCardProps { 
+export interface ProductDTO { 
   id: number;
   vendor: {
     id: number;
@@ -19,10 +19,16 @@ export interface ProductCardProps {
   stock: number;
   created_at: string;
   images: ProductImages[],
-  product_href: string
-}
-
-export interface ProductCardAuctionProps extends ProductCardProps {
+  product_href: string,
   start_price: number;
   auction_end_time: string;
+  discount_price: string;
+  reviews_count: number;
+  rating: number;
+}
+
+export interface getHitsResponseDTO { 
+  message: string;
+  success: boolean;
+  results: ProductDTO[];
 }

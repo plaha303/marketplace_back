@@ -4,7 +4,8 @@ const ApiEndpoint = {
   EMAILCONFIRM: '/auth/verify-email/',
   REFRESHTOKEN: '/auth/refresh/',
 
-  CATEGORY: '/categories'
+  CATEGORY: '/categories',
+  GETHiTS: '/hits'
 } as const
 
 type ApiEndpoint = typeof ApiEndpoint[keyof typeof ApiEndpoint]
