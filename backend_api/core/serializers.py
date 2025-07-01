@@ -458,7 +458,7 @@ class ResendVerificationCodeSerializer(serializers.Serializer):
         token = default_token_generator.make_token(user)
         user.verification_token_created_at = now()
         user.save()
-        verification_url = f"{settings.FRONTEND_URL}/verify-email/{uid}/{token}/"
+        verification_url = f"{settings.FRONTEND_URL}/verify-email/{uid}/{token}"
 
         send_mail(
             'Новий код підтвердження',

@@ -1,6 +1,6 @@
 import { IAuthApi } from "./type/auth-api.interface";
 import { IAuthService } from "./type/auth-service.interface";
-import { LogInRequestDTO, LogInResponseDTO, SignUpRequestDTO, SignUpResponseDTO } from "./type/interfaces";
+import { LogInRequestDTO, LogInResponseDTO, SignUpRequestDTO, SignUpResponseDTO, VerifyEmailRequestDTO, VerifyEmailResponseDTO } from "./type/interfaces";
 
 
 class AuthService implements IAuthService {
@@ -11,6 +11,7 @@ class AuthService implements IAuthService {
   } 
 
   async logInAuth(data: LogInRequestDTO): Promise<LogInResponseDTO> {
+    console.log('log in service' , data)
     return this.authApi.logInAuth(data)
   }
   
@@ -18,6 +19,10 @@ class AuthService implements IAuthService {
     console.log('[AuthService] signUpAuth called');
     console.log('signUpAuth', data)
     return this.authApi.signUpAuth(data)
+  }
+
+  async verifyEmailAuth(data: VerifyEmailRequestDTO): Promise<VerifyEmailResponseDTO> {
+    return this.authApi.verifyEmailAuth(data)
   }
 }
 
