@@ -5,6 +5,8 @@ export interface LogInRequestDTO {
 
 export interface LogInResponseDTO { 
   email: string;
+  access: string;
+  success: boolean
 }
 
 export interface SignUpRequestDTO {
@@ -36,4 +38,14 @@ export interface VerifyEmailRequestDTO {
 export interface VerifyEmailResponseDTO {
   success: boolean,
   message: string
+}
+
+export interface GetUserResponseDTO {
+  data: {
+    username: string;
+    surname: string;
+    email: string;
+    roles: string[];
+  },
+  success: boolean
 }

@@ -48,15 +48,14 @@ export const routers = createBrowserRouter([
         path: AppRoute.RESET_PASSWORD,
         element: <ForgotPasswordPage />
       },
-
+    ],
+  },
+  {
+    element: <ProtectedRoute />,
+    children: [
       {
-        element: <ProtectedRoute />,
-        children: [
-          {
-            path: AppRoute.PROFILE,
-            element: <UserProfile/>
-          }
-        ]
+        path: AppRoute.PROFILE,
+        element: <UserProfile/>
       }
     ]
   }

@@ -15,14 +15,14 @@ export const tokenSlice = createSlice({
   initialState,
   reducers: {
     setToken: (state, action) => {
-      state.accessToken = action.payload
+      state.accessToken = action.payload;
     },
     clearToken: (state) => {
       state.accessToken = null;
       state.isAuthInitialized = false;
     },
-    setAuthInitialized: (state) => {
-      state.isAuthInitialized = true;
+    setAuthInitialized: (state, action) => {
+      state.isAuthInitialized = action.payload;
     }
   }
 })

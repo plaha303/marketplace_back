@@ -2,11 +2,10 @@ import { request } from "@/utils/http/http-request";
 import { ApiEndpoint } from "@/utils/http/enums/api-endpoint";
 import { HttpMethod } from "@/utils/http/enums/http-method";
 import { IAuthApi } from "./type/auth-api.interface";
-import { LogInRequestDTO, LogInResponseDTO, SignUpRequestDTO, SignUpResponseDTO, VerifyEmailRequestDTO, VerifyEmailResponseDTO } from "./type/interfaces";
+import { GetUserResponseDTO, LogInRequestDTO, LogInResponseDTO, SignUpRequestDTO, SignUpResponseDTO, VerifyEmailRequestDTO, VerifyEmailResponseDTO } from "./type/interfaces";
 
 class AuthApi implements IAuthApi {
   async logInAuth(data: LogInRequestDTO): Promise<LogInResponseDTO> {
-    console.log('AuthAPI', data)
     return request({
       url: ApiEndpoint.LOGIN,
       method: HttpMethod.POST,
@@ -15,7 +14,6 @@ class AuthApi implements IAuthApi {
   };
 
   async signUpAuth(data: SignUpRequestDTO): Promise<SignUpResponseDTO> {
-    console.log('api', data)
     return request({
       url: ApiEndpoint.SIGNUP,
       method: HttpMethod.POST,
@@ -29,6 +27,13 @@ class AuthApi implements IAuthApi {
       url: `${ApiEndpoint.VERIFYEMAIL}/${uid}/${token}` as ApiEndpoint,
       method: HttpMethod.POST,
       body: data
+    })
+  }
+
+  async getUser(): Promise<GetUserResponseDTO> {
+    return request({
+      url: ApiEndpoint.GETUSER,
+      method: HttpMethod.GET,
     })
   }
 }
