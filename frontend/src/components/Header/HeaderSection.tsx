@@ -19,6 +19,9 @@ function HeaderSection() {
 	function handleOpenUserMenu() {
 		setUserMenu(prev => !prev)
 	}
+	function handleCloseUserMenu() {
+		setUserMenu(false)
+	}
 	
 	function handleCloseMobileMenu() {
     setActiveHamburger(false)
@@ -68,7 +71,7 @@ function HeaderSection() {
 						transition={{ duration: 0.25 }}
 						className="fixed z-[10] top-0 w-[355px] right-0 h-full"
 					>
-						<UserMenu />
+						<UserMenu handleCloseUserMenu={handleCloseUserMenu} />
 					</motion.div>
 				)}
 			</AnimatePresence>

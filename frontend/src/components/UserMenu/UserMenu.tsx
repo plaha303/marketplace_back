@@ -4,7 +4,7 @@ import UserIcon from '@/assets/Icons/User.svg?react'
 import useGetUserQuery from "@/hooks/auth/useGetUserQuery";
 import { Link } from "react-router";
 
-function UserMenu() {
+function UserMenu({handleCloseUserMenu}: {handleCloseUserMenu: () => void}) {
   const {getUserProfile} = useGetUserQuery();
   
   return (
@@ -28,7 +28,7 @@ function UserMenu() {
             const LinkIcon = item.icon;
             return (
               <div className="user-menu__item mb-2" key={item.id}>
-                <Link to={item.path} className="flex items-center text-size-body-3 font-bold p-4 font-secondary">
+                <Link to={item.path} onClick={() => handleCloseUserMenu()} className="flex items-center text-size-body-3 font-bold p-4 font-secondary">
                   <span className="mr-2"><LinkIcon /></span>
                   {item.title}
                 </Link>
@@ -42,7 +42,7 @@ function UserMenu() {
             const LinkIcon = item.icon;
             return (
               <div className="user-menu__item mb-2" key={item.id}>
-                <Link to={item.path} className="flex items-center text-size-body-3 font-bold p-4 font-secondary">
+                <Link to={item.path} onClick={() => handleCloseUserMenu()} className="flex items-center text-size-body-3 font-bold p-4 font-secondary">
                   <span className="mr-2"><LinkIcon /></span>
                   {item.title}
                 </Link>
