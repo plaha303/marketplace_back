@@ -19,23 +19,23 @@ function Layout() {
 	const modalType = useAppSelector(state => state.authModal.modalType);
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen">
       <Header />
-        <main className="main">
-          <div className="main__inner">
-            <Outlet />
-          </div>
-        </main>
-        {isModalOpen &&
-				<Modal setIsOpenModal={isModalOpen} onClose={() => dispatch(closeAuthModal())} modalType={modalType}>
-					{modalType == 'LogIn' &&  <LogIn />}
-					{modalType == 'SignUp' && <SignUp />}
-					{modalType == 'EmailConfirm' && <EmailConfirm />}
-					{modalType == 'ForgotPassword' && <ForgotPassword />}
-				</Modal>
+      <main className="main flex-1">
+        <div className="main__inner">
+          <Outlet />
+        </div>
+      </main>
+      {isModalOpen &&
+        <Modal setIsOpenModal={isModalOpen} onClose={() => dispatch(closeAuthModal())} modalType={modalType}>
+          {modalType == 'LogIn' &&  <LogIn />}
+          {modalType == 'SignUp' && <SignUp />}
+          {modalType == 'EmailConfirm' && <EmailConfirm />}
+          {modalType == 'ForgotPassword' && <ForgotPassword />}
+        </Modal>
 			}
       <Footer />
-    </>
+    </div>
   );
 }
 

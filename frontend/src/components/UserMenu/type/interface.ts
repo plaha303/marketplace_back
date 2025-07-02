@@ -17,16 +17,16 @@ interface UserMenuLink {
 }
 
 export const userMenuLinks:UserMenuLink[] = [
-  {id: 1, icon: Heart, title: 'Стати майстром', path: AppRoute.ROOT},
+  {id: 1, icon: Heart, title: 'Стати майстром', path: AppRoute.MASTER},
   {id: 2, icon: User, title: 'Мій профіль', path: AppRoute.PROFILE},
   {id: 3, icon: Tote, title: 'Мої замовлення', path: AppRoute.ORDERS},
   {id: 4, icon: Package, title: 'Мої товари', path: AppRoute.GOODS},
   {id: 5, icon: Heart, title: 'Обране', path: AppRoute.FAVORITE},
-  {id: 6, icon: ChatDots, title: 'Повідомлення', path: AppRoute.MESSAGES},
+  {id: 6, icon: ChatDots, title: 'Повідомлення', path: AppRoute.NOTIFICATION},
   {id: 7, icon: Star, title: 'Відгуки', path: AppRoute.REVIEWS}
 ]
 
 export const userMenuLinksSettings:UserMenuLink[] = [
   {id: 1, icon: GearSix, title: 'Налаштування', path: AppRoute.SETTINGS},
-  {id: 2, icon: Info, title: 'Допомога', path: AppRoute.HELP},
+  {id: 2, icon: Info, title: 'Допомога', path: AppRoute.SUPPORT},
 ]
