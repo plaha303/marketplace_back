@@ -18,14 +18,14 @@ function ProtectedRoute() {
   }
  
   return (
-    <div>
-       <Header/>
-       <main className="main">
-          <Suspense fallback={<div>Loading...</div>}>
-            <Outlet />
-          </Suspense>
-       </main>
-       <Footer />
+    <div className="flex flex-col min-h-screen">
+      <Header/>
+      <main className="main flex-1">
+        <Suspense fallback={<div>Loading...</div>}>
+          <Outlet />
+        </Suspense>
+      </main>
+      <Footer />
     </div>
   );
 }
