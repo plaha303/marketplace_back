@@ -9,6 +9,8 @@ from .models import User, Order, EmailLog, Category, ProductImage
 from django.db import transaction
 from django.template.loader import render_to_string
 import logging
+import re
+
 
 cloudinary.config(
     cloud_name=settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
