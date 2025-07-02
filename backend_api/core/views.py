@@ -350,6 +350,7 @@ class LoginView(generics.GenericAPIView):
             secure=True,
             samesite='None', #Strict
             max_age=14 * 24 * 60 * 60,
+            path=path
         )
         return response
 
