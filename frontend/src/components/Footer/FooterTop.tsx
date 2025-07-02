@@ -10,8 +10,10 @@ import AppRoute from "@/routers/enums/routers-enums";
 import PayMethods from "../PayMethods/PayMethods";
 import { footerLinks1, footerLinks2, footerLinks3 } from "./type/interfaces";
 import SearchBlock from "@/components/SearchBlock/SearchBlock";
+import { useAppSelector } from "@/store/hooks/hooks";
 
 function FooterTop(){ 
+	const isAssesToken = useAppSelector(state => state.token.accessToken);
 	return (
 		<div className="w-full flex lg:flex-nowrap flex-wrap justify-between xl:gap-[67px] lg:gap-5">
 
@@ -62,8 +64,15 @@ function FooterTop(){
 			<div className="footer__right md:w-[375px] w-full">
 				<div className="flex items-center md:gap-6 gap-3 mb-8">
 					<RegionalSettings />
-					<Button asChild className="btn-secondary text-size-body-2 font-bold h-[56px] flex-1" size="lg">
-						<Link to={AppRoute.LOGIN}>Вхід</Link>
+					<Button asChild variant="secondary" className=" text-size-body-2 font-bold h-[56px] flex-1" size="lg">
+						{isAssesToken
+							? (
+								<Link to={AppRoute.PROFILE}>Профіль</Link>
+							) : (
+								<Link to={AppRoute.LOGIN}>Вхід</Link>
+							)
+						}
+						
 					</Button>
 				</div>
 				<div className="mb-8 flex-1">

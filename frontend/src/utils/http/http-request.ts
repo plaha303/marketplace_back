@@ -1,5 +1,4 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { clearToken, setToken } from "../../store/slices/tokenSlice";
+import { clearToken, setAuthInitialized, setToken } from "../../store/slices/tokenSlice";
 import store from "../../store/store";
 import { axiosInstance } from "./axiosInstance";
 import { ApiEndpoint } from "./enums/api-endpoint";
@@ -11,16 +10,21 @@ import { normalizeApiError } from "./normalizeApiError";
 
 export async function refreshAccessToken() {
   try {
-    const responce = await axiosInstance.post(ApiEndpoint.REFRESHTOKEN)
-    
-    const access_token = responce.data.data.access_token;
+    const response = await axiosInstance.post(ApiEndpoint.REFRESHTOKEN)
+    console.log('response 1', response)
+    const access_token = response.data.access;
+
+    console.log('access_token', access_token)
 
     store.dispatch(setToken(access_token));
 
+    return access_token;
   } catch (error) {
     console.error("Error refreshing access token:", error);
+    store.dispatch(clearToken());
+    store.dispatch(setAuthInitialized(false));
 
-    const queryClient = useQueryClient();
+    const queryClient = getQueryClient();
     queryClient.removeQueries({ queryKey: ['user']})
 
     return null;
@@ -42,6 +46,7 @@ export async function  request<T>(options:RequestOptions): Promise<T> {
     if(axios.isAxiosError(error) && error.response?.status === 401) {
       const {isAuthInitialized} = store.getState().token;
 
+      console.log('error isAuthInitialized', isAuthInitialized)
       if(!isAuthInitialized) {
         return Promise.reject(error)
       }
@@ -50,11 +55,12 @@ export async function  request<T>(options:RequestOptions): Promise<T> {
       
       if(newAccessToken) {
         const retryConfig = buildRequestConfig({ method, accessToken: newAccessToken, url, body, params, config })
-        const retryResponce = await axiosInstance(retryConfig);
+        const retryResponse = await axiosInstance(retryConfig);
 
-        return retryResponce.data
+        return retryResponse.data
       } else {
         store.dispatch(clearToken());
+         store.dispatch(setAuthInitialized(false));
 
         getQueryClient().removeQueries({ queryKey: ["user"]})
 
