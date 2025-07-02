@@ -347,7 +347,7 @@ class LoginView(generics.GenericAPIView):
             value=str(refresh),
             httponly=True,
             secure=False,
-            samesite='Strict',
+            samesite='Lax', #Strict
             max_age=14 * 24 * 60 * 60,
         )
         return response
