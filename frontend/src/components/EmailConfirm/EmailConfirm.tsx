@@ -41,7 +41,7 @@ function EmailConfirm() {
 
     emailConfirm(data, {
       onSuccess: () => {
-				navigate(AppRoute.SUCCESSFULLY_EMAIL_CONFIRM);
+				navigate('/');
 			},
       onError: (error: Error) => {
         console.log('error', error)
