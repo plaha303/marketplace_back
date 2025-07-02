@@ -27,12 +27,12 @@ function BaseSlider({children, className, pagination = false, navigation, module
     }
   }, [children]);
   return (
-    <div className='relative overflow-hidden px-1'>
+    <div className={classNames('relative', className === 'sliderWithProducts' ? 'overflow-hidden px-1' : '')}>
       <Swiper
         modules={[Navigation, Pagination, ...modules]}
         pagination={pagination ? { clickable: true } : false}
         breakpoints={breakpoints}
-        className={classNames('!overflow-visible', className)}
+        className={classNames(className === 'sliderWithProducts' ? '!overflow-visible' : '' )}
         slidesPerView={slidesPerView}
         spaceBetween={spaceBetween}
         onSwiper={(swiper) => {

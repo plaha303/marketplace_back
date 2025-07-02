@@ -9,7 +9,7 @@ import ArrowDown from "@/UI/Icons/ArrowDown";
 import { useEffect, useRef } from "react";
 import HeaderTopPC from "../HeaderTop/HeaderTopPC";
 
-function HeaderMobileMenu({handleOpenMenuCatalog, openMenuCatalog, handleCloseMobileMenu}: HeaderMobileMenuProps) {
+function HeaderMobileMenu({handleOpenMenuCatalog, openMenuCatalog, handleCloseMobileMenu, handleOpenUserMenu}: HeaderMobileMenuProps) {
   
   const menuTop = useRef<HTMLDivElement>(null);
   const menuBottom = useRef<HTMLDivElement>(null);
@@ -35,7 +35,7 @@ function HeaderMobileMenu({handleOpenMenuCatalog, openMenuCatalog, handleCloseMo
           </span>
         </div>
         <div className="mobile-menu__middle bg-primary-800 py-2">
-          <HeaderActions />
+          <HeaderActions handleOpenUserMenu={handleOpenUserMenu} />
         </div>
         <div className="mobile-menu__bottom">
           <MenuLinksSection handleOpenMenuCatalog={handleOpenMenuCatalog} openMenuCatalog={openMenuCatalog} />
