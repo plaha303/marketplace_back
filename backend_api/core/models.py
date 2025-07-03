@@ -280,3 +280,17 @@ class Favorite(models.Model):
 
     def __str__(self):
         return f"{self.user.username} (ID: {self.user.id})'s favorite for {self.product.name}"
+
+
+class PlatformReview(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='platform_reviews')
+    avatar = models.URLField(null=True, blank=True)
+    name = models.CharField(max_length=50, validators=[name_validator])
+    surname = models.CharField(max_length=50, validators=[name_validator])
+    city = models.CharField(max_length=100)
+    rating = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(5)], db_index=True)
+    review_text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    def __str__(self):
+        return f"Platform review by {self.name} {self.surname} from {self.city}"

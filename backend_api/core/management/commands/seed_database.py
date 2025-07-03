@@ -4,8 +4,7 @@ from django.utils.text import slugify
 from django.contrib.auth import get_user_model
 from django.utils.timezone import now, timedelta
 from faker import Faker
-from core.models import Category, Product, ProductImage, Review, AuctionBid, Order, OrderItem, Payment, Shipping, Cart
-from django.core.management.base import BaseCommand
+from core.models import Category, Product, ProductImage, Review, AuctionBid, Order, OrderItem, Payment, Shipping, Cart, PlatformReview
 
 User = get_user_model()
 fake = Faker('uk_UA')
@@ -21,6 +20,7 @@ class Command(BaseCommand):
         parser.add_argument('--orders', type=int, default=10, help='Number of orders to create')
         parser.add_argument('--reviews', type=int, default=10, help='Maximum number of reviews per product')
         parser.add_argument('--favorites', type=int, default=10, help='Maximum number of favorites per user')
+        parser.add_argument('--platform_reviews', type=int, default=10, help='Number of platform reviews to create')
 
     def handle(self, *args, **options):
         num_users = options['users']
@@ -29,6 +29,7 @@ class Command(BaseCommand):
         num_orders = options['orders']
         max_reviews = options['reviews']
         max_favorites = options['favorites']
+        num_platform_reviews = options['platform_reviews']
 
         # Очищення даних
         User.objects.exclude(is_superuser=True).delete()
@@ -42,6 +43,7 @@ class Command(BaseCommand):
         Payment.objects.all().delete()
         Shipping.objects.all().delete()
         Cart.objects.all().delete()
+        PlatformReview.objects.all().delete()
 
         # Створення користувачів
         users = []
@@ -78,7 +80,7 @@ class Command(BaseCommand):
             discount_price = None
             if sale_type == 'fixed' and random.choice([True, False]):
                 discount_price = round(price * random.uniform(0.7, 0.95), 2)
-            product_name = f"{fake.word().capitalize()} {fake.word().capitalize()} {i + 1}"  # Генеруємо назву з двох слів і номера
+            product_name = f"{fake.word().capitalize()} {fake.word().capitalize()} {i + 1}"
             product = Product.objects.create(
                 vendor=random.choice(users),
                 category=random.choice(categories),
@@ -102,15 +104,41 @@ class Command(BaseCommand):
                     image_url=f"https://picsum.photos/seed/{slugify(product.name)}/300/300.jpg"
                 )
 
-        # Створення відгуків
+        # Створення відгуків про продукти
         for product in products:
-            for _ in range(random.randint(1, max_reviews)):  # Змінено 0 на 1, щоб кожен продукт мав відгуки
+            for _ in range(random.randint(1, max_reviews)):
                 Review.objects.create(
                     product=product,
                     user=random.choice(users),
                     rating=random.randint(0, 5),
                     comment=fake.text(max_nb_chars=100)
                 )
+
+        # Створення відгуків про платформу
+        review_texts = [
+            "Чудова платформа, зручний інтерфейс і швидка доставка!",
+            "Дуже задоволений покупками, великий вибір товарів.",
+            "Легко знайти потрібний продукт, підтримка на висоті!",
+            "Трохи складна навігація, але загалом все працює добре.",
+            "Швидко, зручно, але хотілося б більше знижок.",
+            "Відмінний сервіс, завжди приємно купувати тут!",
+            "Платформа супер, але інколи бувають затримки з доставкою.",
+            "Дуже подобається аукціонна система, цікаво брати участь!",
+            "Зручний кошик і швидке оформлення замовлення.",
+            "Чудовий досвід покупок, рекомендую всім!"
+        ]
+        for i in range(num_platform_reviews):
+            user = random.choice(users)
+            PlatformReview.objects.create(
+                user=user,
+                avatar=f"https://i.pravatar.cc/150?u={user.email}",
+                name=user.username,
+                surname=user.surname,
+                city=fake.city(),
+                rating=random.randint(3, 5),
+                review_text=review_texts[i],
+                created_at=now() - timedelta(days=random.randint(1, 30))
+            )
 
         # Створення ставок для аукціонів
         for product in products:

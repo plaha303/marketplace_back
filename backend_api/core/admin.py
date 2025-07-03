@@ -5,7 +5,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import (
     User, Category, Product, ProductImage, Cart, EmailLog, AuctionBid,
-    Order, OrderItem, Payment, Shipping, Review, Favorite
+    Order, OrderItem, Payment, Shipping, Review, Favorite, PlatformReview
 )
 
 logger = logging.getLogger(__name__)
@@ -186,6 +186,12 @@ class EmailLogAdmin(admin.ModelAdmin):
     search_fields = ['recipient', 'subject', 'error']
     fields = ['order', 'recipient', 'subject', 'status', 'error', 'sent_at']
     readonly_fields = ['sent_at', 'error']
+
+@admin.register(PlatformReview)
+class PlatformReviewAdmin(admin.ModelAdmin):
+    list_display = ['name', 'surname', 'city', 'rating', 'created_at']
+    search_fields = ['name', 'surname', 'city', 'review_text']
+    list_filter = ['rating', 'created_at']
 
 @admin.register(ProductImage)
 class ProductImageAdmin(admin.ModelAdmin):
