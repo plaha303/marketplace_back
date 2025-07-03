@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework_simplejwt.token_blacklist',
     # Dev app
     'corsheaders',
     'rest_framework',
@@ -281,6 +282,7 @@ CELERY_BEAT_SCHEDULE = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),  # Access token діє 2 години
     'REFRESH_TOKEN_LIFETIME': timedelta(days=14), # Refresh token діє 14 днів
+    'BLACKLIST_AFTER_ROTATION': True,
 }
 
 # Налаштування cookie

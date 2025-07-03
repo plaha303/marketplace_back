@@ -6,7 +6,7 @@ from .views import (
     PasswordResetRequestView, PasswordResetConfirmView, UserViewSet, UserProfileView,
     CategoryViewSet, ProductViewSet, OrderViewSet, CartAddView, CartRemoveView, CartListView,
     ReviewViewSet, AuctionBidViewSet, FavoriteViewSet, PaymentViewSet, ShippingViewSet,
-    CategoryImageUploadView, ProductImageUploadView
+    CategoryImageUploadView, ProductImageUploadView, LogoutView
 )
 
 urlpatterns = [
@@ -19,6 +19,7 @@ urlpatterns = [
     path('auth/password-reset/', views.PasswordResetRequestView.as_view(), name='password_reset'),
     path('auth/password-reset-confirm/<str:uidb64>/<str:token>/', views.PasswordResetConfirmView.as_view(),
          name='password_reset_confirm'),
+    path('auth/logout/', LogoutView.as_view(), name='logout'),
 
     # Нові маршрути для заглушок
     path('hits/', views.HitsView.as_view({'get': 'list'}), name='hits'),
