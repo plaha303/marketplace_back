@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import ProductFilter, OrderFilter, UserFilter, CartFilter, ReviewFilter, AuctionBidFilter, FavoriteFilter, CategoryFilter, PaymentFilter, ShippingFilter
 from django.contrib.auth import get_user_model
@@ -869,3 +870,34 @@ class PopularCategoriesView(APIView):
             },
             status=status.HTTP_200_OK
         )
+
+class LogoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        try:
+            # Отримуємо refresh_token з кукі
+            refresh_token = request.COOKIES.get('refresh_token')
+            if not refresh_token:
+                return Response(
+                    {"success": False, "errors": {"detail": "Refresh token not found in cookies"}},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Додаємо токен до чорного списку
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            # Формуємо відповідь і видаляємо кукі
+            response = Response(
+                {"success": True, "message": "Logged out successfully"},
+                status=status.HTTP_200_OK
+            )
+            response.delete_cookie('refresh_token')
+            return response
+
+        except TokenError as e:
+            return Response(
+                {"success": False, "errors": {"detail": str(e)}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
