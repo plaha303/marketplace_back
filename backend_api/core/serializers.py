@@ -3,7 +3,7 @@ from rest_framework.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.validators import RegexValidator
-from .models import Product, ProductImage, Order, OrderItem, Category, Cart, Review, AuctionBid, Favorite, Payment, Shipping
+from .models import Product, ProductImage, Order, OrderItem, Category, Cart, Review, AuctionBid, Favorite, Payment, Shipping, PlatformReview
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
@@ -243,6 +243,10 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
 
         return user
+class PlatformReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlatformReview
+        fields = ['id', 'avatar', 'name', 'surname', 'city', 'rating', 'review_text', 'created_at']
 
 class VerifyEmailSerializer(serializers.Serializer):
     uidb64 = serializers.CharField(required=True)

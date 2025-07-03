@@ -6,7 +6,7 @@ from .views import (
     PasswordResetRequestView, PasswordResetConfirmView, UserViewSet, UserProfileView,
     CategoryViewSet, ProductViewSet, OrderViewSet, CartAddView, CartRemoveView, CartListView,
     ReviewViewSet, AuctionBidViewSet, FavoriteViewSet, PaymentViewSet, ShippingViewSet,
-    CategoryImageUploadView, ProductImageUploadView, LogoutView
+    CategoryImageUploadView, ProductImageUploadView, LogoutView, PlatformReviewListView
 )
 
 urlpatterns = [
@@ -65,4 +65,5 @@ urlpatterns = [
     path('<slug:category_href>/<slug:product_href>/', views.ProductViewSet.as_view(
         {'get': 'retrieve_by_href', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}),
          name='product-detail-by-href'),
+    path('platform-reviews/', PlatformReviewListView.as_view(), name='platform-review-list'),
 ]
