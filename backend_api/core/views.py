@@ -12,13 +12,13 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .filters import ProductFilter, OrderFilter, UserFilter, CartFilter, ReviewFilter, AuctionBidFilter, FavoriteFilter, CategoryFilter, PaymentFilter, ShippingFilter
 from django.contrib.auth import get_user_model
 from .permissions import HasRolePermission
-from .models import Product, Order, Cart, Review, AuctionBid, Favorite, Category, Payment, Shipping
+from .models import Product, Order, Cart, Review, AuctionBid, Favorite, Category, Payment, Shipping, PlatformReview
 from .serializers import (ProductSerializer, OrderSerializer, UserSerializer,
                           RegisterSerializer, PasswordResetRequestSerializer,
                           PasswordResetConfirmSerializer, VerifyEmailSerializer, LoginSerializer,
                           CartSerializer, ResendVerificationCodeSerializer, OrderItem, CartRemoveSerializer,
                           ReviewSerializer, AuctionBidSerializer, FavoriteSerializer, CategorySerializer, PaymentSerializer,
-                          ShippingSerializer, UserProfileSerializer, CategoryImageUploadSerializer, ProductImageUploadSerializer)
+                          ShippingSerializer, UserProfileSerializer, CategoryImageUploadSerializer, ProductImageUploadSerializer, PlatformReviewSerializer)
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
@@ -901,3 +901,7 @@ class LogoutView(APIView):
                 {"success": False, "errors": {"detail": str(e)}},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+class PlatformReviewListView(generics.ListAPIView):
+    queryset = PlatformReview.objects.all()
+    serializer_class = PlatformReviewSerializer
