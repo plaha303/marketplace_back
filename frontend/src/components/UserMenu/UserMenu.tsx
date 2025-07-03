@@ -2,10 +2,19 @@ import { userMenuLinks, userMenuLinksSettings } from "./type/interface";
 import SingOut from '@/assets/Icons/SignOut.svg?react';
 import UserIcon from '@/assets/Icons/User.svg?react'
 import useGetUserQuery from "@/hooks/auth/useGetUserQuery";
-import { Link } from "react-router";
+import useLogOutAuthMutation from "@/hooks/auth/useLogOutAuthMutation";
+import AppRoute from "@/routers/enums/routers-enums";
+import { Link, Navigate } from "react-router";
 
 function UserMenu({handleCloseUserMenu}: {handleCloseUserMenu: () => void}) {
   const {getUserProfile} = useGetUserQuery();
+  const {logOut} = useLogOutAuthMutation();
+
+  function handleLogOutUser() {
+    console.log('log out click')
+    logOut();
+    handleCloseUserMenu();
+  }
   
   return (
     <div className="user-menu h-full bg-snow rounded-tl-sm py-6 px-4 rounded-bl-sm shadow-custom1  overflow-y-auto">
@@ -28,7 +37,7 @@ function UserMenu({handleCloseUserMenu}: {handleCloseUserMenu: () => void}) {
             const LinkIcon = item.icon;
             return (
               <div className="user-menu__item mb-2" key={item.id}>
-                <Link to={item.path} onClick={() => handleCloseUserMenu()} className="flex items-center text-size-body-3 font-bold p-4 font-secondary">
+                <Link to={item.path} onClick={handleCloseUserMenu} className="flex items-center text-size-body-3 font-bold p-4 font-secondary">
                   <span className="mr-2"><LinkIcon /></span>
                   {item.title}
                 </Link>
@@ -42,7 +51,7 @@ function UserMenu({handleCloseUserMenu}: {handleCloseUserMenu: () => void}) {
             const LinkIcon = item.icon;
             return (
               <div className="user-menu__item mb-2" key={item.id}>
-                <Link to={item.path} onClick={() => handleCloseUserMenu()} className="flex items-center text-size-body-3 font-bold p-4 font-secondary">
+                <Link to={item.path} onClick={handleCloseUserMenu} className="flex items-center text-size-body-3 font-bold p-4 font-secondary">
                   <span className="mr-2"><LinkIcon /></span>
                   {item.title}
                 </Link>
@@ -52,7 +61,7 @@ function UserMenu({handleCloseUserMenu}: {handleCloseUserMenu: () => void}) {
         </div>
 
         <div className="user-menu__items mt-2 border-t border-t-primary-100">
-          <div className="user-menu__item flex items-center text-size-body-3 font-bold p-4 font-secondary">
+          <div className="user-menu__item flex items-center text-size-body-3 font-bold p-4 font-secondary" onClick={handleLogOutUser}>
             <span className="mr-2"><SingOut /></span>
             Вийти
           </div>
