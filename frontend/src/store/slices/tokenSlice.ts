@@ -18,6 +18,7 @@ export const tokenSlice = createSlice({
       state.accessToken = action.payload;
     },
     clearToken: (state) => {
+      console.log('clean token')
       state.accessToken = null;
       state.isAuthInitialized = false;
     },

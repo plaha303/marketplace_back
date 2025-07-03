@@ -18,6 +18,10 @@ class AuthService implements IAuthService {
     return this.authApi.signUpAuth(data)
   }
 
+  async logOutAuth() {
+    return this.authApi.logOutAuth();
+  }
+
   async verifyEmailAuth(data: VerifyEmailRequestDTO): Promise<VerifyEmailResponseDTO> {
     return this.authApi.verifyEmailAuth(data)
   }

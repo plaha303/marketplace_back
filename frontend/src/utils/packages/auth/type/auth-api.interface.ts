@@ -4,7 +4,8 @@ interface IAuthApi {
   logInAuth: (data: LogInRequestDTO) => Promise<LogInResponseDTO>;
   signUpAuth: (data: SignUpRequestDTO) => Promise<SignUpResponseDTO>;
   verifyEmailAuth: (data: VerifyEmailRequestDTO) => Promise<VerifyEmailResponseDTO>;
-  getUser: () => Promise<GetUserResponseDTO>
+  getUser: () => Promise<GetUserResponseDTO>;
+  logOutAuth: () => void;
 }
 
 export {type IAuthApi}
