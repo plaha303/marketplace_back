@@ -1,4 +1,4 @@
-import { useAppDispatch } from "@/store/hooks/hooks";
+import { useAppDispatch, useAppSelector } from "@/store/hooks/hooks";
 import { clearToken, setAuthInitialized, setToken } from "@/store/slices/tokenSlice";
 import { refreshAccessToken } from "@/utils/http/http-request";
 import { useEffect, useRef } from "react";

@@ -21,6 +21,13 @@ class AuthApi implements IAuthApi {
     })
   }
 
+  async logOutAuth() {
+    return request({
+      url: ApiEndpoint.LOGOUT,
+      method: HttpMethod.POST
+    })
+  }
+
   async verifyEmailAuth(data: VerifyEmailRequestDTO): Promise<VerifyEmailResponseDTO> {
     const { uid, token } = data
     return request({
