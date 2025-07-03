@@ -15,8 +15,14 @@ const AppRoute = {
 
 
   PROFILE: '/profile',
+  MASTER: '/master',
+  ORDERS: '/orders',
+  GOODS: '/goods',
   FAVORITE: '/favorite',
   NOTIFICATION: '/notification',
+  MESSAGES: '/messages',
+  REVIEWS: '/reviews',
+  SETTINGS: '/settings',
   BASKET: '/basket',
   BLOG: '/blog',
   CATEGORY: '/:category',

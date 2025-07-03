@@ -11,6 +11,13 @@ import SignUpPage from "@/pages/SignUpPage/SignUpPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage/ForgotPasswordPage";
 import SendConfirmLetter from "@/components/SendConfirmLetter/SendConfirmLetter";
 import VerifyEmail from "@/components/VerifyEmail/VerifyEmail";
+import UserOrders from "@/pages/UserOrders/UserOrders";
+import UserFavorite from "@/pages/UserFavorite/UserFavorite";
+import UserNotification from "@/pages/UserNotification/UserNotification";
+import UserSettings from "@/pages/UserSettings/UserSettings";
+import UserGoods from "@/pages/UserGoods/UserGoods";
+import UserReviews from "@/pages/UserReviews/UserReviews";
+import UserMaster from "@/pages/UserMaster/UserMaster";
 
 
 
@@ -48,16 +55,47 @@ export const routers = createBrowserRouter([
         path: AppRoute.RESET_PASSWORD,
         element: <ForgotPasswordPage />
       },
-
+    ],
+  },
+  {
+    element: <ProtectedRoute />,
+    children: [
       {
-        element: <ProtectedRoute />,
-        children: [
-          {
-            path: AppRoute.PROFILE,
-            element: <UserProfile/>
-          }
-        ]
-      }
+        path: AppRoute.MASTER,
+        element: <UserProfile/>
+      },
+      {
+        path: AppRoute.PROFILE,
+        element: <UserProfile/>
+      },
+      {
+        path: AppRoute.ORDERS,
+        element: <UserOrders/>
+      },
+      {
+        path: AppRoute.FAVORITE,
+        element: <UserFavorite />
+      },
+      {
+        path: AppRoute.NOTIFICATION,
+        element: <UserNotification />
+      },
+      {
+        path: AppRoute.SETTINGS,
+        element: <UserSettings />
+      },
+      {
+        path: AppRoute.GOODS,
+        element: <UserGoods />
+      },
+      {
+        path: AppRoute.REVIEWS,
+        element: <UserReviews />
+      },
+      {
+        path: AppRoute.MASTER,
+        element: <UserMaster />
+      },
     ]
   }
 ])

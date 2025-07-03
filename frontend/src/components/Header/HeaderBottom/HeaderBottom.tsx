@@ -6,7 +6,8 @@ import { useMediaQuery } from "react-responsive";
 import classNames from "classnames";
 import { HeaderBottomProps } from "./type/interfaces";
 
-function HeaderBottom({setActiveHamburger}: HeaderBottomProps) {
+
+function HeaderBottom({setActiveHamburger, handleOpenUserMenu}: HeaderBottomProps) {
 
   const isWidthMore1023 = useMediaQuery({ query: '(max-width: 1023px)' });
 
@@ -26,7 +27,7 @@ function HeaderBottom({setActiveHamburger}: HeaderBottomProps) {
                 <SearchBlock />
               </div>
               <RegionalSettings />
-              <HeaderActions />
+              <HeaderActions handleOpenUserMenu={handleOpenUserMenu} />
             </>
           )}
 

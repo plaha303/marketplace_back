@@ -3,6 +3,7 @@ const ApiEndpoint = {
   SIGNUP: '/auth/register/',
   VERIFYEMAIL: '/auth/verify-email',
   REFRESHTOKEN: '/auth/refresh/',
+  GETUSER: '/user/',
 
   CATEGORY: '/categories',
   GETHiTS: '/hits'
