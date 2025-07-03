@@ -10,7 +10,11 @@ function HomeBanner() {
   return (
     <div className="home-banner pattern-bg lg:py-6 py-12">
       <div className="container px-4 mx-auto">
-        <BaseSlider pagination={true} className="home-banner">
+        <BaseSlider 
+          pagination={true} 
+          spaceBetween={10}
+          className="home-banner"
+        >
           <div className="home-banner__slide slide">
             <div className="slide__inner flex items-center justify-between lg:gap-6 gap-9 lg:flex-row flex-col">
               <div className="slide__left lg:order-1 order-2">

@@ -103,7 +103,21 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'http://127.0.0.1:8000',
+    'http://localhost:8000',
 ]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
 
 
 WSGI_APPLICATION = 'backend_api.wsgi.application'
@@ -273,7 +287,7 @@ SIMPLE_JWT = {
 
 # Налаштування cookie
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'Strict'
+SESSION_COOKIE_SAMESITE = 'Lax'   #Strict
 SESSION_COOKIE_SECURE = False  # У продакшні  True для HTTPS
 
 

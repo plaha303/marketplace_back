@@ -336,6 +336,7 @@ class LoginView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         refresh = RefreshToken.for_user(user)
+        path = '/api/auth/refresh/'
 
         response_data = {
             'success': True,
@@ -347,9 +348,10 @@ class LoginView(generics.GenericAPIView):
             key='refresh_token',
             value=str(refresh),
             httponly=True,
-            secure=False,
-            samesite='Strict',
+            secure=True,
+            samesite='None', #Strict
             max_age=14 * 24 * 60 * 60,
+            path=path
         )
         return response
 
