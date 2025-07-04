@@ -876,27 +876,35 @@ class LogoutView(APIView):
 
     def post(self, request):
         try:
-            # Отримуємо refresh_token з кукі
             refresh_token = request.COOKIES.get('refresh_token')
             if not refresh_token:
+                logger.error("Refresh token not found in cookies")
                 return Response(
                     {"success": False, "errors": {"detail": "Refresh token not found in cookies"}},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Додаємо токен до чорного списку
+            logger.info(f"Adding refresh token {refresh_token} to blacklist for user {request.user.id}")
             token = RefreshToken(refresh_token)
             token.blacklist()
+            logger.info(f"Refresh token {refresh_token} successfully blacklisted")
 
-            # Формуємо відповідь і видаляємо кукі
             response = Response(
                 {"success": True, "message": "Logged out successfully"},
                 status=status.HTTP_200_OK
             )
-            response.delete_cookie('refresh_token')
+            response.delete_cookie(
+                key='refresh_token',
+                path='/api/auth/refresh/',
+                domain=None,
+                secure=True,
+                httponly=True,
+                samesite='None'
+            )
             return response
 
         except TokenError as e:
+            logger.error(f"Token error during logout for user {request.user.id}: {str(e)}")
             return Response(
                 {"success": False, "errors": {"detail": str(e)}},
                 status=status.HTTP_400_BAD_REQUEST
