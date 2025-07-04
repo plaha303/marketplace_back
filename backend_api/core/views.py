@@ -11,7 +11,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import ProductFilter, OrderFilter, UserFilter, CartFilter, ReviewFilter, AuctionBidFilter, FavoriteFilter, CategoryFilter, PaymentFilter, ShippingFilter
 from django.contrib.auth import get_user_model
-from .permissions import HasRolePermission
+from .permissions import HasRolePermission, ReviewPermission
 from .models import Product, Order, Cart, Review, AuctionBid, Favorite, Category, Payment, Shipping, PlatformReview
 from .serializers import (ProductSerializer, OrderSerializer, UserSerializer,
                           RegisterSerializer, PasswordResetRequestSerializer,
@@ -599,7 +599,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     throttle_scope = 'reviews'
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = [HasRolePermission]
+    permission_classes = [ReviewPermission]
     allowed_roles = ['user']
     filter_backends = [DjangoFilterBackend]
     filterset_class = ReviewFilter
