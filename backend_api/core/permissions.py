@@ -83,3 +83,28 @@ class HasRolePermission(permissions.BasePermission):
         except Exception as e:
             logger.critical(f"Unexpected error in {view.__class__.__name__} for user {request.user.id}, object {obj.__class__.__name__}: {e}")
             return False
+class ReviewPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            logger.debug(f"Allowing SAFE method {request.method} for view {view.__class__.__name__}")
+            return True
+        if not request.user.is_authenticated:
+            logger.debug(f"User not authenticated for {request.method} in {view.__class__.__name__}")
+            return False
+        allowed_roles = getattr(view, 'allowed_roles', [])
+        user_roles = request.user.roles or []
+        logger.debug(f"Checking roles {allowed_roles} against user roles {user_roles} for user {request.user.id}")
+        return any(role in user_roles for role in allowed_roles)
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            logger.debug(f"Allowing SAFE method {request.method} for object {obj.__class__.__name__}")
+            return True
+        allowed_roles = getattr(view, 'allowed_roles', [])
+        user_roles = request.user.roles or []
+        if not any(role in user_roles for role in allowed_roles):
+            logger.warning(f"User {request.user.id} lacks required roles {allowed_roles}")
+            return False
+        if 'admin' in user_roles:
+            return True
+        return obj.user == request.user
