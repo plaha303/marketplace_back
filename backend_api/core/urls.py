@@ -60,10 +60,10 @@ urlpatterns = [
     path('shipping/', views.ShippingViewSet.as_view({'get': 'list', 'post': 'create'}), name='shipping-list'),
     path('shipping/<int:pk>/', views.ShippingViewSet.as_view(
         {'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='shipping-detail'),
+    path('platform-reviews/', PlatformReviewListView.as_view(), name='platform-review-list'),
     path('<slug:category_href>/', views.CategoryViewSet.as_view({'get': 'retrieve_by_href'}),
          name='category-detail-by-href'),
     path('<slug:category_href>/<slug:product_href>/', views.ProductViewSet.as_view(
         {'get': 'retrieve_by_href', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}),
          name='product-detail-by-href'),
-    path('platform-reviews/', PlatformReviewListView.as_view(), name='platform-review-list'),
 ]
