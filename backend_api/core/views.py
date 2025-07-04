@@ -331,27 +331,23 @@ class LoginView(generics.GenericAPIView):
     throttle_scope = 'login'
     serializer_class = LoginSerializer
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         refresh = RefreshToken.for_user(user)
-        path = '/api/auth/refresh/'
-
-        response_data = {
+        response = Response({
             'success': True,
-            'access': str(refresh.access_token),
-        }
-
-        response = Response(response_data, status=status.HTTP_200_OK)
+            'access': str(refresh.access_token)
+        }, status=status.HTTP_200_OK)
         response.set_cookie(
             key='refresh_token',
             value=str(refresh),
             httponly=True,
             secure=True,
-            samesite='None', #Strict
+            samesite='None',
             max_age=14 * 24 * 60 * 60,
-            path=path
+            path='/api/auth/'
         )
         return response
 
@@ -883,26 +879,21 @@ class LogoutView(APIView):
                     {"success": False, "errors": {"detail": "Refresh token not found in cookies"}},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-
             logger.info(f"Adding refresh token {refresh_token} to blacklist for user {request.user.id}")
             token = RefreshToken(refresh_token)
             token.blacklist()
             logger.info(f"Refresh token {refresh_token} successfully blacklisted")
-
             response = Response(
                 {"success": True, "message": "Logged out successfully"},
                 status=status.HTTP_200_OK
             )
             response.delete_cookie(
                 key='refresh_token',
-                path='/api/auth/refresh/',
+                path='/api/auth/',  # Змінити, якщо в LoginView використовується інший шлях
                 domain=None,
-                secure=True,
-                httponly=True,
                 samesite='None'
             )
             return response
-
         except TokenError as e:
             logger.error(f"Token error during logout for user {request.user.id}: {str(e)}")
             return Response(
