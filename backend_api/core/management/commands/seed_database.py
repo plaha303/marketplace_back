@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.utils.timezone import now, timedelta
 from faker import Faker
 from core.models import Category, Product, ProductImage, Review, AuctionBid, Order, OrderItem, Payment, Shipping, Cart, PlatformReview
+from django.core.management.base import BaseCommand
 
 User = get_user_model()
 fake = Faker('uk_UA')
