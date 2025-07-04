@@ -702,10 +702,21 @@ class FavoriteViewSet(viewsets.ModelViewSet):
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [HasRolePermission]
-    allowed_roles = ['admin']
     filterset_class = CategoryFilter
     filter_backends = [DjangoFilterBackend]
+
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return [permissions.AllowAny()]
+        return [HasRolePermission(allowed_roles=['admin'])]
+
+    @extend_schema(
+        responses={200: CategorySerializer(many=True)},
+        description="Повертає список усіх категорій, доступний для всіх користувачів."
+    )
+    def list(self, request, *args, **kwargs):
+        logger.debug(f"CategoryViewSet list called by user {request.user.id if request.user.is_authenticated else 'anonymous'}")
+        return super().list(request, *args, **kwargs)
 
     def retrieve_by_href(self, request, category_href=None):
         logger.debug(f"retrieve_by_href called with category_href={category_href}")
