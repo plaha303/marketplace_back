@@ -11,6 +11,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import ProductFilter, OrderFilter, UserFilter, CartFilter, ReviewFilter, AuctionBidFilter, FavoriteFilter, CategoryFilter, PaymentFilter, ShippingFilter
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from .permissions import HasRolePermission, ReviewPermission
 from .models import Product, Order, Cart, Review, AuctionBid, Favorite, Category, Payment, Shipping, PlatformReview
 from .serializers import (ProductSerializer, OrderSerializer, UserSerializer,
@@ -332,7 +333,7 @@ class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
 
     def post(self, request):
-        serializer = LoginSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         refresh = RefreshToken.for_user(user)
@@ -344,11 +345,13 @@ class LoginView(generics.GenericAPIView):
             key='refresh_token',
             value=str(refresh),
             httponly=True,
-            secure=False,
-            samesite='Lax',
+            secure=True,
+            samesite='None',
             max_age=14 * 24 * 60 * 60,
             path='/'
         )
+        response['Set-Cookie'] = f'refresh_token={str(refresh)}; HttpOnly; Secure; SameSite=None; Path=/; Partitioned'
+        logger.info(f"User {user.id} logged in, refresh_token set with Partitioned attribute")
         return response
 
 class CustomTokenRefreshView(APIView):
@@ -890,10 +893,10 @@ class LogoutView(APIView):
                     {"success": False, "errors": {"detail": "Refresh token not found in cookies"}},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            logger.info(f"Adding refresh token {refresh_token} to blacklist for user {request.user.id}")
+            logger.info(f"Adding refresh token to blacklist for user {request.user.id}")
             token = RefreshToken(refresh_token)
             token.blacklist()
-            logger.info(f"Refresh token {refresh_token} successfully blacklisted")
+            logger.info(f"Refresh token successfully blacklisted")
             response = Response(
                 {"success": True, "message": "Logged out successfully"},
                 status=status.HTTP_200_OK
@@ -904,9 +907,10 @@ class LogoutView(APIView):
                 domain=None,
                 samesite='None'
             )
+            response['Set-Cookie'] = 'refresh_token=; HttpOnly; Secure; SameSite=None; Path=/; Partitioned; Max-Age=0'
             return response
         except TokenError as e:
-            logger.error(f"Token error during logout for user {request.user.id}: {str(e)}")
+            logger.error(f"Token error during logout: {str(e)}")
             return Response(
                 {"success": False, "errors": {"detail": str(e)}},
                 status=status.HTTP_400_BAD_REQUEST
