@@ -2,7 +2,7 @@ import { AxiosRequestConfig } from "axios"
 import { RequestOptions } from "./type/interface"
 
 function buildRequestConfig({method, url, accessToken, body, params, config}: RequestOptions): AxiosRequestConfig {
-  console.log('buildRequestConfig', accessToken)
+  console.log('buildRequestConfig accessToken', accessToken)
   return {
     method,
     url,

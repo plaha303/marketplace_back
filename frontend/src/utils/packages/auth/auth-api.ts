@@ -24,7 +24,8 @@ class AuthApi implements IAuthApi {
   async logOutAuth() {
     return request({
       url: ApiEndpoint.LOGOUT,
-      method: HttpMethod.POST
+      method: HttpMethod.POST,
+      skipAuth: true,
     })
   }
 

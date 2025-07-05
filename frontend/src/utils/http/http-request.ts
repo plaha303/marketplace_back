@@ -13,6 +13,7 @@ export async function refreshAccessToken() {
     const response = await axiosInstance.post(ApiEndpoint.REFRESHTOKEN)
     console.log('response 1', response)
     const access_token = response.data.access;
+    axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
 
     console.log('access_token', access_token)
 
@@ -32,11 +33,11 @@ export async function refreshAccessToken() {
 }
 
 export async function  request<T>(options:RequestOptions): Promise<T> {
-  const { method, url, body, params, config } = options;
+  const { method, url, body, params, config, skipAuth } = options;
   const accessToken = store.getState().token.accessToken;
 
   try {
-    const requestConfig = buildRequestConfig({ method, accessToken, url, body, params, config });
+    const requestConfig = buildRequestConfig({ method, accessToken: skipAuth ? undefined : accessToken, url, body, params, config });
     const response: AxiosResponse<T> = await axiosInstance(requestConfig);
 
     console.log('response', response)
@@ -44,7 +45,7 @@ export async function  request<T>(options:RequestOptions): Promise<T> {
     return response.data
   } catch (error: unknown) {
     if(axios.isAxiosError(error) && error.response?.status === 401) {
-      const {isAuthInitialized} = store.getState().token;
+      const { isAuthInitialized } = store.getState().token;
 
       console.log('error isAuthInitialized', isAuthInitialized)
       if(!isAuthInitialized) {

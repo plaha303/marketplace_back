@@ -5,6 +5,7 @@ const ApiEndpoint = {
   REFRESHTOKEN: '/auth/refresh/',
   LOGOUT: '/auth/logout/',
   GETUSER: '/user/',
+  PLATFORMREVIEWS: '/platform-reviews/',
 
   CATEGORY: '/categories',
   GETHiTS: '/hits'

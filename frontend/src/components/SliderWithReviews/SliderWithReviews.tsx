@@ -1,11 +1,15 @@
+import BaseSlider from "@/UI/Slider/BaseSlider";
+import { PlatformReviewsItem } from "@/utils/packages/platformReviews/type/interface";
 import { Link } from "react-router";
+import ReviewBlock from "../ReviewBlock/ReviewBlock";
 
 interface SliderWithReviewsProps {
   title: string;
-  watchAll: string
+  watchAll: string,
+  data: PlatformReviewsItem[]
 }
 
-function SliderWithReviews({title, watchAll}: SliderWithReviewsProps) {
+function SliderWithReviews({title, watchAll, data}: SliderWithReviewsProps) {
   return (
     <div className="slider-review lg:py-[80px] py-12">
       <div className="container px-4 mx-auto">
@@ -14,7 +18,11 @@ function SliderWithReviews({title, watchAll}: SliderWithReviewsProps) {
           <Link to={watchAll} className="font-secondary underline text-size-body-3 leading-100 text-primary-600">дивитися всі</Link>
         </div>
         <div className="slider-review__body">
-
+          <BaseSlider>
+            {data.map(review => (
+              <ReviewBlock review={review} />
+            ))}
+          </BaseSlider>
         </div>
       </div>
     </div>
