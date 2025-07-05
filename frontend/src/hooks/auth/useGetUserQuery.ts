@@ -6,8 +6,6 @@ function useGetUserQuery() {
   const isAuthInitialized = useAppSelector(state => state.token.isAuthInitialized);
   const isAccessToken = useAppSelector(state => state.token.accessToken);
 
-  console.log('auth state', { isAuthInitialized, isAccessToken });
-
   const {data, isPending: getUserProfilePending } = useQuery({
     queryKey: ['user'],
     queryFn: () => authService.getUser(),

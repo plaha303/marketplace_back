@@ -3,8 +3,7 @@ import SingOut from '@/assets/Icons/SignOut.svg?react';
 import UserIcon from '@/assets/Icons/User.svg?react'
 import useGetUserQuery from "@/hooks/auth/useGetUserQuery";
 import useLogOutAuthMutation from "@/hooks/auth/useLogOutAuthMutation";
-import AppRoute from "@/routers/enums/routers-enums";
-import { Link, Navigate } from "react-router";
+import { Link } from "react-router";
 
 function UserMenu({handleCloseUserMenu}: {handleCloseUserMenu: () => void}) {
   const {getUserProfile} = useGetUserQuery();
