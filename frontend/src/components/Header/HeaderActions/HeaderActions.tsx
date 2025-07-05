@@ -13,6 +13,10 @@ import { Button } from "@/UI/Button/Button";
 
 function HeaderActions({handleOpenUserMenu}: {handleOpenUserMenu: () => void;}) {
   const isAccessToken = useAppSelector(state => state.token.accessToken);
+  const isAuthInitialized = useAppSelector(state => state.token.isAuthInitialized);
+
+  console.log('isAuthInitialized', isAuthInitialized)
+  console.log('header isAccessToken', isAccessToken)
 
   return (
     <div className="menuActions flex lg:flex-row flex-col  lg:items-center lg:gap-4">
