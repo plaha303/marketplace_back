@@ -347,7 +347,7 @@ class LoginView(generics.GenericAPIView):
             secure=False,
             samesite='None',
             max_age=14 * 24 * 60 * 60,
-            path='/api/auth/'
+            path='/'
         )
         return response
 
@@ -879,7 +879,7 @@ class PopularCategoriesView(APIView):
         )
 
 class LogoutView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         try:
@@ -900,7 +900,7 @@ class LogoutView(APIView):
             )
             response.delete_cookie(
                 key='refresh_token',
-                path='/api/auth/',  # Змінити, якщо в LoginView використовується інший шлях
+                path='/',
                 domain=None,
                 samesite='None'
             )
