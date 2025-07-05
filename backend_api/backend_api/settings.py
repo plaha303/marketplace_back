@@ -27,7 +27,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 #from decouple import config
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
@@ -281,15 +281,22 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),  # Access token діє 2 години
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=14), # Refresh token діє 14 днів
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=14),
     'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_COOKIE': 'refresh_token',
+    'AUTH_COOKIE_HTTP_ONLY': True,
+    'AUTH_COOKIE_SECURE': True,
+    'AUTH_COOKIE_SAMESITE': 'None',
+    'AUTH_COOKIE_PATH': '/',
 }
 
 # Налаштування cookie
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'Lax'   #Strict
-SESSION_COOKIE_SECURE = False  # У продакшні  True для HTTPS
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = True
 
 
 LOGGING = {
