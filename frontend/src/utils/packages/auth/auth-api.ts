@@ -3,6 +3,7 @@ import { ApiEndpoint } from "@/utils/http/enums/api-endpoint";
 import { HttpMethod } from "@/utils/http/enums/http-method";
 import { IAuthApi } from "./type/auth-api.interface";
 import { GetUserResponseDTO, LogInRequestDTO, LogInResponseDTO, SignUpRequestDTO, SignUpResponseDTO, VerifyEmailRequestDTO, VerifyEmailResponseDTO } from "./type/interfaces";
+import store from "@/store/store";
 
 class AuthApi implements IAuthApi {
   async logInAuth(data: LogInRequestDTO): Promise<LogInResponseDTO> {
@@ -25,7 +26,6 @@ class AuthApi implements IAuthApi {
     return request({
       url: ApiEndpoint.LOGOUT,
       method: HttpMethod.POST,
-      skipAuth: true,
     })
   }
 
@@ -39,9 +39,11 @@ class AuthApi implements IAuthApi {
   }
 
   async getUser(): Promise<GetUserResponseDTO> {
+    const ACCESS_TOKEN = store.getState().token.accessToken;
     return request({
       url: ApiEndpoint.GETUSER,
       method: HttpMethod.GET,
+      headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
     })
   }
 }
