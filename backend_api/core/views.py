@@ -344,8 +344,8 @@ class LoginView(generics.GenericAPIView):
             key='refresh_token',
             value=str(refresh),
             httponly=True,
-            secure=True,
-            samesite='None',
+            secure=False,
+            samesite='Lax',
             max_age=14 * 24 * 60 * 60,
             path='/'
         )
