@@ -4,7 +4,6 @@ import ProductCard from "../ProductCard/ProductCard";
 import BaseSlider from "@/UI/Slider/BaseSlider";
 
 function SliderWithProducts({title, watchAll, data}: SliderWithProductsProps) {
-  console.log('data', data)
   return (
     <div className="slider-products lg:py-[80px] py-12">
       <div className="container px-4 mx-auto">

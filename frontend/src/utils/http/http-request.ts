@@ -15,7 +15,7 @@ export async function refreshAccessToken() {
     const access_token = response.data.access;
     axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
 
-    console.log('access_token', access_token)
+    console.log('refreshAccessToken access_token', access_token)
 
     store.dispatch(setToken(access_token));
 
@@ -33,14 +33,21 @@ export async function refreshAccessToken() {
 }
 
 export async function  request<T>(options:RequestOptions): Promise<T> {
-  const { method, url, body, params, config, skipAuth } = options;
+  const { method, url, body, params, config, headers = {} } = options;
   const accessToken = store.getState().token.accessToken;
 
+  const finalHeaders = {
+    ...headers,
+    ...(accessToken && !headers.Authorization
+      ? { Authorization: `Bearer ${accessToken}` }
+      : {}),
+  };
+
   try {
-    const requestConfig = buildRequestConfig({ method, accessToken: skipAuth ? undefined : accessToken, url, body, params, config });
+    const requestConfig = buildRequestConfig({ method, url, body, params, config, headers: finalHeaders });
     const response: AxiosResponse<T> = await axiosInstance(requestConfig);
 
-    console.log('response', response)
+    // console.log('response', response)
 
     return response.data
   } catch (error: unknown) {
@@ -55,7 +62,11 @@ export async function  request<T>(options:RequestOptions): Promise<T> {
       const newAccessToken = await refreshAccessToken();
       
       if(newAccessToken) {
-        const retryConfig = buildRequestConfig({ method, accessToken: newAccessToken, url, body, params, config })
+        const retryHeaders = {
+          ...finalHeaders,
+          Authorization: `Bearer ${newAccessToken}`,
+        };
+        const retryConfig = buildRequestConfig({ method, url, body, params, config, headers: retryHeaders });
         const retryResponse = await axiosInstance(retryConfig);
 
         return retryResponse.data
