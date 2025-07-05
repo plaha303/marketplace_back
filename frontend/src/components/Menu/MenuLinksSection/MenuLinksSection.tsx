@@ -8,7 +8,7 @@ import { MenuLinksSectionProps } from '../type/interfaces';
 import styled from "./MenuLinksSection.module.scss"
 
 function MenuLinksSection({handleOpenMenuCatalog, openMenuCatalog, buttonRef}: MenuLinksSectionProps) {
-  console.log('openMenuCatalog', openMenuCatalog)
+
   return (
     <>
      <div className={classNames('xl:mr-9 lg:mr-7 lg:py-0 py-2', styled.menuCatalog__btn)}>

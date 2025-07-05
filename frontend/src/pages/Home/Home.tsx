@@ -8,12 +8,13 @@ import SpecialOffers from "@/components/SpecialOffers/SpecialOffers";
 import Subscription from "@/components/Subscription/Subscription";
 import TopCategories from "@/components/TopCategories/TopCategories";
 import useHitsProducts from "@/hooks/useHitsProducts";
+import usePlatformReviewsQuery from "@/hooks/usePlatformReviewsQuery";
 import AppRoute from "@/routers/enums/routers-enums";
 
 function Home() {
 
 	const {hitsProducts} = useHitsProducts();
-	console.log('hitsProducts', hitsProducts)
+	const {allPlatformReviews} = usePlatformReviewsQuery();
 
 	return (
 		<div className="home-page">
@@ -25,7 +26,7 @@ function Home() {
 			<SpecialOffers />
 			<SliderWithProducts title="Товари зі знижками" watchAll='/' />
 			<Subscription />
-			<SliderWithReviews title="Відгуки" watchAll='/' />
+			<SliderWithReviews title="Відгуки" watchAll='/' data={allPlatformReviews?.results ?? []} />
 			<SliderWithBlog title="Блог" watchAll='/' />
 		</div>
 	);

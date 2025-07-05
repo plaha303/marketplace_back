@@ -8,7 +8,6 @@ const AppRoute = {
   SENDCONFIRMLETTER: '/confirm_email',
   VERIFYEMAIL: '/verify-email/:uid/:token',
   LOGIN: '/login',
-  LOGOUT: '/logout',
   RESET_PASSWORD: '/reset_password',
 
   HITS: '/hits',
