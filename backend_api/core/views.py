@@ -337,7 +337,7 @@ class LoginView(generics.GenericAPIView):
         user = serializer.validated_data['user']
         refresh = RefreshToken.for_user(user)
         response = Response({
-            'success': True,
+            'success': False,
             'access': str(refresh.access_token)
         }, status=status.HTTP_200_OK)
         response.set_cookie(
