@@ -288,8 +288,8 @@ SIMPLE_JWT = {
 
 # Налаштування cookie
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'Strict'   #Strict
-SESSION_COOKIE_SECURE = True  # У продакшні  True для HTTPS
+SESSION_COOKIE_SAMESITE = 'Lax'   #Strict
+SESSION_COOKIE_SECURE = False  # У продакшні  True для HTTPS
 
 
 LOGGING = {
