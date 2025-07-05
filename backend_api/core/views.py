@@ -350,7 +350,6 @@ class LoginView(generics.GenericAPIView):
             max_age=14 * 24 * 60 * 60,
             path='/'
         )
-        response['Set-Cookie'] = f'refresh_token={str(refresh)}; HttpOnly; Secure; SameSite=None; Path=/; Partitioned'
         logger.info(f"User {user.id} logged in, refresh_token set with Partitioned attribute")
         return response
 
@@ -907,7 +906,6 @@ class LogoutView(APIView):
                 domain=None,
                 samesite='None'
             )
-            response['Set-Cookie'] = 'refresh_token=; HttpOnly; Secure; SameSite=None; Path=/; Partitioned; Max-Age=0'
             return response
         except TokenError as e:
             logger.error(f"Token error during logout: {str(e)}")

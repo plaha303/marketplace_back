@@ -10,6 +10,7 @@ export type RequestOptions = {
   readonly params?: Record<string, string | number>;
   readonly config?: AxiosRequestConfig,
   readonly skipAuth?: boolean;
+  readonly headers?: Record<string, string>
 }
 
 export type ApiError = {
