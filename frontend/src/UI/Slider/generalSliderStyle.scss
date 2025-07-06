@@ -57,3 +57,12 @@
     }
   }
 }
+
+
+.slider-review {
+  .swiper-slide {
+    @media(max-width: 565px) {
+      max-width: 327px;
+    }
+  }
+}

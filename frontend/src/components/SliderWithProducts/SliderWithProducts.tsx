@@ -16,7 +16,7 @@ function SliderWithProducts({title, watchAll, data}: SliderWithProductsProps) {
             spaceBetween={24}
             navigation={true}
             slidesPerView={4}
-            className="sliderWithProducts"
+            className="sliderWithBlocks"
           >
             {data?.map(item => (
               <ProductCard item={item} key={item.id} />
