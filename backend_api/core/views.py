@@ -917,3 +917,14 @@ class LogoutView(APIView):
 class PlatformReviewListView(generics.ListAPIView):
     queryset = PlatformReview.objects.all()
     serializer_class = PlatformReviewSerializer
+
+class DiscountedProductsView(viewsets.ReadOnlyModelViewSet):
+    serializer_class = ProductSerializer
+
+    @extend_schema(
+        responses={200: ProductSerializer(many=True)},
+        description="Повертає список товарів зі знижками (discount_price не null)."
+    )
+    def get_queryset(self):
+        logger.info("DiscountedProductsView accessed, returning products with discounts")
+        return Product.objects.filter(stock__gt=0, sale_type='fixed', discount_price__isnull=False)
