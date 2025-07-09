@@ -67,9 +67,9 @@ class Command(BaseCommand):
         # Створення категорій
         categories = []
         for _ in range(num_categories):
+            name = fake.word().capitalize()
             category = Category.objects.create(
-                name=fake.word().capitalize(),
-                category_href=slugify(fake.word())
+                name=name
             )
             categories.append(category)
 
@@ -79,8 +79,10 @@ class Command(BaseCommand):
             sale_type = random.choice(['fixed', 'auction'])
             price = round(random.uniform(10, 1000), 2) if sale_type == 'fixed' else None
             discount_price = None
-            if sale_type == 'fixed' and random.choice([True, False]):
+            if sale_type == 'fixed' and random.random() < 0.5:
                 discount_price = round(price * random.uniform(0.7, 0.95), 2)
+                if discount_price <= 0:
+                    discount_price = None
             product_name = f"{fake.word().capitalize()} {fake.word().capitalize()} {i + 1}"
             product = Product.objects.create(
                 vendor=random.choice(users),

@@ -6,6 +6,7 @@ from django.core.validators import RegexValidator, MinValueValidator, MaxValueVa
 from django.contrib.postgres.fields import ArrayField
 from cloudinary.models import CloudinaryField
 from django.utils.text import slugify  # Переносимо імпорт на початок файлу
+from pytils.translit import slugify
 
 name_validator = RegexValidator(
     regex=r'^(?!-)([A-Za-zА-Яа-яїЇіІєЄґҐ]+)(?<!-)$',
@@ -94,11 +95,11 @@ class Category(models.Model):
     category_image = CloudinaryField('image', blank=True, null=True)
     category_href = models.SlugField(max_length=255, unique=True, blank=True)
 
-
     def save(self, *args, **kwargs):
         if not self.category_href:
-            from django.utils.text import slugify
-            self.category_href = slugify(self.name)
+            self.category_href = slugify(self.name)  # Використовуємо pytils slugify
+            if not self.category_href:  # Якщо slugify повертає порожній рядок
+                self.category_href = f"category-{self.id or Category.objects.count() + 1}"
             base_href = self.category_href
             counter = 1
             while Category.objects.filter(category_href=self.category_href).exclude(id=self.id).exists():
