@@ -86,12 +86,13 @@ class ProductSerializer(serializers.ModelSerializer):
     productId = serializers.IntegerField(source='id')
     categoryId = serializers.IntegerField(source='category.id', allow_null=True)
     rating = serializers.SerializerMethodField()
+    discount_tag = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = ['productId', 'vendor', 'categoryId', 'name', 'description',
                   'sale_type', 'price', 'discount_price', 'start_price', 'auction_end_time',
-                  'stock', 'created_at', 'images', 'product_href', 'isAvailable', 'reviews_count', 'rating']
+                  'stock', 'created_at', 'images', 'product_href', 'isAvailable', 'reviews_count', 'rating', 'discount_tag']
 
     def get_isAvailable(self, obj):
         return obj.is_available()
@@ -101,6 +102,12 @@ class ProductSerializer(serializers.ModelSerializer):
         average = obj.reviews.aggregate(Avg('rating'))['rating__avg']
         # Повертаємо середній рейтинг з округленням до 2 знаків після коми, або null, якщо відгуків немає
         return round(average, 2) if average is not None else None
+
+    def get_discount_tag(self, obj):
+        if obj.sale_type == 'fixed' and obj.discount_price is not None and obj.price is not None and obj.price > 0:
+            discount_percentage = round(((obj.price - obj.discount_price) / obj.price) * 100)
+            return f"{discount_percentage}%"
+        return None
 
     def validate_categoryId(self, value):
         if value is not None:

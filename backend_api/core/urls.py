@@ -34,6 +34,7 @@ urlpatterns = [
     path('categories/image-upload/', views.CategoryImageUploadView.as_view(), name='category-image-upload'),
     path('categories/<int:pk>/', views.CategoryViewSet.as_view(
         {'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='category-detail'),
+    path('discounted-products/', views.DiscountedProductsView.as_view({'get': 'list'}), name='discounted-products'),
     path('products/', views.ProductViewSet.as_view({'get': 'list', 'post': 'create'}), name='product-list'),
     path('products/image-upload/', views.ProductImageUploadView.as_view(), name='product-image-upload'),
     path('products/<int:pk>/', views.ProductViewSet.as_view(
