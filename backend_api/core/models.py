@@ -94,11 +94,12 @@ class Category(models.Model):
     category_image = CloudinaryField('image', blank=True, null=True)
     category_href = models.SlugField(max_length=255, unique=True, blank=True)
 
-
     def save(self, *args, **kwargs):
         if not self.category_href:
             from django.utils.text import slugify
             self.category_href = slugify(self.name)
+            if not self.category_href:  # Якщо slugify повертає порожній рядок
+                self.category_href = f"category-{self.id or Category.objects.count() + 1}"
             base_href = self.category_href
             counter = 1
             while Category.objects.filter(category_href=self.category_href).exclude(id=self.id).exists():
