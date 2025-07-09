@@ -104,7 +104,7 @@ class ProductSerializer(serializers.ModelSerializer):
         return round(average, 2) if average is not None else None
 
     def get_discount_tag(self, obj):
-        if obj.sale_type == 'fixed' and obj.discount_price is not None and obj.price is not None:
+        if obj.sale_type == 'fixed' and obj.discount_price is not None and obj.price is not None and obj.price > 0:
             discount_percentage = round(((obj.price - obj.discount_price) / obj.price) * 100)
             return f"{discount_percentage}%"
         return None
