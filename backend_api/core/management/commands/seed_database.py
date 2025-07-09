@@ -79,8 +79,10 @@ class Command(BaseCommand):
             sale_type = random.choice(['fixed', 'auction'])
             price = round(random.uniform(10, 1000), 2) if sale_type == 'fixed' else None
             discount_price = None
-            if sale_type == 'fixed' and random.choice([True, False]):
-                discount_price = round(price * random.uniform(0.7, 0.95), 2)
+            if sale_type == 'fixed':
+                # Гарантуємо, що 50% товарів матимуть знижку
+                if random.random() < 0.5:  # 50% ймовірність знижки
+                    discount_price = round(price * random.uniform(0.7, 0.95), 2)
             product_name = f"{fake.word().capitalize()} {fake.word().capitalize()} {i + 1}"
             product = Product.objects.create(
                 vendor=random.choice(users),
