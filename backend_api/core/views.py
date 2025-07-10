@@ -1,4 +1,4 @@
-from drf_spectacular.utils import extend_schema, OpenApiExample
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from django.utils.timezone import now
 from rest_framework import viewsets, permissions, status, generics
 from rest_framework.permissions import IsAuthenticated
@@ -13,19 +13,25 @@ from .filters import ProductFilter, OrderFilter, UserFilter, CartFilter, ReviewF
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from .permissions import HasRolePermission, ReviewPermission
-from .models import Product, Order, Cart, Review, AuctionBid, Favorite, Category, Payment, Shipping, PlatformReview
+from .models import Product, Order, Cart, Review, AuctionBid, Favorite, Category, Payment, Shipping, PlatformReview, User
 from .serializers import (ProductSerializer, OrderSerializer, UserSerializer,
                           RegisterSerializer, PasswordResetRequestSerializer,
                           PasswordResetConfirmSerializer, VerifyEmailSerializer, LoginSerializer,
                           CartSerializer, ResendVerificationCodeSerializer, OrderItem, CartRemoveSerializer,
                           ReviewSerializer, AuctionBidSerializer, FavoriteSerializer, CategorySerializer, PaymentSerializer,
-                          ShippingSerializer, UserProfileSerializer, CategoryImageUploadSerializer, ProductImageUploadSerializer, PlatformReviewSerializer)
+                          ShippingSerializer, UserProfileSerializer, CategoryImageUploadSerializer, ProductImageUploadSerializer,
+                          PlatformReviewSerializer, SearchResultSerializer)
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.db import transaction
 from core.tasks import upload_image_to_cloudinary
 import logging
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank, TrigramSimilarity
+from rest_framework import viewsets, mixins
+from django.db.models import Q, Value, CharField, F
+from django.db.models.functions import Concat
+from rest_framework.permissions import AllowAny
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -928,3 +934,68 @@ class DiscountedProductsView(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         logger.info("DiscountedProductsView accessed, returning products with discounts")
         return Product.objects.filter(stock__gt=0, sale_type='fixed', discount_price__isnull=False)
+
+
+class SearchViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    serializer_class = SearchResultSerializer
+    permission_classes = [AllowAny]
+    throttle_scope = 'search'
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='q', type=str, location=OpenApiParameter.QUERY, required=True, description='Пошуковий запит'),
+        ],
+        responses={200: SearchResultSerializer(many=True)},
+        description="Глобальний пошук по користувачах, категоріях і продуктах."
+    )
+    def list(self, request, *args, **kwargs):
+        query = request.GET.get('q', '').strip()
+        if not query:
+            logger.warning("Search request with empty query")
+            return Response({"success": False, "errors": {"query": "Пошуковий запит не може бути порожнім"}}, status=status.HTTP_400_BAD_REQUEST)
+
+        logger.debug(f"Search request with query: {query}")
+
+        try:
+            # Створюємо SearchQuery для запиту
+            search_query = SearchQuery(query, config='ukrainian')
+
+            # Пошук по користувачах
+            user_results = User.objects.annotate(
+                rank=SearchRank('search_vector', search_query),
+                similarity=TrigramSimilarity('username', query) + TrigramSimilarity('surname', query),
+                type=Value('user', output_field=CharField()),
+                name=Concat('username', Value(' '), 'surname')
+            ).filter(
+                (Q(search_vector=search_query) | Q(similarity__gt=0.3)) & Q(is_active=True) & Q(is_verified=True)
+            ).values('type', 'id', 'name', relevance=F('rank')).order_by('-relevance')
+
+            # Пошук по категоріях
+            category_results = Category.objects.annotate(
+                rank=SearchRank('search_vector', search_query),
+                similarity=TrigramSimilarity('name', query),
+                type=Value('category', output_field=CharField())
+            ).filter(
+                Q(search_vector=search_query) | Q(similarity__gt=0.3)
+            ).values('type', 'id', 'name', relevance=F('rank')).order_by('-relevance')
+
+            # Пошук по продуктах
+            product_results = Product.objects.annotate(
+                rank=SearchRank('search_vector', search_query),
+                similarity=TrigramSimilarity('name', query) + TrigramSimilarity('description', query),
+                type=Value('product', output_field=CharField())
+            ).filter(
+                (Q(search_vector=search_query) | Q(similarity__gt=0.3)) & Q(stock__gt=0)
+            ).values('type', 'id', 'name', relevance=F('rank')).order_by('-relevance')
+
+            # Об'єднуємо результати
+            results = list(user_results) + list(category_results) + list(product_results)
+            results = sorted(results, key=lambda x: x['relevance'], reverse=True)[:50]
+
+            serializer = self.get_serializer(results, many=True)
+            logger.info(f"Search completed for query '{query}' with {len(results)} results")
+            return Response({"success": True, "data": serializer.data}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"Error during search for query '{query}': {str(e)}")
+            return Response({"success": False, "errors": {"detail": str(e)}}, status=status.HTTP_400_BAD_REQUEST)
