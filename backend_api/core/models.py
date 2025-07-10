@@ -7,6 +7,9 @@ from django.contrib.postgres.fields import ArrayField
 from cloudinary.models import CloudinaryField
 from django.utils.text import slugify  # Переносимо імпорт на початок файлу
 from pytils.translit import slugify
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
+from django.contrib.postgres.search import SearchVector
 
 name_validator = RegexValidator(
     regex=r'^(?!-)([A-Za-zА-Яа-яїЇіІєЄґҐ]+)(?<!-)$',
@@ -45,6 +48,7 @@ class User(AbstractUser):
     ]
     email = models.EmailField(unique=True)
     username = models.CharField(max_length=50, validators=[name_validator])
+    surname = models.CharField(max_length=50, validators=[name_validator])
     roles = ArrayField(
         models.CharField(max_length=10, choices=ROLE_CHOICES),
         default=list,
@@ -52,9 +56,8 @@ class User(AbstractUser):
         db_index=True
     )
     is_verified = models.BooleanField(default=False, db_index=True)
-    surname = models.CharField(max_length=50, validators=[name_validator])
-
     verification_token_created_at = models.DateTimeField(null=True, blank=True)
+    search_vector = SearchVectorField(null=True, blank=True)
 
     objects = CustomUserManager()
 
@@ -62,10 +65,21 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ['username', 'surname']
 
     def save(self, *args, **kwargs):
-        # Уникаємо скидання roles для суперкористувачів
         if not self.is_superuser and not self.roles:
             self.roles = ['user']
         super().save(*args, **kwargs)
+        # Оновлюємо search_vector після збереження
+        User.objects.filter(pk=self.pk).update(
+            search_vector=(
+                SearchVector('username', weight='A', config='ukrainian') +
+                SearchVector('surname', weight='B', config='ukrainian')
+            )
+        )
+
+    class Meta:
+        indexes = [
+            GinIndex(fields=['search_vector'], name='user_search_idx'),
+        ]
 
     def __str__(self):
         return f"{self.username} (ID: {self.id})"
@@ -94,22 +108,32 @@ class Category(models.Model):
     parent = models.ForeignKey('self', null=True, on_delete=models.SET_NULL, db_index=True)
     category_image = CloudinaryField('image', blank=True, null=True)
     category_href = models.SlugField(max_length=255, unique=True, blank=True)
+    search_vector = SearchVectorField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.category_href:
-            self.category_href = slugify(self.name)  # Використовуємо pytils slugify
-            if not self.category_href:  # Якщо slugify повертає порожній рядок
+            self.category_href = slugify(self.name)
+            if not self.category_href:
                 self.category_href = f"category-{self.id or Category.objects.count() + 1}"
             base_href = self.category_href
             counter = 1
             while Category.objects.filter(category_href=self.category_href).exclude(id=self.id).exists():
                 self.category_href = f"{base_href}-{counter}"
                 counter += 1
+
         super().save(*args, **kwargs)
+
+        # Після збереження — оновлюємо search_vector
+        Category.objects.filter(pk=self.pk).update(
+            search_vector=SearchVector('name', weight='A', config='ukrainian')
+        )
 
     class Meta:
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
+        indexes = [
+            GinIndex(fields=['search_vector'], name='category_search_idx'),
+        ]
 
 name_validator = RegexValidator(
     regex=r'^[A-Za-zА-Яа-я0-9\s\-\']+$',
@@ -121,6 +145,7 @@ class Product(models.Model):
         ('fixed', 'Fixed Price'),
         ('auction', 'Auction'),
     ]
+
     vendor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='products')
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     name = models.CharField(max_length=255, db_index=True, validators=[name_validator])
@@ -129,40 +154,51 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, db_index=True)
     discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, db_index=True)
     start_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    rating_count = models.PositiveIntegerField(default=0, db_index=True)
     auction_end_time = models.DateTimeField(null=True, blank=True, db_index=True)
     stock = models.PositiveIntegerField(default=0, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
-    product_href = models.SlugField(max_length=255, unique=True, blank=True)
+    product_href = models.SlugField(max_length=255, unique=True, blank=True)  #SlugField
+    rating_count = models.PositiveIntegerField(default=0, db_index=True)
+    search_vector = SearchVectorField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.name.strip():
             raise ValueError("Назва продукту не може бути порожньою.")
         if not self.product_href:
             self.product_href = slugify(self.name)
-            if not self.product_href:  # Якщо slugify повертає порожній результат
+            if not self.product_href:
                 self.product_href = f"product-{self.id or Product.objects.count() + 1}"
             base_href = self.product_href
             counter = 1
             while Product.objects.filter(product_href=self.product_href).exclude(id=self.id).exists():
                 self.product_href = f"{base_href}-{counter}"
                 counter += 1
-        # Валідація: discount_price має сенс тільки для sale_type='fixed' і повинен бути <= price
         if self.sale_type == 'fixed' and self.discount_price is not None:
             if self.price is None:
                 raise ValueError("Для типу продажу 'fixed' ціна обов’язкова, якщо вказана знижка.")
             if self.discount_price > self.price:
                 raise ValueError("Знижена ціна не може бути більшою за звичайну ціну.")
         if self.sale_type == 'auction' and self.discount_price is not None:
-            self.discount_price = None  # Скидаємо знижку для аукціонів
+            self.discount_price = None
         super().save(*args, **kwargs)
+        Product.objects.filter(pk=self.pk).update(
+            search_vector=(
+                SearchVector('name', weight='A', config='ukrainian') +
+                SearchVector('description', weight='B', config='ukrainian')
+            )
+        )
 
     def is_available(self):
         return self.stock > 0
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        indexes = [
+            GinIndex(fields=['search_vector'], name='product_search_idx'),
+        ]
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')

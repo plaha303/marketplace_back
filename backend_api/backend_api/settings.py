@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework_simplejwt.token_blacklist',
+    'django.contrib.postgres',
     # Dev app
     'corsheaders',
     'rest_framework',
@@ -138,6 +139,8 @@ DATABASES = {
         'PORT': env('DB_PORT'),
     }
 }
+
+FULLTEXT_SEARCH_CONFIG = 'ukrainian'
 
 
 # Password validation
