@@ -60,6 +60,7 @@ services:
     entrypoint: >
       sh -c "
       until pg_isready -h marketplace_database -U ${DB_USERNAME} -d ${DB_DATABASE}; do sleep 1; done;
-      psql -h marketplace_database -U ${DB_USERNAME} -d ${DB_DATABASE} -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm;';
-      psql -h marketplace_database -U ${DB_USERNAME} -d ${DB_DATABASE} -c 'CREATE EXTENSION IF NOT EXISTS unaccent;';
+      psql -h marketplace_database -U ${DB_USERNAME} -d ${DB_DATABASE} -f /docker-entrypoint-initdb.d/00-init-extensions.sql
       "
+    volumes:
+      - ./init-extensions.sql:/docker-entrypoint-initdb.d/00-init-extensions.sql

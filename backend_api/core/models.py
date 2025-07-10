@@ -9,6 +9,7 @@ from django.utils.text import slugify  # Переносимо імпорт на 
 from pytils.translit import slugify
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
+from django.contrib.postgres.search import SearchVector
 
 name_validator = RegexValidator(
     regex=r'^(?!-)([A-Za-zА-Яа-яїЇіІєЄґҐ]+)(?<!-)$',
