@@ -6,7 +6,8 @@ from .views import (
     PasswordResetRequestView, PasswordResetConfirmView, UserViewSet, UserProfileView,
     CategoryViewSet, ProductViewSet, OrderViewSet, CartAddView, CartRemoveView, CartListView,
     ReviewViewSet, AuctionBidViewSet, FavoriteViewSet, PaymentViewSet, ShippingViewSet,
-    CategoryImageUploadView, ProductImageUploadView, LogoutView, PlatformReviewListView
+    CategoryImageUploadView, ProductImageUploadView, LogoutView, PlatformReviewListView,
+    SearchViewSet
 )
 
 urlpatterns = [
@@ -26,6 +27,7 @@ urlpatterns = [
     path('popular-categories/', views.PopularCategoriesView.as_view(), name='popular-categories'),
 
     # Інші маршрути
+    path('search/', SearchViewSet.as_view({'get': 'list'}), name='search'),
     path('users/', views.UserViewSet.as_view({'get': 'list', 'post': 'create'}), name='user-list'),
     path('user/', views.UserProfileView.as_view(), name='user-profile'),
     path('users/<int:pk>/', views.UserViewSet.as_view(

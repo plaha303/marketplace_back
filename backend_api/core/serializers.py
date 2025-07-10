@@ -13,6 +13,7 @@ import certifi
 import re
 from django.utils.timezone import now
 from datetime import timedelta
+from rest_framework import serializers
 
 from django.db.models import Avg
 import logging
@@ -481,3 +482,22 @@ class ResendVerificationCodeSerializer(serializers.Serializer):
             fail_silently=False,
         )
         return user
+
+class SearchResultSerializer(serializers.Serializer):
+    type = serializers.CharField()  # Тип результату: 'user', 'category', 'product'
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    details = serializers.SerializerMethodField()
+    relevance = serializers.FloatField()  # Ранг релевантності
+
+    def get_details(self, obj):
+        if obj['type'] == 'user':
+            user = User.objects.get(id=obj['id'])
+            return UserSerializer(user).data
+        elif obj['type'] == 'category':
+            category = Category.objects.get(id=obj['id'])
+            return CategorySerializer(category).data
+        elif obj['type'] == 'product':
+            product = Product.objects.get(id=obj['id'])
+            return ProductSerializer(product, context=self.context).data
+        return {}

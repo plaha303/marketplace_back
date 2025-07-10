@@ -4,14 +4,14 @@ volumes:
   redis_data:
 
 services:
-
   # Postgres
   marketplace_database:
     image: postgres:alpine
     container_name: marketplace_database
     restart: unless-stopped
     volumes:
-      - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./init-extensions.sql:/docker-entrypoint-initdb.d/00-init-extensions.sql
       - marketplace_db_data:/var/lib/postgresql/data
     ports:
       - 5432:5432
@@ -25,7 +25,7 @@ services:
       POSTGRES_USER: ${DB_USERNAME}
       SCHEMA: public
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -46,3 +46,21 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # Service to initialize extensions for existing databases
+  db-extensions-init:
+    image: postgres:alpine
+    depends_on:
+      marketplace_database:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${DB_PASSWORD}
+      PGUSER: ${DB_USERNAME}
+      PGDATABASE: ${DB_DATABASE}
+    entrypoint: >
+      sh -c "
+      until pg_isready -h marketplace_database -U ${DB_USERNAME} -d ${DB_DATABASE}; do sleep 1; done;
+      psql -h marketplace_database -U ${DB_USERNAME} -d ${DB_DATABASE} -f /docker-entrypoint-initdb.d/00-init-extensions.sql
+      "
+    volumes:
+      - ./init-extensions.sql:/docker-entrypoint-initdb.d/00-init-extensions.sql
