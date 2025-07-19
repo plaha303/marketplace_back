@@ -946,7 +946,7 @@ class SearchViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             OpenApiParameter(name='q', type=str, location=OpenApiParameter.QUERY, required=True, description='Пошуковий запит'),
         ],
         responses={200: SearchResultSerializer(many=True)},
-        description="Глобальний пошук по користувачах, категоріях і продуктах."
+        description="Глобальний пошук по користувачах і продуктах."
     )
     def list(self, request, *args, **kwargs):
         query = request.GET.get('q', '').strip()
@@ -970,15 +970,6 @@ class SearchViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
                 (Q(search_vector=search_query) | Q(similarity__gt=0.3)) & Q(is_active=True) & Q(is_verified=True)
             ).values('type', 'id', 'name', relevance=F('rank')).order_by('-relevance')
 
-            # Пошук по категоріях
-            category_results = Category.objects.annotate(
-                rank=SearchRank('search_vector', search_query),
-                similarity=TrigramSimilarity('name', query),
-                type=Value('category', output_field=CharField())
-            ).filter(
-                Q(search_vector=search_query) | Q(similarity__gt=0.3)
-            ).values('type', 'id', 'name', relevance=F('rank')).order_by('-relevance')
-
             # Пошук по продуктах
             product_results = Product.objects.annotate(
                 rank=SearchRank('search_vector', search_query),
@@ -989,7 +980,7 @@ class SearchViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             ).values('type', 'id', 'name', relevance=F('rank')).order_by('-relevance')
 
             # Об'єднуємо результати
-            results = list(user_results) + list(category_results) + list(product_results)
+            results = list(user_results) + list(product_results)
             results = sorted(results, key=lambda x: x['relevance'], reverse=True)[:50]
 
             serializer = self.get_serializer(results, many=True)
