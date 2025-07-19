@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'django_celery_beat',
     # Web app
     'core',
+    'django_extensions',
 ]
 
 MIDDLEWARE = [
