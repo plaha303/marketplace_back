@@ -27,14 +27,33 @@ from django.contrib.auth.tokens import default_token_generator
 from django.db import transaction
 from core.tasks import upload_image_to_cloudinary
 import logging
+from rest_framework.viewsets import ViewSet
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank, TrigramSimilarity
 from rest_framework import viewsets, mixins
 from django.db.models import Q, Value, CharField, F
 from django.db.models.functions import Concat
 from rest_framework.permissions import AllowAny
+from rest_framework.pagination import PageNumberPagination
+from itertools import chain
+from django.db import DatabaseError
+from rest_framework.viewsets import GenericViewSet
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
+
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+    def get_paginated_response(self, data):
+        return Response({
+            "success": True,
+            "count": self.page.paginator.count,
+            "next": self.get_next_link(),
+            "prev": self.get_previous_link(),
+            "results": data
+        })
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -936,66 +955,152 @@ class DiscountedProductsView(viewsets.ReadOnlyModelViewSet):
         return Product.objects.filter(stock__gt=0, sale_type='fixed', discount_price__isnull=False)
 
 
-class SearchViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+class SearchViewSet(GenericViewSet):
+    permission_classes = []
+    pagination_class = StandardResultsSetPagination
     serializer_class = SearchResultSerializer
-    permission_classes = [AllowAny]
     throttle_scope = 'search'
 
     @extend_schema(
         parameters=[
-            OpenApiParameter(name='q', type=str, location=OpenApiParameter.QUERY, required=True, description='Пошуковий запит'),
+            OpenApiParameter(name='q', description='Search query', required=True, type=str),
+            OpenApiParameter(name='similarity_threshold', description='Trigram similarity threshold', required=False, type=float, default=0.3),
         ],
         responses={200: SearchResultSerializer(many=True)},
-        description="Глобальний пошук по користувачах, категоріях і продуктах."
+        examples=[
+            OpenApiExample(
+                'Example Response',
+                value={
+                    'success': True,
+                    'count': 3,
+                    'next': None,
+                    'prev': None,
+                    'results': [
+                        {'type': 'user', 'id': 1, 'name': 'Тест Користувач', 'relevance': 0.9, 'details': {}},
+                        {'type': 'product', 'id': 2, 'name': 'Смартфон', 'relevance': 0.8, 'details': {}},
+                        {'type': 'category', 'id': 3, 'name': 'Електроніка', 'relevance': 0.7, 'details': {}}
+                    ]
+                }
+            )
+        ]
     )
     def list(self, request, *args, **kwargs):
         query = request.GET.get('q', '').strip()
+        try:
+            similarity_threshold = float(request.GET.get('similarity_threshold', 0.3))
+        except (TypeError, ValueError):
+            return Response(
+                {"success": False, "errors": {"similarity_threshold": "Невірне значення similarity_threshold"}},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        if len(query) > 100:
+            logger.warning(f"Search query too long: {len(query)} characters")
+            return Response({"success": False, "errors": {"query": "Запит занадто довгий (макс. 100 символів)"}},
+                            status=status.HTTP_400_BAD_REQUEST)
+
         if not query:
             logger.warning("Search request with empty query")
-            return Response({"success": False, "errors": {"query": "Пошуковий запит не може бути порожнім"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success": False, "errors": {"query": "Пошуковий запит не може бути порожнім"}},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-        logger.debug(f"Search request with query: {query}")
+        logger.debug(f"Search request with query: {query}, similarity_threshold: {similarity_threshold}")
 
         try:
-            # Створюємо SearchQuery для запиту
             search_query = SearchQuery(query, config='ukrainian')
 
-            # Пошук по користувачах
-            user_results = User.objects.annotate(
+            user_data = User.objects.annotate(
                 rank=SearchRank('search_vector', search_query),
                 similarity=TrigramSimilarity('username', query) + TrigramSimilarity('surname', query),
                 type=Value('user', output_field=CharField()),
-                name=Concat('username', Value(' '), 'surname')
+                full_name=Concat('username', Value(' '), 'surname'),
+                relevance=SearchRank('search_vector', search_query) + TrigramSimilarity('username', query) + TrigramSimilarity('surname', query)
             ).filter(
-                (Q(search_vector=search_query) | Q(similarity__gt=0.3)) & Q(is_active=True) & Q(is_verified=True)
-            ).values('type', 'id', 'name', relevance=F('rank')).order_by('-relevance')
+                (Q(search_vector=search_query) | Q(similarity__gt=similarity_threshold)) & Q(is_active=True) & Q(is_verified=True)
+            ).values('type', 'id', 'full_name', 'relevance')
 
-            # Пошук по категоріях
-            category_results = Category.objects.annotate(
-                rank=SearchRank('search_vector', search_query),
-                similarity=TrigramSimilarity('name', query),
-                type=Value('category', output_field=CharField())
-            ).filter(
-                Q(search_vector=search_query) | Q(similarity__gt=0.3)
-            ).values('type', 'id', 'name', relevance=F('rank')).order_by('-relevance')
-
-            # Пошук по продуктах
-            product_results = Product.objects.annotate(
+            product_data = Product.objects.annotate(
                 rank=SearchRank('search_vector', search_query),
                 similarity=TrigramSimilarity('name', query) + TrigramSimilarity('description', query),
-                type=Value('product', output_field=CharField())
+                type=Value('product', output_field=CharField()),
+                full_name=F('name'),  # Використовуємо full_name для уніфікації
+                relevance=SearchRank('search_vector', search_query) + TrigramSimilarity('name', query) + TrigramSimilarity('description', query)
             ).filter(
-                (Q(search_vector=search_query) | Q(similarity__gt=0.3)) & Q(stock__gt=0)
-            ).values('type', 'id', 'name', relevance=F('rank')).order_by('-relevance')
+                (Q(search_vector=search_query) | Q(similarity__gt=similarity_threshold)) & Q(stock__gt=0)
+            ).values('type', 'id', 'full_name', 'relevance')
 
-            # Об'єднуємо результати
-            results = list(user_results) + list(category_results) + list(product_results)
-            results = sorted(results, key=lambda x: x['relevance'], reverse=True)[:50]
+            category_data = Category.objects.annotate(
+                rank=SearchRank('search_vector', search_query),
+                similarity=TrigramSimilarity('name', query),
+                type=Value('category', output_field=CharField()),
+                full_name=F('name'),
+                relevance=SearchRank('search_vector', search_query) + TrigramSimilarity('name', query)
+            ).filter(
+                Q(search_vector=search_query) | Q(similarity__gt=similarity_threshold)
+            ).values('type', 'id', 'full_name', 'relevance')
 
-            serializer = self.get_serializer(results, many=True)
-            logger.info(f"Search completed for query '{query}' with {len(results)} results")
-            return Response({"success": True, "data": serializer.data}, status=status.HTTP_200_OK)
+            # Об'єднуємо усі дані (union) — order_by тут не працює
+            data = user_data.union(product_data, category_data)
 
+            data_list = list(data)
+
+            # Сортуємо в Python за relevance desc
+            data_list.sort(key=lambda x: x['relevance'], reverse=True)
+
+            max_results = 1000
+            if len(data_list) > max_results:
+                logger.warning(f"Search query '{query}' returned too many results: {len(data_list)}")
+                data_list = data_list[:max_results]
+
+            # Переіменовуємо full_name у name для серіалізатора
+            for item in data_list:
+                item['name'] = item.pop('full_name')
+
+            user_ids = [item['id'] for item in data_list if item['type'] == 'user']
+            product_ids = [item['id'] for item in data_list if item['type'] == 'product']
+            category_ids = [item['id'] for item in data_list if item['type'] == 'category']
+
+            users = User.objects.filter(id__in=user_ids).select_related()
+            products = Product.objects.filter(id__in=product_ids).select_related('vendor', 'category').prefetch_related('images')
+            categories = Category.objects.filter(id__in=category_ids).select_related('parent')
+
+            user_dict = {u.id: u for u in users}
+            product_dict = {p.id: p for p in products}
+            category_dict = {c.id: c for c in categories}
+
+            logger.info(f"Search found {len(user_ids)} users, {len(product_ids)} products, {len(category_ids)} categories for query '{query}'")
+
+            page = self.paginate_queryset(data_list)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True, context={
+                    'user_dict': user_dict,
+                    'product_dict': product_dict,
+                    'category_dict': category_dict
+                })
+                return self.get_paginated_response(serializer.data)
+
+            serializer = self.get_serializer(data_list, many=True, context={
+                'user_dict': user_dict,
+                'product_dict': product_dict,
+                'category_dict': category_dict
+            })
+
+            logger.info(f"Search completed for query '{query}' with {len(data_list)} results")
+
+            return Response({
+                "success": True,
+                "count": len(data_list),
+                "next": None,
+                "prev": None,
+                "results": serializer.data
+            }, status=status.HTTP_200_OK)
+
+        except DatabaseError as e:
+            logger.error(f"Database error during search for query '{query}': {str(e)}")
+            return Response({"success": False, "errors": {"detail": "Помилка бази даних"}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except ValueError as e:
+            logger.error(f"Value error during search for query '{query}': {str(e)}", exc_info=True)
+            return Response({"success": False, "errors": {"detail": f"Невірний формат запиту: {str(e)}"}},
+                            status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            logger.error(f"Error during search for query '{query}': {str(e)}")
+            logger.error(f"Unexpected error during search for query '{query}': {str(e)}")
             return Response({"success": False, "errors": {"detail": str(e)}}, status=status.HTTP_400_BAD_REQUEST)
