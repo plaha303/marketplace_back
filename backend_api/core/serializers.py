@@ -494,9 +494,6 @@ class SearchResultSerializer(serializers.Serializer):
         if obj['type'] == 'user':
             user = User.objects.get(id=obj['id'])
             return UserSerializer(user).data
-        elif obj['type'] == 'category':
-            category = Category.objects.get(id=obj['id'])
-            return CategorySerializer(category).data
         elif obj['type'] == 'product':
             product = Product.objects.get(id=obj['id'])
             return ProductSerializer(product, context=self.context).data
