@@ -483,18 +483,26 @@ class ResendVerificationCodeSerializer(serializers.Serializer):
         )
         return user
 
+
 class SearchResultSerializer(serializers.Serializer):
-    type = serializers.CharField()  # Тип результату: 'user', 'category', 'product'
+    type = serializers.CharField()
     id = serializers.IntegerField()
-    name = serializers.CharField()
+    name = serializers.SerializerMethodField()
+    relevance = serializers.FloatField()
     details = serializers.SerializerMethodField()
-    relevance = serializers.FloatField()  # Ранг релевантності
+
+    def get_name(self, obj):
+        return obj.get('name', '')
+
 
     def get_details(self, obj):
         if obj['type'] == 'user':
-            user = User.objects.get(id=obj['id'])
-            return UserSerializer(user).data
+            instance = self.context['user_dict'].get(obj['id'])
+            return UserSerializer(instance).data if instance else {}
         elif obj['type'] == 'product':
-            product = Product.objects.get(id=obj['id'])
-            return ProductSerializer(product, context=self.context).data
+            instance = self.context['product_dict'].get(obj['id'])
+            return ProductSerializer(instance).data if instance else {}
+        elif obj['type'] == 'category':
+            instance = self.context['category_dict'].get(obj['id'])
+            return CategorySerializer(instance).data if instance else {}
         return {}

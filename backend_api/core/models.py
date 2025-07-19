@@ -10,6 +10,7 @@ from pytils.translit import slugify
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.contrib.postgres.search import SearchVector
+from django.db import transaction
 
 name_validator = RegexValidator(
     regex=r'^(?!-)([A-Za-zА-Яа-яїЇіІєЄґҐ]+)(?<!-)$',
@@ -65,17 +66,16 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ['username', 'surname']
 
     def save(self, *args, **kwargs):
-        if not self.is_superuser and not self.roles:
-            self.roles = ['user']
-        super().save(*args, **kwargs)
-        # Оновлюємо search_vector після збереження
-        User.objects.filter(pk=self.pk).update(
-            search_vector=(
-                SearchVector('username', weight='A', config='ukrainian') +
-                SearchVector('surname', weight='B', config='ukrainian')
+        with transaction.atomic():
+            if not self.is_superuser and not self.roles:
+                self.roles = ['user']
+            super().save(*args, **kwargs)
+            User.objects.filter(pk=self.pk).update(
+                search_vector=(
+                        SearchVector('username', weight='A', config='ukrainian') +
+                        SearchVector('surname', weight='B', config='ukrainian')
+                )
             )
-        )
-
     class Meta:
         indexes = [
             GinIndex(fields=['search_vector'], name='user_search_idx'),
@@ -163,31 +163,32 @@ class Product(models.Model):
     search_vector = SearchVectorField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
-        if not self.name.strip():
-            raise ValueError("Назва продукту не може бути порожньою.")
-        if not self.product_href:
-            self.product_href = slugify(self.name)
+        with transaction.atomic():
+            if not self.name.strip():
+                raise ValueError("Назва продукту не може бути порожньою.")
             if not self.product_href:
-                self.product_href = f"product-{self.id or Product.objects.count() + 1}"
-            base_href = self.product_href
-            counter = 1
-            while Product.objects.filter(product_href=self.product_href).exclude(id=self.id).exists():
-                self.product_href = f"{base_href}-{counter}"
-                counter += 1
-        if self.sale_type == 'fixed' and self.discount_price is not None:
-            if self.price is None:
-                raise ValueError("Для типу продажу 'fixed' ціна обов’язкова, якщо вказана знижка.")
-            if self.discount_price > self.price:
-                raise ValueError("Знижена ціна не може бути більшою за звичайну ціну.")
-        if self.sale_type == 'auction' and self.discount_price is not None:
-            self.discount_price = None
-        super().save(*args, **kwargs)
-        Product.objects.filter(pk=self.pk).update(
-            search_vector=(
-                SearchVector('name', weight='A', config='ukrainian') +
-                SearchVector('description', weight='B', config='ukrainian')
+                self.product_href = slugify(self.name)
+                if not self.product_href:
+                    self.product_href = f"product-{self.id or Product.objects.count() + 1}"
+                base_href = self.product_href
+                counter = 1
+                while Product.objects.filter(product_href=self.product_href).exclude(id=self.id).exists():
+                    self.product_href = f"{base_href}-{counter}"
+                    counter += 1
+            if self.sale_type == 'fixed' and self.discount_price is not None:
+                if self.price is None:
+                    raise ValueError("Для типу продажу 'fixed' ціна обов’язкова, якщо вказана знижка.")
+                if self.discount_price > self.price:
+                    raise ValueError("Знижена ціна не може бути більшою за звичайну ціну.")
+            if self.sale_type == 'auction' and self.discount_price is not None:
+                self.discount_price = None
+            super().save(*args, **kwargs)
+            Product.objects.filter(pk=self.pk).update(
+                search_vector=(
+                        SearchVector('name', weight='A', config='ukrainian') +
+                        SearchVector('description', weight='B', config='ukrainian')
+                )
             )
-        )
 
     def is_available(self):
         return self.stock > 0
