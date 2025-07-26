@@ -26,7 +26,7 @@ from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.db import transaction
-from core.tasks import upload_image_to_cloudinary
+from core.tasks import upload_image_to_cloudinary, send_moderation_notification
 import logging
 from rest_framework.viewsets import ViewSet
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank, TrigramSimilarity
