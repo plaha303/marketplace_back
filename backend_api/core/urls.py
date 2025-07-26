@@ -26,6 +26,9 @@ urlpatterns = [
     path('hits/', views.HitsView.as_view({'get': 'list'}), name='hits'),
     path('popular-categories/', views.PopularCategoriesView.as_view(), name='popular-categories'),
 
+    # Маршрут для модерації
+    path('content/moderation/', ModerationViewSet.as_view({'get': 'list', 'post': 'create'}), name='moderation'),
+
     # Інші маршрути
     path('search/', SearchViewSet.as_view({'get': 'list'}), name='search'),
     path('users/', views.UserViewSet.as_view({'get': 'list', 'post': 'create'}), name='user-list'),
@@ -36,7 +39,6 @@ urlpatterns = [
     path('categories/image-upload/', views.CategoryImageUploadView.as_view(), name='category-image-upload'),
     path('categories/<int:pk>/', views.CategoryViewSet.as_view(
         {'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='category-detail'),
-    path('content/moderation/', ModerationViewSet.as_view({'get': 'list', 'post': 'moderate'}), name='moderation'),
     path('discounted-products/', views.DiscountedProductsView.as_view({'get': 'list'}), name='discounted-products'),
     path('products/', views.ProductViewSet.as_view({'get': 'list', 'post': 'create'}), name='product-list'),
     path('products/image-upload/', views.ProductImageUploadView.as_view(), name='product-image-upload'),
