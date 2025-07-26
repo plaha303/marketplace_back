@@ -149,13 +149,13 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'vendor', 'category', 'sale_type', 'price', 'stock', 'is_available', 'created_at']
-    list_filter = ['sale_type', 'category', 'vendor']
+    list_display = ['id', 'name', 'vendor', 'category', 'sale_type', 'price', 'stock', 'is_available', 'is_approved', 'created_at']  # Додаємо is_approved
+    list_filter = ['sale_type', 'category', 'vendor', 'is_approved']  # Додаємо фільтр
     search_fields = ['name', 'product_href', 'description']
     prepopulated_fields = {'product_href': ('name',)}
     fields = [
         'name', 'vendor', 'category', 'description', 'sale_type',
-        'price', 'start_price', 'auction_end_time', 'stock', 'product_href'
+        'price', 'start_price', 'auction_end_time', 'stock', 'product_href', 'is_approved'  # Додаємо is_approved
     ]
     inlines = [ProductImageInline, AuctionBidInline, ReviewInline]
     list_select_related = ['vendor', 'category']
@@ -187,11 +187,13 @@ class EmailLogAdmin(admin.ModelAdmin):
     fields = ['order', 'recipient', 'subject', 'status', 'error', 'sent_at']
     readonly_fields = ['sent_at', 'error']
 
-@admin.register(PlatformReview)
-class PlatformReviewAdmin(admin.ModelAdmin):
-    list_display = ['name', 'surname', 'city', 'rating', 'created_at']
-    search_fields = ['name', 'surname', 'city', 'review_text']
-    list_filter = ['rating', 'created_at']
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ['id', 'product', 'user', 'rating', 'is_approved', 'created_at']
+    list_filter = ['rating', 'created_at', 'product', 'is_approved']
+    search_fields = ['product__name', 'user__username', 'comment']
+    fields = ['product', 'user', 'rating', 'comment', 'is_approved', 'created_at']
+    readonly_fields = ['created_at']
 
 @admin.register(ProductImage)
 class ProductImageAdmin(admin.ModelAdmin):
@@ -263,13 +265,6 @@ class ShippingAdmin(admin.ModelAdmin):
             qs = qs.filter(order__customer=request.user)
         return qs
 
-@admin.register(Review)
-class ReviewAdmin(admin.ModelAdmin):
-    list_display = ['id', 'product', 'user', 'rating', 'created_at']
-    list_filter = ['rating', 'created_at', 'product']
-    search_fields = ['product__name', 'user__username', 'comment']
-    fields = ['product', 'user', 'rating', 'comment', 'created_at']
-    readonly_fields = ['created_at']
 
 @admin.register(Favorite)
 class FavoriteAdmin(admin.ModelAdmin):

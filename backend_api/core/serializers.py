@@ -88,19 +88,21 @@ class ProductSerializer(serializers.ModelSerializer):
     categoryId = serializers.IntegerField(source='category.id', allow_null=True)
     rating = serializers.SerializerMethodField()
     discount_tag = serializers.SerializerMethodField()
+    is_approved = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Product
         fields = ['productId', 'vendor', 'categoryId', 'name', 'description',
                   'sale_type', 'price', 'discount_price', 'start_price', 'auction_end_time',
-                  'stock', 'created_at', 'images', 'product_href', 'isAvailable', 'reviews_count', 'rating', 'discount_tag']
+                  'stock', 'created_at', 'images', 'product_href', 'isAvailable', 'reviews_count', 'rating',
+                  'discount_tag', 'is_approved']
 
     def get_isAvailable(self, obj):
         return obj.is_available()
 
     def get_rating(self, obj):
         # Обчислюємо середній рейтинг на основі всіх відгуків продукту
-        average = obj.reviews.aggregate(Avg('rating'))['rating__avg']
+        average = obj.reviews.filter(is_approved=True).aggregate(Avg('rating'))['rating__avg']
         # Повертаємо середній рейтинг з округленням до 2 знаків після коми, або null, якщо відгуків немає
         return round(average, 2) if average is not None else None
 
@@ -403,11 +405,12 @@ class CartRemoveSerializer(serializers.Serializer):
 class ReviewSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     productId = serializers.IntegerField(source='product.id')
+    is_approved = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Review
-        fields = ['id', 'productId', 'user', 'rating', 'comment', 'created_at']
-        read_only_fields = ['user', 'created_at']
+        fields = ['id', 'productId', 'user', 'rating', 'comment', 'created_at', 'is_approved']
+        read_only_fields = ['user', 'created_at', 'is_approved']
 
     def validate_rating(self, value):
         if value < 0 or value > 5:

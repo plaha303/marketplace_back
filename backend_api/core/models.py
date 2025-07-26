@@ -161,6 +161,7 @@ class Product(models.Model):
     product_href = models.SlugField(max_length=255, unique=True, blank=True)  #SlugField
     rating_count = models.PositiveIntegerField(default=0, db_index=True)
     search_vector = SearchVectorField(null=True, blank=True)
+    is_approved = models.BooleanField(default=False, db_index=True)  # Поле для модерації
 
     def save(self, *args, **kwargs):
         with transaction.atomic():
@@ -191,7 +192,7 @@ class Product(models.Model):
             )
 
     def is_available(self):
-        return self.stock > 0
+        return self.stock > 0 and self.is_approved
 
     def __str__(self):
         return self.name
@@ -295,16 +296,18 @@ class Review(models.Model):
     )
     comment = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    is_approved = models.BooleanField(default=False, db_index=True)
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        self.product.rating_count = self.product.reviews.count()
+        self.product.rating_count = self.product.reviews.filter(is_approved=True).count()  # Обновлюємо тільки для схвалених відгуків
         self.product.save(update_fields=['rating_count'])
 
     def delete(self, *args, **kwargs):
         product = self.product
         super().delete(*args, **kwargs)
-        product.rating_count = product.reviews.count()
+        product.rating_count = product.reviews.filter(
+            is_approved=True).count()  # Обновлюємо тільки для схвалених відгуків
         product.save(update_fields=['rating_count'])
 
     def __str__(self):
