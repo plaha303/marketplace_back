@@ -1120,7 +1120,7 @@ class ModerationViewSet(viewsets.ViewSet):
             OpenApiParameter(name='type', description='Type of content to moderate (product/review)', required=True, type=str),
             OpenApiParameter(name='is_approved', description='Filter by approval status', required=False, type=bool),
         ],
-        responses={200: serializers.Serializer},
+        responses={200: ProductSerializer(many=True)},
         description="Retrieve content pending moderation (products or reviews)"
     )
     def list(self, request):
@@ -1155,17 +1155,25 @@ class ModerationViewSet(viewsets.ViewSet):
             )
 
     @extend_schema(
-        parameters=[
-            OpenApiParameter(name='type', description='Type of content (product/review)', required=True, type=str),
-            OpenApiParameter(name='id', description='ID of the content to moderate', required=True, type=int),
-            OpenApiParameter(name='is_approved', description='Approval status', required=True, type=bool),
-        ],
-        responses={200: None},
-        description="Approve or reject content (product/review)"
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'type': {'type': 'string', 'enum': ['product', 'review']},
+                    'id': {'type': 'integer'},
+                    'is_approved': {'type': 'boolean'},
+                },
+                'required': ['type', 'id', 'is_approved']
+            }
+        },
+        responses={
+            200: {'description': 'Content approved or rejected'},
+            400: {'description': 'Invalid request'},
+            404: {'description': 'Content not found'},
+        },
+        description="Approve or reject content (product or review)"
     )
-    @action(detail=False, methods=['post'])
-    def moderate(self, request):
-        logger.debug(f"Moderation request by user {request.user.id} with data: {request.data}")
+    def create(self, request):
         content_type = request.data.get('type')
         content_id = request.data.get('id')
         is_approved = request.data.get('is_approved')
@@ -1177,6 +1185,13 @@ class ModerationViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        if not isinstance(content_id, int):
+            logger.error(f"Invalid content ID {content_id} for moderation")
+            return Response(
+                {"success": False, "errors": {"id": "ID контенту має бути цілим числом"}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         if not isinstance(is_approved, bool):
             logger.error(f"Invalid is_approved value {is_approved} for moderation")
             return Response(
@@ -1185,40 +1200,30 @@ class ModerationViewSet(viewsets.ViewSet):
             )
 
         try:
-            with transaction.atomic():
-                if content_type == 'product':
-                    try:
-                        content = Product.objects.select_for_update().get(id=content_id)
-                    except Product.DoesNotExist:
-                        logger.error(f"Product {content_id} not found for moderation")
-                        return Response(
-                            {"success": False, "errors": {"id": "Продукт не знайдено"}},
-                            status=status.HTTP_404_NOT_FOUND
-                        )
-                else:  # content_type == 'review'
-                    try:
-                        content = Review.objects.select_for_update().get(id=content_id)
-                    except Review.DoesNotExist:
-                        logger.error(f"Review {content_id} not found for moderation")
-                        return Response(
-                            {"success": False, "errors": {"id": "Відгук не знайдено"}},
-                            status=status.HTTP_404_NOT_FOUND
-                        )
+            if content_type == 'product':
+                obj = Product.objects.get(id=content_id)
+                recipient_email = obj.vendor.email
+            else:  # review
+                obj = Review.objects.get(id=content_id)
+                recipient_email = obj.user.email
 
-                content.is_approved = is_approved
-                content.save()
+            obj.is_approved = is_approved
+            obj.save()
+            logger.info(f"{content_type.capitalize()} {content_id} {'approved' if is_approved else 'rejected'} by user {request.user.id}")
 
-                # Якщо відгук схвалено або відхилено, оновлюємо rating_count продукту
-                if content_type == 'review':
-                    product = content.product
-                    product.rating_count = product.reviews.filter(is_approved=True).count()
-                    product.save(update_fields=['rating_count'])
+            # Виклик асинхронної задачі для відправки сповіщення
+            send_moderation_notification.delay(content_type, content_id, is_approved, recipient_email)
 
-                logger.info(f"{content_type.capitalize()} {content_id} moderated by user {request.user.id} to is_approved={is_approved}")
-                return Response(
-                    {"success": True, "message": f"{content_type.capitalize()} {'схвалено' if is_approved else 'відхилено'}"},
-                    status=status.HTTP_200_OK
-                )
+            return Response(
+                {"success": True, "message": f"{content_type.capitalize()} {'схвалено' if is_approved else 'відхилено'}"},
+                status=status.HTTP_200_OK
+            )
+        except (Product.DoesNotExist, Review.DoesNotExist):
+            logger.error(f"{content_type.capitalize()} with ID {content_id} not found")
+            return Response(
+                {"success": False, "errors": {"detail": f"{content_type.capitalize()} не знайдено"}},
+                status=status.HTTP_404_NOT_FOUND
+            )
         except Exception as e:
             logger.error(f"Error moderating {content_type} {content_id}: {str(e)}")
             return Response(
