@@ -17,11 +17,12 @@ class ProductFilter(filters.FilterSet):
     stock_min = filters.NumberFilter(field_name='stock', lookup_expr='gte')
     min_rating_count = filters.NumberFilter(method='filter_min_rating_count')
     has_discount = filters.BooleanFilter(method='filter_has_discount')
+    is_approved = filters.BooleanFilter(field_name='is_approved', lookup_expr='exact')
 
     class Meta:
         model = Product
         fields = ['categoryId', 'sale_type', 'min_price', 'max_price', 'vendorId', 'in_stock', 'name', 'is_active_auction',
-                  'created_after', 'stock_min', 'min_rating_count', 'has_discount']
+                  'created_after', 'stock_min', 'min_rating_count', 'has_discount', 'is_approved']
 
     def filter_in_stock(self, queryset, name, value):
         if value:
@@ -90,10 +91,11 @@ class ReviewFilter(filters.FilterSet):
     min_rating = filters.NumberFilter(field_name='rating', lookup_expr='gte')
     created_after = filters.DateTimeFilter(field_name='created_at', lookup_expr='gte')
     user = filters.NumberFilter(field_name='user__id', lookup_expr='exact')
+    is_approved = filters.BooleanFilter(field_name='is_approved', lookup_expr='exact')
 
     class Meta:
         model = Review
-        fields = ['product', 'rating', 'min_rating', 'created_after', 'user']
+        fields = ['product', 'rating', 'min_rating', 'created_after', 'user', 'is_approved']
 
 
 class AuctionBidFilter(filters.FilterSet):

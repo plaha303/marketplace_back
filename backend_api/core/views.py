@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from django.utils.timezone import now
+from rest_framework import serializers
 from rest_framework import viewsets, permissions, status, generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import GenericAPIView
@@ -97,11 +98,11 @@ class ProductViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.action == 'list':
-            return queryset.filter(stock__gt=0)
+            return queryset.filter(stock__gt=0, is_approved=True)
         return queryset
 
     def perform_create(self, serializer):
-        serializer.save(vendor=self.request.user)
+        serializer.save(vendor=self.request.user, is_approved=False)
 
     def perform_update(self, serializer):
         try:
@@ -627,6 +628,11 @@ class ReviewViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = ReviewFilter
 
+    def get_queryset(self):
+        if 'admin' in self.request.user.roles:
+            return Review.objects.all()  # Адміни бачать усі відгуки
+        return Review.objects.filter(is_approved=True)  # Звичайні користувачі бачать тільки схвалені відгуки
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
@@ -638,15 +644,14 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
         try:
             with transaction.atomic():
-                serializer.save(user=self.request.user)
+                serializer.save(user=self.request.user, is_approved=False)
                 logger.info(f"Review created for product {serializer.validated_data['product'].id} by user {request.user.id}")
             return Response({"success": True, "data": serializer.data}, status=status.HTTP_201_CREATED)
         except Exception as e:
             logger.error(f"Error creating review for user {request.user.id}: {str(e)}")
             return Response(
                 {"success": False, "errors": {"detail": str(e)}},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+                status=status.HTTP_400_BAD_REQUEST)
 
 class AuctionBidViewSet(viewsets.ModelViewSet):
     throttle_scope = 'auction_bids'
@@ -885,7 +890,7 @@ class HitsView(viewsets.ReadOnlyModelViewSet):
     )
     def get_queryset(self):
         logger.info("HitsView accessed, returning top 10 products by rating_count, excluding auctions")
-        return Product.objects.filter(stock__gt=0, sale_type='fixed').order_by('-rating_count')[:10]
+        return Product.objects.filter(stock__gt=0, sale_type='fixed', is_approved=True).order_by('-rating_count')[:10]
 
 class PopularCategoriesView(APIView):
     @extend_schema(
@@ -952,7 +957,7 @@ class DiscountedProductsView(viewsets.ReadOnlyModelViewSet):
     )
     def get_queryset(self):
         logger.info("DiscountedProductsView accessed, returning products with discounts")
-        return Product.objects.filter(stock__gt=0, sale_type='fixed', discount_price__isnull=False)
+        return Product.objects.filter(stock__gt=0, sale_type='fixed', discount_price__isnull=False, is_approved=True)
 
 
 class SearchViewSet(GenericViewSet):
@@ -1104,3 +1109,119 @@ class SearchViewSet(GenericViewSet):
         except Exception as e:
             logger.error(f"Unexpected error during search for query '{query}': {str(e)}")
             return Response({"success": False, "errors": {"detail": str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+
+class ModerationViewSet(viewsets.ViewSet):
+    permission_classes = [HasRolePermission]
+    allowed_roles = ['admin']
+    throttle_scope = 'moderation'
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='type', description='Type of content to moderate (product/review)', required=True, type=str),
+            OpenApiParameter(name='is_approved', description='Filter by approval status', required=False, type=bool),
+        ],
+        responses={200: serializers.Serializer},
+        description="Retrieve content pending moderation (products or reviews)"
+    )
+    def list(self, request):
+        content_type = request.query_params.get('type')
+        is_approved = request.query_params.get('is_approved', None)
+
+        if content_type not in ['product', 'review']:
+            logger.error(f"Invalid content type {content_type} for moderation")
+            return Response(
+                {"success": False, "errors": {"type": "Тип контенту має бути 'product' або 'review'"}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            if content_type == 'product':
+                queryset = Product.objects.all()
+                if is_approved is not None:
+                    queryset = queryset.filter(is_approved=is_approved.lower() == 'true')
+                serializer = ProductSerializer(queryset, many=True)
+            else:  # content_type == 'review'
+                queryset = Review.objects.all()
+                if is_approved is not None:
+                    queryset = queryset.filter(is_approved=is_approved.lower() == 'true')
+                serializer = ReviewSerializer(queryset, many=True)
+
+            return Response({"success": True, "data": serializer.data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Error listing moderation content for type {content_type}: {str(e)}")
+            return Response(
+                {"success": False, "errors": {"detail": str(e)}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='type', description='Type of content (product/review)', required=True, type=str),
+            OpenApiParameter(name='id', description='ID of the content to moderate', required=True, type=int),
+            OpenApiParameter(name='is_approved', description='Approval status', required=True, type=bool),
+        ],
+        responses={200: None},
+        description="Approve or reject content (product/review)"
+    )
+    @action(detail=False, methods=['post'])
+    def moderate(self, request):
+        logger.debug(f"Moderation request by user {request.user.id} with data: {request.data}")
+        content_type = request.data.get('type')
+        content_id = request.data.get('id')
+        is_approved = request.data.get('is_approved')
+
+        if content_type not in ['product', 'review']:
+            logger.error(f"Invalid content type {content_type} for moderation")
+            return Response(
+                {"success": False, "errors": {"type": "Тип контенту має бути 'product' або 'review'"}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not isinstance(is_approved, bool):
+            logger.error(f"Invalid is_approved value {is_approved} for moderation")
+            return Response(
+                {"success": False, "errors": {"is_approved": "is_approved має бути булевим значенням"}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            with transaction.atomic():
+                if content_type == 'product':
+                    try:
+                        content = Product.objects.select_for_update().get(id=content_id)
+                    except Product.DoesNotExist:
+                        logger.error(f"Product {content_id} not found for moderation")
+                        return Response(
+                            {"success": False, "errors": {"id": "Продукт не знайдено"}},
+                            status=status.HTTP_404_NOT_FOUND
+                        )
+                else:  # content_type == 'review'
+                    try:
+                        content = Review.objects.select_for_update().get(id=content_id)
+                    except Review.DoesNotExist:
+                        logger.error(f"Review {content_id} not found for moderation")
+                        return Response(
+                            {"success": False, "errors": {"id": "Відгук не знайдено"}},
+                            status=status.HTTP_404_NOT_FOUND
+                        )
+
+                content.is_approved = is_approved
+                content.save()
+
+                # Якщо відгук схвалено або відхилено, оновлюємо rating_count продукту
+                if content_type == 'review':
+                    product = content.product
+                    product.rating_count = product.reviews.filter(is_approved=True).count()
+                    product.save(update_fields=['rating_count'])
+
+                logger.info(f"{content_type.capitalize()} {content_id} moderated by user {request.user.id} to is_approved={is_approved}")
+                return Response(
+                    {"success": True, "message": f"{content_type.capitalize()} {'схвалено' if is_approved else 'відхилено'}"},
+                    status=status.HTTP_200_OK
+                )
+        except Exception as e:
+            logger.error(f"Error moderating {content_type} {content_id}: {str(e)}")
+            return Response(
+                {"success": False, "errors": {"detail": str(e)}},
+                status=status.HTTP_400_BAD_REQUEST
+            )
