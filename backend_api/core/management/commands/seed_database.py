@@ -95,6 +95,7 @@ class Command(BaseCommand):
                 start_price=round(random.uniform(10, 500), 2) if sale_type == 'auction' else None,
                 auction_end_time=now() + timedelta(days=random.randint(1, 7)) if sale_type == 'auction' else None,
                 stock=random.randint(0, 100),
+                is_approved=random.choice([True, False])
             )
             products.append(product)
 
@@ -114,7 +115,8 @@ class Command(BaseCommand):
                     product=product,
                     user=random.choice(users),
                     rating=random.randint(0, 5),
-                    comment=fake.text(max_nb_chars=100)
+                    comment=fake.text(max_nb_chars=100),
+                    is_approved = random.choice([True, False])
                 )
 
         # Створення відгуків про платформу
