@@ -177,3 +177,7 @@ worker-emails.pid
 
 backend_api/staticfiles/
 *.pid
+
+moderate/ml_models/model.safetensors
+
+
