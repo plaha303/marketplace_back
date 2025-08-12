@@ -26,7 +26,7 @@ from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.db import transaction
-from core.tasks import upload_image_to_cloudinary, send_moderation_notification
+from core.tasks import upload_image_to_cloudinary, send_moderation_notification, moderate_content
 import logging
 from rest_framework.viewsets import ViewSet
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank, TrigramSimilarity
@@ -624,9 +624,13 @@ class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     permission_classes = [ReviewPermission]
-    allowed_roles = ['user']
+    allowed_roles = ['user', 'admin']
     filter_backends = [DjangoFilterBackend]
     filterset_class = ReviewFilter
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user, is_approved=False)
+
 
     def get_queryset(self):
         if 'admin' in self.request.user.roles:
@@ -634,6 +638,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return Review.objects.filter(is_approved=True)  # Звичайні користувачі бачать тільки схвалені відгуки
 
     def create(self, request, *args, **kwargs):
+        logger.debug(f"Request data in ReviewViewSet.create: {request.data}")
+
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             logger.error(f"Invalid review data for user {request.user.id}: {serializer.errors}")
@@ -644,8 +650,15 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
         try:
             with transaction.atomic():
-                serializer.save(user=self.request.user, is_approved=False)
-                logger.info(f"Review created for product {serializer.validated_data['product'].id} by user {request.user.id}")
+                review = serializer.save(user=self.request.user, is_approved=False)
+                logger.info(
+                    f"Review created for product {serializer.validated_data['product']['id']} by user {request.user.id}")
+                # Виклик задачі модерації з чергою auto_moderation
+                moderate_content.apply_async(
+                    args=("review", review.id, review.comment),
+                    queue="auto_moderation"
+                )
+
             return Response({"success": True, "data": serializer.data}, status=status.HTTP_201_CREATED)
         except Exception as e:
             logger.error(f"Error creating review for user {request.user.id}: {str(e)}")

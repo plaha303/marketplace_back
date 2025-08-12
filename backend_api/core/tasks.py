@@ -5,12 +5,11 @@ import cloudinary.uploader
 from django.core.mail import send_mail
 from django.conf import settings
 from django.core.cache import cache
-from .models import User, Order, EmailLog, Category, ProductImage
+from .models import User, Order, EmailLog, Category, ProductImage, Review, Product
 from django.db import transaction
 from django.template.loader import render_to_string
 import logging
-import re
-
+import requests
 
 cloudinary.config(
     cloud_name=settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
@@ -183,3 +182,40 @@ def send_moderation_notification(content_type, content_id, is_approved, recipien
         fail_silently=False,
     )
 
+@shared_task(
+    bind=True,
+    name="core.tasks.moderate_content",
+    max_retries=3,
+    default_retry_delay=60,
+    queue="auto_moderation"
+)
+def moderate_content(self, model_type, instance_id, text):
+    try:
+        # Виклик FastAPI-сервера
+        response = requests.post(
+            "http://127.0.0.1:8001/moderate",
+            json={"text": text},
+            timeout=5
+        )
+        response.raise_for_status()
+        result = response.json()
+        is_toxic = result["is_toxic"]
+        score = result["score"]
+
+        with transaction.atomic():
+            if model_type == "product":
+                obj = Product.objects.get(id=instance_id)
+            elif model_type == "review":
+                obj = Review.objects.get(id=instance_id)
+            else:
+                raise ValueError(f"Invalid model_type: {model_type}")
+            obj.is_approved = not is_toxic
+            obj.save()
+
+        if is_toxic:
+            recipient_email = obj.vendor.email if model_type == "product" else obj.user.email
+            send_moderation_notification.delay(model_type, instance_id, False, recipient_email)
+        logger.info(f"Moderated {model_type} {instance_id}: is_toxic={is_toxic}, score={score}")
+    except Exception as e:
+        logger.error(f"Error moderating {model_type} {instance_id}: {str(e)}")
+        raise self.retry(exc=e)

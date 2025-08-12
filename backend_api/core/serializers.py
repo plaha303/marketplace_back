@@ -84,18 +84,23 @@ class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
     isAvailable = serializers.SerializerMethodField()
     reviews_count = serializers.IntegerField(read_only=True, source='rating_count')
-    productId = serializers.IntegerField(source='id')
-    categoryId = serializers.IntegerField(source='category.id', allow_null=True)
+    productId = serializers.IntegerField(source='id', read_only=True)
+    categoryId = serializers.IntegerField(source='category.id', read_only=True)
     rating = serializers.SerializerMethodField()
     discount_tag = serializers.SerializerMethodField()
     is_approved = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Product
-        fields = ['productId', 'vendor', 'categoryId', 'name', 'description',
-                  'sale_type', 'price', 'discount_price', 'start_price', 'auction_end_time',
-                  'stock', 'created_at', 'images', 'product_href', 'isAvailable', 'reviews_count', 'rating',
-                  'discount_tag', 'is_approved']
+        fields = [
+            'productId', 'vendor', 'categoryId', 'name', 'description',
+            'sale_type', 'price', 'discount_price', 'start_price', 'auction_end_time',
+            'stock', 'created_at', 'images', 'product_href', 'isAvailable', 'reviews_count',
+            'rating', 'discount_tag', 'is_approved'
+        ]
+        extra_kwargs = {
+            'category': {'write_only': True}
+        }
 
     def get_isAvailable(self, obj):
         return obj.is_available()
@@ -113,11 +118,10 @@ class ProductSerializer(serializers.ModelSerializer):
         return None
 
     def validate_categoryId(self, value):
-        if value is not None:
-            try:
-                Category.objects.get(id=value)
-            except Category.DoesNotExist:
-                raise serializers.ValidationError({"categoryId": "Категорія з таким ID не існує."})
+        try:
+            Category.objects.get(id=value)
+        except Category.DoesNotExist:
+            raise serializers.ValidationError({"categoryId": "Категорія з таким ID не існує."})
         return value
 
     def validate(self, data):
@@ -141,7 +145,7 @@ class ProductSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             validated_data['vendor'] = request.user
         return super().create(validated_data)
-
+      
 class OrderItemSerializer(serializers.ModelSerializer):
     productId = serializers.IntegerField(source='product.id', allow_null=True)
 
@@ -412,11 +416,30 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = ['id', 'productId', 'user', 'rating', 'comment', 'created_at', 'is_approved']
         read_only_fields = ['user', 'created_at', 'is_approved']
 
+    def validate(self, data):
+        product_id = data.get('product', {}).get('id')
+        if not Product.objects.filter(id=product_id).exists():
+            raise serializers.ValidationError({"productId": "Продукт не знайдений."})
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            # Додаткова перевірка: чи купував користувач цей продукт
+            if not Order.objects.filter(customer=request.user, items__product_id=product_id).exists():
+                raise serializers.ValidationError({"productId": "Ви не можете залишити відгук, оскільки не купували цей продукт."})
+        return data
+
     def validate_rating(self, value):
         if value < 0 or value > 5:
             raise serializers.ValidationError("Рейтинг має бути від 0 до 5.")
         return value
 
+    def create(self, validated_data):
+        logger.debug(f"Validated data in ReviewSerializer.create: {validated_data}")
+        product_id = validated_data.pop('product')['id']
+        product = Product.objects.get(id=product_id)
+        validated_data['user'] = self.context['request'].user
+        review = Review.objects.create(product=product, **validated_data)
+        return review
+      
 class AuctionBidSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     productId = serializers.IntegerField(source='product.id')
