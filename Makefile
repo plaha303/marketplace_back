@@ -85,14 +85,15 @@ PYTHON_BIN ?= python3
 
 # Команда для запуску Celery Workers, Beat і Flower
 work: check_venv
-	@echo "🚀 Запуск Celery Workers (default, emails, images, moderation), Beat і Flower локально..."
+	@echo "🚀 Запуск Celery Workers (default, emails, images, moderation, auto_moderation), Beat і Flower локально..."
 	@$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q default --hostname=worker-default@%h & echo $$! > worker-default.pid
 	@$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q emails --hostname=worker-emails@%h & echo $$! > worker-emails.pid
 	@$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q images --hostname=worker-images@%h & echo $$! > worker-images.pid
 	@$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q moderation --hostname=worker-moderation@%h & echo $$! > worker-moderation.pid
+	@$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q auto_moderation --hostname=worker-auto-moderation@%h & echo $$! > worker-auto-moderation.pid
 	@$(PYTHON_BIN) backend_api/manage.py run_beat --loglevel=INFO & echo $$! > beat.pid
 	@$(PYTHON_BIN) backend_api/manage.py run_flower & echo $$! > flower.pid
-	@echo "✅ Celery Workers (default, emails, images, moderation), Beat і Flower запущені у фоновому режимі!"
+	@echo "✅ Celery Workers (default, emails, images, moderation, auto_moderation), Beat і Flower запущені у фоновому режимі!"
 
 # Команда для зупинки Celery Workers, Beat і Flower
 nowork:
@@ -101,8 +102,10 @@ nowork:
 	@if [ -f worker-emails.pid ]; then kill `cat worker-emails.pid` && rm worker-emails.pid && echo "✅ Emails worker зупинено." || echo "Emails worker не був запущений."; fi
 	@if [ -f worker-images.pid ]; then kill `cat worker-images.pid` && rm worker-images.pid && echo "✅ Image worker зупинено." || echo "Image worker не був запущений."; fi
 	@if [ -f worker-moderation.pid ]; then kill `cat worker-moderation.pid` && rm worker-moderation.pid && echo "✅ Moderation worker зупинено." || echo "Moderation worker не був запущений."; fi
+	@if [ -f worker-auto-moderation.pid ]; then kill `cat worker-auto-moderation.pid` && rm worker-auto-moderation.pid && echo "✅ Auto-moderation worker зупинено." || echo "Auto-moderation worker не був запущений."; fi
 	@if [ -f beat.pid ]; then kill `cat beat.pid` && rm beat.pid && echo "✅ Beat зупинено." || echo "Beat не був запущений."; fi
 	@if [ -f flower.pid ]; then kill `cat flower.pid` && rm flower.pid && echo "✅ Flower зупинено." || echo "Flower не був запущений."; fi
+
 
 seed: check_venv ## Заповнення тестової бази даних
 	@echo "🌱 Заповнення тестової бази даних..."
@@ -111,3 +114,29 @@ seed: check_venv ## Заповнення тестової бази даних
 flush: check_venv ## Очищення бази даних
 	@echo "🗑 Очищення бази даних..."
 	$(PYTHON_BIN) backend_api/manage.py flush --noinput
+
+# Встановлення залежностей для moderation_service
+install_moderation: check_venv
+	@echo "📦 Встановлення залежностей для moderation_service..."
+	$(PIP_BIN) install -r moderate/requirements.txt
+
+# Запуск FastAPI-сервера локально
+run_moderation: check_venv install_moderation
+	@echo "🚀 Запуск FastAPI-сервера для модерації..."
+	$(PYTHON_BIN) -m uvicorn moderate.main:app --host 0.0.0.0 --port 8001 & echo $$! > moderate.pid
+
+# Зупинка FastAPI-сервера
+stop_moderation:
+	@echo "🛑 Зупинка FastAPI-сервера..."
+	@if [ -f moderate.pid ]; then \
+		PID=$$(cat moderate.pid); \
+		if kill $$PID 2>/dev/null; then \
+			rm moderate.pid; \
+			echo "✅ Moderation server зупинено."; \
+		else \
+			echo "⚠️ PID $$PID неактивний. Видаляю файл..."; \
+			rm -f moderate.pid; \
+		fi \
+	else \
+		echo "Moderation server не був запущений."; \
+	fi

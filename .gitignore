@@ -176,3 +176,4 @@ worker-default.pid
 worker-emails.pid
 
 backend_api/staticfiles/
+*.pid

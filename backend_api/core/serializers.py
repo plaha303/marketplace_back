@@ -84,26 +84,29 @@ class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
     isAvailable = serializers.SerializerMethodField()
     reviews_count = serializers.IntegerField(read_only=True, source='rating_count')
-    productId = serializers.IntegerField(source='id')
-    categoryId = serializers.IntegerField(source='category.id', allow_null=True)
+    productId = serializers.IntegerField(source='id', read_only=True)  # зробили read_only
+    categoryId = serializers.IntegerField(source='category.id', read_only=True)  # read_only
     rating = serializers.SerializerMethodField()
     discount_tag = serializers.SerializerMethodField()
     is_approved = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Product
-        fields = ['productId', 'vendor', 'categoryId', 'name', 'description',
-                  'sale_type', 'price', 'discount_price', 'start_price', 'auction_end_time',
-                  'stock', 'created_at', 'images', 'product_href', 'isAvailable', 'reviews_count', 'rating',
-                  'discount_tag', 'is_approved']
+        fields = [
+            'productId', 'vendor', 'categoryId', 'category', 'name', 'description',
+            'sale_type', 'price', 'discount_price', 'start_price', 'auction_end_time',
+            'stock', 'created_at', 'images', 'product_href', 'isAvailable', 'reviews_count',
+            'rating', 'discount_tag', 'is_approved'
+        ]
+        extra_kwargs = {
+            'category': {'write_only': True}
+        }
 
     def get_isAvailable(self, obj):
         return obj.is_available()
 
     def get_rating(self, obj):
-        # Обчислюємо середній рейтинг на основі всіх відгуків продукту
         average = obj.reviews.filter(is_approved=True).aggregate(Avg('rating'))['rating__avg']
-        # Повертаємо середній рейтинг з округленням до 2 знаків після коми, або null, якщо відгуків немає
         return round(average, 2) if average is not None else None
 
     def get_discount_tag(self, obj):
@@ -112,35 +115,12 @@ class ProductSerializer(serializers.ModelSerializer):
             return f"{discount_percentage}%"
         return None
 
-    def validate_categoryId(self, value):
-        if value is not None:
-            try:
-                Category.objects.get(id=value)
-            except Category.DoesNotExist:
-                raise serializers.ValidationError({"categoryId": "Категорія з таким ID не існує."})
-        return value
-
-    def validate(self, data):
-        sale_type = data.get('sale_type', self.instance.sale_type if self.instance else 'fixed')
-        price = data.get('price', self.instance.price if self.instance else None)
-        discount_price = data.get('discount_price', self.instance.discount_price if self.instance else None)
-
-        if sale_type == 'fixed' and price is None:
-            raise serializers.ValidationError({"price": "Для типу продажу 'fixed' ціна обов’язкова."})
-        if sale_type == 'fixed' and discount_price is not None:
-            if price is None:
-                raise serializers.ValidationError({"price": "Ціна обов’язкова, якщо вказана знижка."})
-            if discount_price > price:
-                raise serializers.ValidationError({"discount_price": "Знижена ціна не може бути більшою за звичайну ціну."})
-        if sale_type == 'auction' and discount_price is not None:
-            raise serializers.ValidationError({"discount_price": "Знижена ціна не підтримується для аукціонів."})
-        return data
-
     def create(self, validated_data):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             validated_data['vendor'] = request.user
         return super().create(validated_data)
+
 
 class OrderItemSerializer(serializers.ModelSerializer):
     productId = serializers.IntegerField(source='product.id', allow_null=True)
@@ -412,10 +392,26 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = ['id', 'productId', 'user', 'rating', 'comment', 'created_at', 'is_approved']
         read_only_fields = ['user', 'created_at', 'is_approved']
 
+    def validate(self, data):
+        product_id = data.get('product', {}).get('id')
+        if not Product.objects.filter(id=product_id).exists():
+            raise serializers.ValidationError({"productId": "Продукт не знайдений."})
+        return data
+
     def validate_rating(self, value):
         if value < 0 or value > 5:
             raise serializers.ValidationError("Рейтинг має бути від 0 до 5.")
         return value
+
+    def create(self, validated_data):
+        logger.debug(f"Validated data in ReviewSerializer.create: {validated_data}")
+        product_id = validated_data.pop('product')['id']
+        product = Product.objects.get(id=product_id)
+        review = Review.objects.create(
+            product=product,
+            **validated_data
+        )
+        return review
 
 class AuctionBidSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
