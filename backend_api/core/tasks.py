@@ -170,3 +170,16 @@ def upload_image_to_cloudinary(self, model_type, instance_id, user_id, image_dat
     except Exception as e:
         logger.error(f"Error in upload_image_to_cloudinary for {model_type} {instance_id} by user {user_id}: {str(e)}")
         raise self.retry(exc=e)
+
+@shared_task(queue='moderation')
+def send_moderation_notification(content_type, content_id, is_approved, recipient_email):
+    subject = f"{content_type.capitalize()} {'схвалено' if is_approved else 'відхилено'}"
+    message = f"Ваш {content_type} (ID: {content_id}) був {'схвалений' if is_approved else 'відхилений'} адміністратором."
+    send_mail(
+        subject,
+        message,
+        'from@example.com',
+        [recipient_email],
+        fail_silently=False,
+    )
+
