@@ -11,6 +11,7 @@ const AppRoute = {
   RESET_PASSWORD: '/reset_password',
 
   HITS: '/hits',
+  SEARCH: '/search',
 
 
   PROFILE: '/profile',

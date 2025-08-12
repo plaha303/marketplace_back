@@ -10,6 +10,9 @@
 .swiper-pagination-bullet-active {
   background: var(--color-primary-400);
 }
+.swiper-slide {
+  height: auto!important;
+}
 
 .home-banner {
   @media (max-width: 1280px) {

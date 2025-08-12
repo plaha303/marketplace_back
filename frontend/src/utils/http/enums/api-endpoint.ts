@@ -6,6 +6,7 @@ const ApiEndpoint = {
   LOGOUT: '/auth/logout/',
   GETUSER: '/user/',
   PLATFORMREVIEWS: '/platform-reviews/',
+  SEARCH: '/search/',
 
   CATEGORY: '/categories',
   GETHiTS: '/hits'
