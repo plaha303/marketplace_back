@@ -631,6 +631,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user, is_approved=False)
 
+
     def get_queryset(self):
         if 'admin' in self.request.user.roles:
             return Review.objects.all()  # Адміни бачать усі відгуки
@@ -638,6 +639,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         logger.debug(f"Request data in ReviewViewSet.create: {request.data}")
+
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             logger.error(f"Invalid review data for user {request.user.id}: {serializer.errors}")
@@ -656,6 +658,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
                     args=("review", review.id, review.comment),
                     queue="auto_moderation"
                 )
+
             return Response({"success": True, "data": serializer.data}, status=status.HTTP_201_CREATED)
         except Exception as e:
             logger.error(f"Error creating review for user {request.user.id}: {str(e)}")
