@@ -1,4 +1,4 @@
-# backend_api/user-service/celery_app.py
+# backend_api/user_service/celery_app.py
 from celery import Celery
 
 app = Celery('user_service')

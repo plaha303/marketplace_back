@@ -50,7 +50,7 @@ class HealthCheckView(APIView):
 
     @extend_schema(
         responses={200: {'description': 'Service is healthy'}},
-        description="Health check endpoint for user-service"
+        description="Health check endpoint for user_service"
     )
     def get(self, request):
         return Response({"status": "healthy"}, status=status.HTTP_200_OK)

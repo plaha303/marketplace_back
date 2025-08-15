@@ -65,7 +65,7 @@ services:
 
   user-service:
     build:
-      context: ./backend_api/user-service
+      context: ./backend_api/user_service
       dockerfile: Dockerfile
     container_name: user_service
     restart: unless-stopped
@@ -83,7 +83,7 @@ services:
       DEBUG: ${DEBUG}
       ALLOWED_HOSTS: localhost,127.0.0.1,user_service
     volumes:
-      - ./backend_api/user-service:/app
+      - ./backend_api/user_service:/app
     command: >
       sh -c "./wait-for-db.sh marketplace_database 5432 &&
              python manage.py makemigrations app &&
@@ -98,9 +98,9 @@ services:
 
   user-service-celery:
     build:
-      context: ./backend_api/user-service
+      context: ./backend_api/user_service
     volumes:
-      - ./backend_api/user-service:/app
+      - ./backend_api/user_service:/app
     command: >
       sh -c "./wait-for-db.sh marketplace_database 5432 &&
              celery -A celery_app worker -l info"
@@ -115,9 +115,9 @@ services:
 
   user-service-celery-beat:
     build:
-      context: ./backend_api/user-service
+      context: ./backend_api/user_service
     volumes:
-      - ./backend_api/user-service:/app
+      - ./backend_api/user_service:/app
     command: >
       sh -c "./wait-for-db.sh marketplace_database 5432 &&
              celery -A celery_app beat -l info"

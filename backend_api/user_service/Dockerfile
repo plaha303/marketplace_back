@@ -15,4 +15,4 @@ COPY wait-for-db.sh /wait-for-db.sh
 RUN chmod +x /wait-for-db.sh
 
 # Команда запуску — чекаємо БД, робимо міграції та стартуємо сервер
-CMD ["/wait-for-db.sh", "marketplace_database", "5432", "sh", "-c", "python manage.py makemigrations app_user && python manage.py migrate --noinput && python manage.py makemigrations && python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"]
+CMD ["/wait-for-db.sh", "marketplace_database", "5432", "sh", "-c", "python manage.py makemigrations app && python manage.py migrate --noinput && python manage.py makemigrations && python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"]
