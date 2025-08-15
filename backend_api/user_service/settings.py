@@ -2,13 +2,12 @@ from pathlib import Path
 import environ
 import os
 from datetime import timedelta
+import logging
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+logger = logging.getLogger(__name__)
 
-# Путь до корня проекта
 BASE_DIR = Path(__file__).resolve().parent
 
-# Инициализация environ и загрузка .env из корня проекта
 env = environ.Env(
     DEBUG=(bool, False),
     ALLOWED_HOSTS=(list, ['localhost', '127.0.0.1', 'user_service']),
@@ -16,10 +15,33 @@ env = environ.Env(
 )
 environ.Env.read_env(os.path.join(BASE_DIR.parent.parent, '.env'))
 
-# Настройки из .env
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
-ALLOWED_HOSTS = env('ALLOWED_HOSTS')
+ALLOWED_HOSTS = env('ALLOWED_HOSTS', default='localhost,127.0.0.1,user_service,order_service').split(',')
+
+# Вказуємо кастомну модель користувача
+AUTH_USER_MODEL = 'app.User'
+
+# Вказуємо тип первинного ключа за замовчуванням
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Налаштування для статичних файлів
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': env('DB_DATABASE'),
+        'USER': env('DB_USERNAME'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST'),
+        'PORT': env('DB_PORT'),
+        'OPTIONS': {
+            'options': '-c search_path=user_service'
+        },
+    }
+}
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -69,22 +91,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'wsgi.application'
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DB_DATABASE'),
-        'USER': env('DB_USERNAME'),
-        'PASSWORD': env('DB_PASSWORD'),
-        'HOST': env('DB_HOST'),
-        'PORT': env('DB_PORT'),
-        'OPTIONS': {
-            'options': '-c search_path=user_service'
-        }
-    }
-}
-
-AUTH_USER_MODEL = 'app.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -163,3 +169,17 @@ LOGGING = {
 }
 
 FRONTEND_URL = env('FRONTEND_URL')
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
+CORS_ALLOW_CREDENTIALS = True
+
+# Додаємо перевірку підключення до бази даних
+try:
+    from django.db import connection
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT 1")
+    logger.info("Database connection successful")
+except Exception as e:
+    logger.error(f"Database connection failed: {str(e)}")

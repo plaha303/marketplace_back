@@ -131,3 +131,22 @@ flush_user_service: check_venv install_user_service
 flush_order_service: check_venv install_order_service
 	@echo "🗑 Очищення бази даних для order_service..."
 	$(PYTHON_BIN) backend_api/order_service/manage.py flush --noinput
+
+run_user_service_celery: check_venv install_user_service
+	@echo "🚀 Запуск Celery Worker і Beat для user_service локально..."
+	@$(PYTHON_BIN) backend_api/user_service/manage.py run_worker --loglevel=INFO -Q default --hostname=user-service-worker@%h & echo $$! > user_service-worker.pid
+	@$(PYTHON_BIN) backend_api/user_service/manage.py run_beat --loglevel=INFO & echo $$! > user_service-beat.pid
+	@echo "✅ Celery Worker і Beat для user_service запущені у фоновому режимі!"
+
+nowork_user_service:
+	@echo "🛑 Зупинка Celery для user_service..."
+	@if [ -f user_service-worker.pid ]; then kill `cat user_service-worker.pid` && rm user_service-worker.pid && echo "✅ User_service worker зупинено." || echo "User_service worker не був запущений."; fi
+	@if [ -f user_service-beat.pid ]; then kill `cat user_service-beat.pid` && rm user_service-beat.pid && echo "✅ User_service beat зупинено." || echo "User_service beat не був запущений."; fi
+
+up: install_all
+	@echo "🚀 Запуск усіх контейнерів..."
+	$(DOCKER_COMPOSE_BIN) -f docker-compose.yml up -d
+	@echo "⏳ Очікування запуску сервісів..."
+	@sleep 10
+	@echo "✅ Всі сервіси запущені!"
+

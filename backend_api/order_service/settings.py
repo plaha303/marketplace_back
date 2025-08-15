@@ -2,6 +2,8 @@ from pathlib import Path
 import environ
 import os
 from datetime import timedelta
+import environ
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

@@ -12,3 +12,4 @@ django-cors-headers
 certifi==2024.8.30
  tenacity==9.0.0
 gunicorn==22.0.0
+python-dotenv==1.0.1

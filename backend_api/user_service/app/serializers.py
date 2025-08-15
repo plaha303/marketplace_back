@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.core.validators import RegexValidator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
@@ -16,13 +15,21 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-User = get_user_model()
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
 class UserSerializer(serializers.ModelSerializer):
-    roles = serializers.ListField(child=serializers.ChoiceField(choices=User.ROLE_CHOICES), required=False)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.fields['roles'] = serializers.ListField(
+            child=serializers.ChoiceField(choices=User.ROLE_CHOICES),
+            required=False
+        )
 
     class Meta:
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
         model = User
         fields = ['id', 'username', 'surname', 'email', 'roles']
 
@@ -31,6 +38,8 @@ class RegisterSerializer(serializers.ModelSerializer):
     password_confirm = serializers.CharField(write_only=True, min_length=8)
 
     class Meta:
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
         model = User
         fields = ['email', 'username', 'surname', 'password', 'password_confirm']
 
@@ -41,6 +50,8 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop('password_confirm')
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
         user = User.objects.create_user(**validated_data)
         return user
 
@@ -56,6 +67,8 @@ class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
     def validate_email(self, value):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
         if not User.objects.filter(email=value).exists():
             raise serializers.ValidationError("Користувача з таким email не знайдено.")
         return value
@@ -74,6 +87,8 @@ class ResendVerificationCodeSerializer(serializers.Serializer):
 
     def validate(self, data):
         email = data.get('email')
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
@@ -86,6 +101,8 @@ class ResendVerificationCodeSerializer(serializers.Serializer):
 
     def save(self):
         email = self.validated_data['email']
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
         user = User.objects.get(email=email)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
@@ -106,5 +123,7 @@ class ResendVerificationCodeSerializer(serializers.Serializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
         model = User
         fields = ['username', 'surname', 'email', 'roles']

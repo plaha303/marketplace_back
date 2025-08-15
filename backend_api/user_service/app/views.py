@@ -27,6 +27,7 @@ from django.db import transaction
 import logging
 from rest_framework.pagination import PageNumberPagination
 from django.db import DatabaseError
+from .utils import check_database_connection
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -48,12 +49,11 @@ class StandardResultsSetPagination(PageNumberPagination):
 class HealthCheckView(APIView):
     permission_classes = [permissions.AllowAny]
 
-    @extend_schema(
-        responses={200: {'description': 'Service is healthy'}},
-        description="Health check endpoint for user_service"
-    )
     def get(self, request):
-        return Response({"status": "healthy"}, status=status.HTTP_200_OK)
+        db_status = check_database_connection()
+        if db_status:
+            return Response({"status": "healthy", "database": "ok"}, status=status.HTTP_200_OK)
+        return Response({"status": "unhealthy", "database": "failed"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
 class OrderInfoView(APIView):
