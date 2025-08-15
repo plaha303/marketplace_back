@@ -57,9 +57,16 @@ class HealthCheckView(APIView):
 
 
 class OrderInfoView(APIView):
-    def get(self, request, *args, **kwargs):
-        return Response({"message": "Order information"}, status=status.HTTP_200_OK)
+    permission_classes = [permissions.IsAuthenticated]
 
+    def get(self, request, order_id):
+        try:
+            response = requests.get(f"{settings.ORDER_SERVICE_URL}/orders/{order_id}", headers={"Authorization": f"Bearer {request.auth}"})
+            response.raise_for_status()
+            return Response({"success": True, "data": response.json()}, status=status.HTTP_200_OK)
+        except requests.RequestException as e:
+            logger.error(f"Failed to fetch order {order_id}: {str(e)}")
+            return Response({"success": False, "errors": {"detail": "Failed to fetch order"}}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
 class RegisterView(GenericAPIView):

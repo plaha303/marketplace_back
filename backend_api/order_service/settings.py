@@ -5,6 +5,10 @@ from datetime import timedelta
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# order_service/settings.py
+USER_SERVICE_URL = env('USER_SERVICE_URL', default='http://user_service:8000')
+PRODUCT_SERVICE_URL = env('PRODUCT_SERVICE_URL', default='http://product_service:8000')
+
 # Путь до корня проекта
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -19,10 +23,10 @@ environ.Env.read_env(os.path.join(BASE_DIR.parent.parent, '.env'))
 # Настройки из .env
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
-ALLOWED_HOSTS = env('ALLOWED_HOSTS')
+ALLOWED_HOSTS = env('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', 'order_service'])
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
+    'django.contrib.admin' if DEBUG else ''
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -122,20 +126,21 @@ EMAIL_PORT = 587
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
 
-CELERY_BROKER_URL = env('REDIS_URL', default='redis://marketplace_redis:6379/0')
-CELERY_RESULT_BACKEND = env('REDIS_URL', default='redis://marketplace_redis:6379/0')
+CELERY_BROKER_URL = env('REDIS_URL', default='redis://marketplace_redis:6379/1')
+CELERY_RESULT_BACKEND = env('REDIS_URL', default='redis://marketplace_redis:6379/1')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
-from celery.schedules import crontab
-CELERY_BEAT_SCHEDULE = {
-    'delete-unverified-users': {
-        'task': 'app.tasks.delete_unverified_users',
-        'schedule': crontab(minute=0, hour=0),
-    },
-}
+#from celery.schedules import crontab
+#CELERY_BEAT_SCHEDULE = {
+#    'send-order-status-update-email': {
+#        'task': 'app.tasks.send_order_status_update_email',
+#        'schedule': crontab(minute=0, hour=0),  # Наприклад, щодня о 00:00
+#        'args': (None, None),  # Потрібно уточнити логіку виклику
+#    },
+#}
 
 LOGGING = {
     'version': 1,

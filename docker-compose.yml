@@ -60,15 +60,16 @@ services:
       psql -h marketplace_database -U ${DB_USERNAME} -d ${DB_DATABASE} -c 'CREATE SCHEMA IF NOT EXISTS user_service;';
       psql -h marketplace_database -U ${DB_USERNAME} -d ${DB_DATABASE} -c 'CREATE SCHEMA IF NOT EXISTS order_service;'
       "
-    volumes:
-      - ./init-extensions.sql:/docker-entrypoint-initdb.d/00-init-extensions.sql
 
-  user-service:
+  user_service:
     build:
       context: ./backend_api/user_service
-      dockerfile: Dockerfile
     container_name: user_service
     restart: unless-stopped
+    ports:
+      - "8000:8000"
+    expose:
+      - 8000
     depends_on:
       marketplace_database:
         condition: service_healthy
@@ -82,6 +83,7 @@ services:
       SECRET_KEY: ${SECRET_KEY}
       DEBUG: ${DEBUG}
       ALLOWED_HOSTS: localhost,127.0.0.1,user_service
+      ORDER_SERVICE_URL: http://order_service:8001
     volumes:
       - ./backend_api/user_service:/app
     command: >
@@ -89,7 +91,7 @@ services:
              python manage.py makemigrations app &&
              python manage.py migrate --noinput || { echo 'migrate failed'; exit 1; } &&
              echo 'Starting server...' &&
-             python manage.py runserver 0.0.0.0:8000 --noreload"
+             gunicorn --bind 0.0.0.0:8000 wsgi:application"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/healthcheck"]
       interval: 30s
@@ -99,6 +101,7 @@ services:
   user-service-celery:
     build:
       context: ./backend_api/user_service
+    container_name: user_service_celery
     volumes:
       - ./backend_api/user_service:/app
     command: >
@@ -112,10 +115,10 @@ services:
       - REDIS_URL=redis://marketplace_redis:6379/0
       - DATABASE_URL=postgres://marketplace_user:marketplace_password@marketplace_database:5432/marketplace_db
 
-
   user-service-celery-beat:
     build:
       context: ./backend_api/user_service
+    container_name: user_service_celery_beat
     volumes:
       - ./backend_api/user_service:/app
     command: >
@@ -127,4 +130,79 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=user_service.settings
       - REDIS_URL=redis://marketplace_redis:6379/0
+      - DATABASE_URL=postgres://marketplace_user:marketplace_password@marketplace_database:5432/marketplace_db
+
+  order_service:
+    build:
+      context: ./backend_api/order_service
+    container_name: order_service
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    expose:
+      - 8000
+    depends_on:
+      marketplace_database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      user_service:
+        condition: service_healthy
+    env_file:
+      - backend_api/.env
+    environment:
+      DB_HOST: marketplace_database
+      REDIS_URL: redis://marketplace_redis:6379/1  # Окрема база Redis для ізоляції
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      ALLOWED_HOSTS: localhost,127.0.0.1,order_service
+      USER_SERVICE_URL: http://user_service:8000
+    volumes:
+      - ./backend_api/order_service:/app
+    command: >
+      sh -c "./wait-for-db.sh marketplace_database 5432 &&
+             python manage.py makemigrations app &&
+             python manage.py migrate --noinput || { echo 'migrate failed'; exit 1; } &&
+             echo 'Starting server...' &&
+             gunicorn --bind 0.0.0.0:8000 wsgi:application"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  order-service-celery:
+    build:
+      context: ./backend_api/order_service
+    container_name: order_service_celery
+    volumes:
+      - ./backend_api/order_service:/app
+    command: >
+      sh -c "./wait-for-db.sh marketplace_database 5432 &&
+             celery -A celery_app worker -l info"
+    depends_on:
+      - marketplace_database
+      - redis
+      - user_service
+    environment:
+      - DJANGO_SETTINGS_MODULE=order_service.settings
+      - REDIS_URL=redis://marketplace_redis:6379/1
+      - DATABASE_URL=postgres://marketplace_user:marketplace_password@marketplace_database:5432/marketplace_db
+
+  order-service-celery-beat:
+    build:
+      context: ./backend_api/order_service
+    container_name: order_service_celery_beat
+    volumes:
+      - ./backend_api/order_service:/app
+    command: >
+      sh -c "./wait-for-db.sh marketplace_database 5432 &&
+             celery -A celery_app beat -l info"
+    depends_on:
+      - marketplace_database
+      - redis
+      - user_service
+    environment:
+      - DJANGO_SETTINGS_MODULE=order_service.settings
+      - REDIS_URL=redis://marketplace_redis:6379/1
       - DATABASE_URL=postgres://marketplace_user:marketplace_password@marketplace_database:5432/marketplace_db

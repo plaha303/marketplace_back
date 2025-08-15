@@ -12,9 +12,9 @@ VENV_ACTIVATE_WINDOWS := $(VENV_DIR)/Scripts/activate
 
 # Визначаємо правильний шлях для активації в залежності від ОС
 ifeq ($(OS),Windows_NT)
-    ACTIVATE := $(VENV_ACTIVATE_WINDOWS)
+ACTIVATE := $(VENV_ACTIVATE_WINDOWS)
 else
-    ACTIVATE := $(VENV_ACTIVATE)
+ACTIVATE := $(VENV_ACTIVATE)
 endif
 
 # Перевіряємо, чи активоване віртуальне оточення
@@ -32,10 +32,19 @@ check_venv:
 		echo "✅ Віртуальне оточення вже активоване."; \
 	fi
 
+# Встановлення всіх залежностей для user_service
+install_user_service: check_venv
+	@echo "📦 Встановлення залежностей для user_service..."
+	$(PIP_BIN) install --no-cache-dir -r backend_api/user_service/requirements.txt
+
+# Встановлення всіх залежностей для order_service
+install_order_service: check_venv
+	@echo "📦 Встановлення залежностей для order_service..."
+	$(PIP_BIN) install --no-cache-dir -r backend_api/order_service/requirements.txt
+
 # Встановлення всіх залежностей
-install_all: check_venv
-	@echo "📦 Встановлення всіх залежностей..."
-	$(PIP_BIN) install --no-cache-dir -r backend_api/user-service/requirements.txt
+install_all: install_user_service install_order_service
+	@echo "📦 Всі залежності встановлено."
 
 # Повний автоматичний запуск усіх контейнерів
 up: install_all
@@ -53,63 +62,72 @@ down:
 # Перезапуск усіх контейнерів
 restart: down up
 
-# Вивести логи всіх сервісів
-logs:
-	$(DOCKER_COMPOSE_BIN) -f docker-compose.yml logs -f
+# Запускає user_service локально
+run_user_service: check_venv install_user_service
+	@echo "🚀 Запуск user_service локально..."
+	$(PYTHON_BIN) backend_api/user_service/manage.py runserver localhost:8000
 
-# Показати активні контейнери
-ps:
-	$(DOCKER_COMPOSE_BIN) -f docker-compose.yml ps
+# Запускає order_service локально
+run_order_service: check_venv install_order_service
+	@echo "🚀 Запуск order_service локально..."
+	$(PYTHON_BIN) backend_api/order_service/manage.py runserver localhost:8001
 
-# Створення нових міграцій для user-service
-makemigrations_user_service: check_venv install_all
-	@echo "🛠 Створення нових міграцій для user-service..."
-	$(PYTHON_BIN) backend_api/user-service/manage.py makemigrations
+# Запускає тести для user_service
+test_user_service: check_venv install_user_service
+	@echo "🧪 Запуск тестів Django для user_service..."
+	$(PYTHON_BIN) backend_api/user_service/manage.py test app
 
-# Виконання міграцій для user-service
-migrate_user_service: check_venv install_all
-	@echo "🔄 Виконання міграцій для user-service..."
-	$(PYTHON_BIN) backend_api/user-service/manage.py migrate
+# Запускає тести для order_service
+test_order_service: check_venv install_order_service
+	@echo "🧪 Запуск тестів Django для order_service..."
+	$(PYTHON_BIN) backend_api/order_service/manage.py test app
 
-# Створення суперкористувача для user-service
-super_user_service: check_venv install_all
-	@echo "👤 Створення суперкористувача для user-service..."
-	$(PYTHON_BIN) backend_api/user-service/manage.py createsuperuser
+# Запуск всіх тестів
+test_all: test_user_service test_order_service
+	@echo "🧪 Всі тести виконано."
 
-# Зупинка Django сервера для user-service
-kill_user_service: check_venv
-	@echo "🛑 Зупинка Django сервера для user-service..."
-	@ps aux | grep "python backend_api/user-service/manage.py runserver" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "Сервер не був запущений."
+# Запуск Celery Workers і Beat для user_service
+work_user_service: check_venv install_user_service
+	@echo "🚀 Запуск Celery Workers і Beat для user_service локально..."
+	@$(PYTHON_BIN) backend_api/user_service/manage.py run_worker --loglevel=INFO -Q default --hostname=user-service-worker@%h & echo $$! > user_service-worker.pid
+	@$(PYTHON_BIN) backend_api/user_service/manage.py run_beat --loglevel=INFO & echo $$! > user_service-beat.pid
+	@echo "✅ Celery Worker і Beat для user_service запущені у фоновому режимі!"
 
-# Запускає сервер Django для user-service без Docker
-run_user_service: check_venv install_all
-	@echo "🚀 Запуск Django сервера для user-service..."
-	$(PYTHON_BIN) backend_api/user-service/manage.py runserver localhost:8000
+# Запуск Celery Workers і Beat для order_service
+work_order_service: check_venv install_order_service
+	@echo "🚀 Запуск Celery Workers і Beat для order_service локально..."
+	@$(PYTHON_BIN) backend_api/order_service/manage.py run_worker --loglevel=INFO -Q default --hostname=order-service-worker@%h & echo $$! > order_service-worker.pid
+	@$(PYTHON_BIN) backend_api/order_service/manage.py run_beat --loglevel=INFO & echo $$! > order_service-beat.pid
+	@echo "✅ Celery Worker і Beat для order_service запущені у фоновому режимі!"
 
-# Запускає тести для user-service
-test_user_service: check_venv install_all
-	@echo "🧪 Запуск тестів Django для user-service..."
-	$(PYTHON_BIN) backend_api/user-service/manage.py test app
-
-# Запуск Celery Workers і Beat для user-service
-work_user_service: check_venv install_all
-	@echo "🚀 Запуск Celery Workers і Beat для user-service локально..."
-	@$(PYTHON_BIN) backend_api/user-service/manage.py run_worker --loglevel=INFO -Q default --hostname=user-service-worker@%h & echo $$! > user-service-worker.pid
-	@$(PYTHON_BIN) backend_api/user-service/manage.py run_beat --loglevel=INFO & echo $$! > user-service-beat.pid
-	@echo "✅ Celery Worker і Beat для user-service запущені у фоновому режимі!"
-
-# Зупинка Celery для user-service
+# Зупинка Celery для user_service
 nowork_user_service:
-	@echo "🛑 Зупинка Celery для user-service..."
-	@if [ -f user-service-worker.pid ]; then kill `cat user-service-worker.pid` && rm user-service-worker.pid && echo "✅ User-service worker зупинено." || echo "User-service worker не був запущений."; fi
-	@if [ -f user-service-beat.pid ]; then kill `cat user-service-beat.pid` && rm user-service-beat.pid && echo "✅ User-service beat зупинено." || echo "User-service beat не був запущений."; fi
+	@echo "🛑 Зупинка Celery для user_service..."
+	@if [ -f user_service-worker.pid ]; then kill `cat user_service-worker.pid` && rm user_service-worker.pid && echo "✅ User_service worker зупинено." || echo "User_service worker не був запущений."; fi
+	@if [ -f user_service-beat.pid ]; then kill `cat user_service-beat.pid` && rm user_service-beat.pid && echo "✅ User_service beat зупинено." || echo "User_service beat не був запущений."; fi
 
-# Заповнення тестової бази даних для user-service
-seed_user_service: check_venv install_all
-	@echo "🌱 Заповнення тестової бази даних для user-service..."
-	$(PYTHON_BIN) backend_api/user-service/manage.py seed_database --users 10
+# Зупинка Celery для order_service
+nowork_order_service:
+	@echo "🛑 Зупинка Celery для order_service..."
+	@if [ -f order_service-worker.pid ]; then kill `cat order_service-worker.pid` && rm order_service-worker.pid && echo "✅ Order_service worker зупинено." || echo "Order_service worker не був запущений."; fi
+	@if [ -f order_service-beat.pid ]; then kill `cat order_service-beat.pid` && rm order_service-beat.pid && echo "✅ Order_service beat зупинено." || echo "Order_service beat не був запущений."; fi
 
-# Очищення бази даних для user-service
-flush_user_service: check_venv install_all
-	@echo "🗑 Очищення бази даних для user-service..."
-	$(PYTHON_BIN) backend_api/user-service/manage.py flush --noinput
+# Заповнення тестової бази даних для user_service
+seed_user_service: check_venv install_user_service
+	@echo "🌱 Заповнення тестової бази даних для user_service..."
+	$(PYTHON_BIN) backend_api/user_service/manage.py seed_database --users 10
+
+# Заповнення тестової бази даних для order_service
+seed_order_service: check_venv install_order_service
+	@echo "🌱 Заповнення тестової бази даних для order_service..."
+	$(PYTHON_BIN) backend_api/order_service/manage.py seed_database --orders 10
+
+# Очищення бази даних для user_service
+flush_user_service: check_venv install_user_service
+	@echo "🗑 Очищення бази даних для user_service..."
+	$(PYTHON_BIN) backend_api/user_service/manage.py flush --noinput
+
+# Очищення бази даних для order_service
+flush_order_service: check_venv install_order_service
+	@echo "🗑 Очищення бази даних для order_service..."
+	$(PYTHON_BIN) backend_api/order_service/manage.py flush --noinput
