@@ -32,106 +32,84 @@ check_venv:
 		echo "✅ Віртуальне оточення вже активоване."; \
 	fi
 
-# Встановлення залежностей
-install: check_venv
-	@echo "📦 Встановлення залежностей з requirements.txt..."
-	$(PIP_BIN) install -r backend_api/requirements.txt
+# Встановлення всіх залежностей
+install_all: check_venv
+	@echo "📦 Встановлення всіх залежностей..."
+	$(PIP_BIN) install --no-cache-dir -r backend_api/user-service/requirements.txt
 
-up: install ## Повний автоматичний запуск усіх контейнерів
+# Повний автоматичний запуск усіх контейнерів
+up: install_all
 	@echo "🚀 Запуск усіх контейнерів..."
 	$(DOCKER_COMPOSE_BIN) -f docker-compose.yml up -d
 	@echo "⏳ Очікування запуску сервісів..."
 	@sleep 10
 	@echo "✅ Всі сервіси запущені!"
 
-down: ## Зупиняє всі контейнери
+# Зупиняє всі контейнери
+down:
 	@echo "🛑 Зупинка всіх контейнерів..."
 	$(DOCKER_COMPOSE_BIN) -f docker-compose.yml down
 
-restart: down up ## Перезапуск усіх контейнерів
+# Перезапуск усіх контейнерів
+restart: down up
 
-logs: ## Вивести логи всіх сервісів
+# Вивести логи всіх сервісів
+logs:
 	$(DOCKER_COMPOSE_BIN) -f docker-compose.yml logs -f
 
-ps: ## Показати активні контейнери
+# Показати активні контейнери
+ps:
 	$(DOCKER_COMPOSE_BIN) -f docker-compose.yml ps
 
-makemigrations: check_venv
-	@echo "🛠 Створення нових міграцій..."
-	$(PYTHON_BIN) backend_api/manage.py makemigrations
+# Створення нових міграцій для user-service
+makemigrations_user_service: check_venv install_all
+	@echo "🛠 Створення нових міграцій для user-service..."
+	$(PYTHON_BIN) backend_api/user-service/manage.py makemigrations
 
-migrate: check_venv
-	@echo "🔄 Виконання міграцій..."
-	$(PYTHON_BIN) backend_api/manage.py migrate
+# Виконання міграцій для user-service
+migrate_user_service: check_venv install_all
+	@echo "🔄 Виконання міграцій для user-service..."
+	$(PYTHON_BIN) backend_api/user-service/manage.py migrate
 
-super: ## Створення суперкористувача
-	@echo "👤 Створення суперкористувача..."
-	$(PYTHON_BIN) backend_api/manage.py createsuperuser
+# Створення суперкористувача для user-service
+super_user_service: check_venv install_all
+	@echo "👤 Створення суперкористувача для user-service..."
+	$(PYTHON_BIN) backend_api/user-service/manage.py createsuperuser
 
-kill: ## Зупинка Django сервера
-	@echo "🛑 Зупинка Django сервера..."
-	@ps aux | grep "python backend_api/manage.py runserver" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "Сервер не був запущений."
+# Зупинка Django сервера для user-service
+kill_user_service: check_venv
+	@echo "🛑 Зупинка Django сервера для user-service..."
+	@ps aux | grep "python backend_api/user-service/manage.py runserver" | grep -v grep | awk '{print $$2}' | xargs -r kill || echo "Сервер не був запущений."
 
-run: check_venv ## Запускає сервер Django без Docker
-	@echo "🚀 Запуск Django сервера..."
-	$(PYTHON_BIN) backend_api/manage.py runserver localhost:8000
+# Запускає сервер Django для user-service без Docker
+run_user_service: check_venv install_all
+	@echo "🚀 Запуск Django сервера для user-service..."
+	$(PYTHON_BIN) backend_api/user-service/manage.py runserver localhost:8000
 
-test: check_venv ## Запускає тести Django
-	@echo "🧪 Запуск тестів Django..."
-	$(PYTHON_BIN) backend_api/manage.py test core
+# Запускає тести для user-service
+test_user_service: check_venv install_all
+	@echo "🧪 Запуск тестів Django для user-service..."
+	$(PYTHON_BIN) backend_api/user-service/manage.py test app
 
+# Запуск Celery Workers і Beat для user-service
+work_user_service: check_venv install_all
+	@echo "🚀 Запуск Celery Workers і Beat для user-service локально..."
+	@$(PYTHON_BIN) backend_api/user-service/manage.py run_worker --loglevel=INFO -Q default --hostname=user-service-worker@%h & echo $$! > user-service-worker.pid
+	@$(PYTHON_BIN) backend_api/user-service/manage.py run_beat --loglevel=INFO & echo $$! > user-service-beat.pid
+	@echo "✅ Celery Worker і Beat для user-service запущені у фоновому режимі!"
 
-PYTHON_BIN ?= python3
+# Зупинка Celery для user-service
+nowork_user_service:
+	@echo "🛑 Зупинка Celery для user-service..."
+	@if [ -f user-service-worker.pid ]; then kill `cat user-service-worker.pid` && rm user-service-worker.pid && echo "✅ User-service worker зупинено." || echo "User-service worker не був запущений."; fi
+	@if [ -f user-service-beat.pid ]; then kill `cat user-service-beat.pid` && rm user-service-beat.pid && echo "✅ User-service beat зупинено." || echo "User-service beat не був запущений."; fi
 
-# Команда для запуску Celery Workers, Beat і Flower
-work: check_venv
-    @echo "🚀 Запуск Celery Workers (default, emails, images, moderation, auto_moderation), Beat і Flower локально..."
-    @$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q default --hostname=worker-default@%h & echo $$! > worker-default.pid
-    @$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q emails --hostname=worker-emails@%h & echo $$! > worker-emails.pid
-    @$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q images --hostname=worker-images@%h & echo $$! > worker-images.pid
-    @$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q moderation --hostname=worker-moderation@%h & echo $$! > worker-moderation.pid
-    @$(PYTHON_BIN) backend_api/manage.py run_worker --loglevel=INFO -Q auto_moderation --hostname=worker-auto-moderation@%h & echo $$! > worker-auto-moderation.pid
-    @$(PYTHON_BIN) backend_api/manage.py run_beat --loglevel=INFO & echo $$! > beat.pid
-    @$(PYTHON_BIN) backend_api/manage.py run_flower & echo $$! > flower.pid
-    @echo "✅ Celery Workers (default, emails, images, moderation, auto_moderation), Beat і Flower запущені у фоновому режимі!"
+# Заповнення тестової бази даних для user-service
+seed_user_service: check_venv install_all
+	@echo "🌱 Заповнення тестової бази даних для user-service..."
+	$(PYTHON_BIN) backend_api/user-service/manage.py seed_database --users 10
 
-nowork:
-    @echo "🛑 Зупинка Celery..."
-    @if [ -f worker-default.pid ]; then kill `cat worker-default.pid` && rm worker-default.pid && echo "✅ Default worker зупинено." || echo "Default worker не був запущений."; fi
-    @if [ -f worker-emails.pid ]; then kill `cat worker-emails.pid` && rm worker-emails.pid && echo "✅ Emails worker зупинено." || echo "Emails worker не був запущений."; fi
-    @if [ -f worker-images.pid ]; then kill `cat worker-images.pid` && rm worker-images.pid && echo "✅ Image worker зупинено." || echo "Image worker не був запущений."; fi
-    @if [ -f worker-moderation.pid ]; then kill `cat worker-moderation.pid` && rm worker-moderation.pid && echo "✅ Moderation worker зупинено." || echo "Moderation worker не був запущений."; fi
-    @if [ -f worker-auto-moderation.pid ]; then kill `cat worker-auto-moderation.pid` && rm worker-auto-moderation.pid && echo "✅ Auto-moderation worker зупинено." || echo "Auto-moderation worker не був запущений."; fi
-    @if [ -f beat.pid ]; then kill `cat beat.pid` && rm beat.pid && echo "✅ Beat зупинено." || echo "Beat не був запущений."; fi
-    @if [ -f flower.pid ]; then kill `cat flower.pid` && rm flower.pid && echo "✅ Flower зупинено." || echo "Flower не був запущений."; fi
-
-seed: check_venv ## Заповнення тестової бази даних
-    @echo "🌱 Заповнення тестової бази даних..."
-    $(PYTHON_BIN) backend_api/manage.py seed_database --users 10 --categories 5 --products 20 --min_hits 10 --orders 5 --reviews 10 --favorites 10
-
-flush: check_venv ## Очищення бази даних
-    @echo "🗑 Очищення бази даних..."
-    $(PYTHON_BIN) backend_api/manage.py flush --noinput
-
-install_moderation: check_venv ## Встановлення залежностей для moderation_service
-    @echo "📦 Встановлення залежностей для moderation_service..."
-    $(PIP_BIN) install -r moderate/requirements.txt
-
-run_moderation: check_venv install_moderation ## Запуск FastAPI-сервера для модерації
-    @echo "🚀 Запуск FastAPI-сервера для модерації..."
-    $(PYTHON_BIN) -m uvicorn moderate.main:app --host 0.0.0.0 --port 8001 & echo $$! > moderate.pid
-
-stop_moderation: ## Зупинка FastAPI-сервера
-    @echo "🛑 Зупинка FastAPI-сервера..."
-    @if [ -f moderate.pid ]; then \
-        PID=$$(cat moderate.pid); \
-        if kill $$PID 2>/dev/null; then \
-            rm moderate.pid; \
-            echo "✅ Moderation server зупинено."; \
-        else \
-            echo "⚠️ PID $$PID неактивний. Видаляю файл..."; \
-            rm -f moderate.pid; \
-        fi \
-    else \
-        echo "Moderation server не був запущений."; \
-    fi
+# Очищення бази даних для user-service
+flush_user_service: check_venv install_all
+	@echo "🗑 Очищення бази даних для user-service..."
+	$(PYTHON_BIN) backend_api/user-service/manage.py flush --noinput

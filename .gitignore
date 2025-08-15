@@ -150,3 +150,5 @@ cython_debug/
 second.md
 backend_api/staticfiles/
 moderate/ml_models/model.safetensors
+.pid
+
