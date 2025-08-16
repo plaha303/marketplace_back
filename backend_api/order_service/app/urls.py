@@ -9,4 +9,5 @@ router.register(r'orders', OrderViewSet, basename='order')
 urlpatterns = [
     path('', include(router.urls)),
     path('healthcheck/', HealthCheckView.as_view(), name='healthcheck'),
+    path('orders/info/', OrderInfoView.as_view(), name='order_info'),
 ]

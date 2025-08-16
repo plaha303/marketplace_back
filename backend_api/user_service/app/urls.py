@@ -1,9 +1,10 @@
+#user_service
+
 from django.urls import path
 from . import views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import HealthCheckView, OrderInfoView
 urlpatterns = [
-    path('orders/info/', OrderInfoView.as_view(), name='order_info'),
     path('healthcheck/', HealthCheckView.as_view(), name='healthcheck'),
     path('auth/register/', views.RegisterView.as_view(), name='register'),
     path('auth/verify-email/<str:uidb64>/<str:token>/', views.VerifyEmailView.as_view(), name='verify-email'),

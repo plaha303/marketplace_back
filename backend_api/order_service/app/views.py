@@ -1,4 +1,6 @@
 # order_service/app/views.py
+from django.db import connection
+from django.db.utils import OperationalError
 from rest_framework import viewsets, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -43,9 +45,16 @@ class OrderViewSet(viewsets.ModelViewSet):
             send_order_status_update_email.delay(instance.id, instance.status)
             logger.info(f"Triggered email for order {instance.id} status change to {instance.status}")
 
+
+
 class HealthCheckView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        return Response({"status": "healthy"}, status=status.HTTP_200_OK)
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+            return Response({"status": "healthy", "database": "ok"}, status=status.HTTP_200_OK)
+        except OperationalError:
+            return Response({"status": "unhealthy", "database": "failed"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
