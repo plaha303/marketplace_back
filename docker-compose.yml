@@ -324,6 +324,100 @@ services:
       REDIS_URL: redis://marketplace_redis:6379/0
       DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=payment_service
 
+  shipping_service:
+    build:
+      context: ./backend_api/shipping_service
+      dockerfile: Dockerfile
+    container_name: shipping_service
+    restart: unless-stopped
+    ports:
+      - "8003:8000"
+    expose:
+      - "8000"
+    depends_on:
+      marketplace_database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      order_service:
+        condition: service_healthy
+    env_file:
+      - backend_api/.env
+    environment:
+      DJANGO_SETTINGS_MODULE: settings
+      DB_HOST: marketplace_database
+      REDIS_URL: redis://marketplace_redis:6379/0
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      ALLOWED_HOSTS: "*"
+      ORDER_SERVICE_URL: http://order_service:8000
+      USER_SERVICE_URL: http://user_service:8000
+      SHIPPING_SERVICE_URL: http://shipping_service:8000
+    volumes:
+      - ./backend_api/shipping_service:/app
+    command: >
+      sh -c "./wait-for-db.sh marketplace_database 5432 &&
+             python manage.py makemigrations app &&
+             python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn --bind 0.0.0.0:8000 wsgi:application"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  shipping_service_celery:
+    build:
+      context: ./backend_api/shipping_service
+      dockerfile: Dockerfile
+    container_name: shipping_service_celery
+    restart: unless-stopped
+    volumes:
+      - ./backend_api/shipping_service:/app
+    command: >
+      sh -c "./wait-for-db.sh marketplace_database 5432 &&
+             celery -A celery_app worker -l info"
+    depends_on:
+      marketplace_database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      order_service:
+        condition: service_healthy
+    env_file:
+      - backend_api/.env
+    environment:
+      DJANGO_SETTINGS_MODULE: settings
+      REDIS_URL: redis://marketplace_redis:6379/0
+      DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=shipping_service
+
+  shipping_service_celery_beat:
+    build:
+      context: ./backend_api/shipping_service
+      dockerfile: Dockerfile
+    container_name: shipping_service_celery_beat
+    restart: unless-stopped
+    volumes:
+      - ./backend_api/shipping_service:/app
+    command: >
+      sh -c "./wait-for-db.sh marketplace_database 5432 &&
+             celery -A celery_app beat -l info"
+    depends_on:
+      marketplace_database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      order_service:
+        condition: service_healthy
+    env_file:
+      - backend_api/.env
+    environment:
+      DJANGO_SETTINGS_MODULE: settings
+      REDIS_URL: redis://marketplace_redis:6379/0
+      DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=shipping_service
+
 networks:
   default:
     driver: bridge
