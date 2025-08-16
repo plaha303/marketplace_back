@@ -46,6 +46,10 @@ services:
       start_period: 10s
 
   user_service:
+    networks:
+      default:
+        aliases:
+          - user_service.local
     build:
       context: ./backend_api/user_service
       dockerfile: Dockerfile
@@ -69,9 +73,9 @@ services:
       REDIS_URL: redis://marketplace_redis:6379/0
       SECRET_KEY: ${SECRET_KEY}
       DEBUG: ${DEBUG}
-      ALLOWED_HOSTS: localhost,127.0.0.1,user_service,order_service
-      ORDER_SERVICE_URL: http://order_service:8000
-      USER_SERVICE_URL: http://user_service:8000
+      ALLOWED_HOSTS: "*"
+      ORDER_SERVICE_URL: http://order_service.local:8000
+      USER_SERVICE_URL: http://user_service.local:8000
     volumes:
       - ./backend_api/user_service:/app
       - ./backend_api/user_service/staticfiles:/app/staticfiles
@@ -135,6 +139,10 @@ services:
       DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=user_service
 
   order_service:
+    networks:
+      default:
+        aliases:
+          - order_service.local
     build:
       context: ./backend_api/order_service
       dockerfile: Dockerfile
@@ -157,12 +165,12 @@ services:
       DJANGO_SETTINGS_MODULE: settings
       DB_HOST: marketplace_database
       DB_PORT: 5432
-      REDIS_URL: redis://marketplace_redis:6379/1
+      REDIS_URL: redis://marketplace_redis:6379/0
       SECRET_KEY: ${SECRET_KEY}
       DEBUG: ${DEBUG}
-      ALLOWED_HOSTS: localhost,127.0.0.1,order_service
-      USER_SERVICE_URL: http://user_service:8000
-      ORDER_SERVICE_URL: http://order_service:8000
+      ALLOWED_HOSTS: "*"
+      ORDER_SERVICE_URL: http://order_service.local:8000
+      USER_SERVICE_URL: http://user_service.local:8000
     volumes:
       - ./backend_api/order_service:/app
     command: >
@@ -171,7 +179,7 @@ services:
              python manage.py migrate --noinput &&
              gunicorn --bind 0.0.0.0:8000 wsgi:application"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/healthcheck"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/healthcheck" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -226,3 +234,6 @@ services:
       DJANGO_SETTINGS_MODULE: settings
       REDIS_URL: redis://marketplace_redis:6379/1
       DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=order_service
+networks:
+  default:
+    driver: bridge

@@ -17,8 +17,8 @@ environ.Env.read_env(os.path.join(BASE_DIR.parent.parent, '.env'))
 
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
-ALLOWED_HOSTS = env('ALLOWED_HOSTS', default='localhost,127.0.0.1,user_service,order_service').split(',')
-
+ALLOWED_HOSTS = ['*']
+logger.info(f"ALLOWED_HOSTS set to: {ALLOWED_HOSTS}")
 # Вказуємо кастомну модель користувача
 AUTH_USER_MODEL = 'app.User'
 
@@ -65,6 +65,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'app.middleware.BypassHostValidationMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -145,6 +146,7 @@ CELERY_BEAT_SCHEDULE = {
 
 LOGGING = {
     'version': 1,
+    'disable_existing_loggers': False,
     'filters': {
         'sensitive_data': {
             '()': 'app.log_filters.SensitiveDataFilter',
@@ -160,10 +162,17 @@ LOGGING = {
         'django': {
             'handlers': ['console'],
             'level': 'INFO',
+            'propagate': False,
         },
         'app': {
             'handlers': ['console'],
             'level': 'DEBUG',
+            'propagate': False,
+        },
+        '': {  # Додаємо root logger для всіх модулів, включаючи settings
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
         },
     },
 }
@@ -172,7 +181,10 @@ FRONTEND_URL = env('FRONTEND_URL')
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://user_service:8000",
+    "http://order_service:8000",
 ]
+
 CORS_ALLOW_CREDENTIALS = True
 
 # Додаємо перевірку підключення до бази даних

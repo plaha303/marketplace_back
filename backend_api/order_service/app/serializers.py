@@ -1,6 +1,6 @@
 # order_service/app/serializers.py
 from rest_framework import serializers
-from .models import Order, OrderItem, Payment, Shipping
+from .models import Order, OrderItem
 import requests
 from django.conf import settings
 import logging
@@ -21,26 +21,13 @@ class OrderItemSerializer(serializers.ModelSerializer):
             logger.error(f"Failed to validate product_id {value}: {str(e)}")
             raise serializers.ValidationError("Invalid product_id")
 
-class PaymentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Payment
-        fields = ['id', 'order', 'user_id', 'amount', 'payment_method', 'status', 'created_at']
-        read_only_fields = ['created_at']
-
-class ShippingSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Shipping
-        fields = ['id', 'order', 'recipient_name', 'address', 'city', 'postal_code', 'country', 'tracking_number', 'shipped_at']
-        read_only_fields = ['shipped_at']
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
-    payment = PaymentSerializer(read_only=True)
-    shipping = ShippingSerializer(read_only=True)
 
     class Meta:
         model = Order
-        fields = ['id', 'customer_id', 'status', 'total_amount', 'created_at', 'items', 'payment', 'shipping']
+        fields = ['id', 'customer_id', 'status', 'total_amount', 'created_at', 'items']
         read_only_fields = ['created_at']
 
     def validate_customer_id(self, value):

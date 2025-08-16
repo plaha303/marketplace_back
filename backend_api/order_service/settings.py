@@ -2,14 +2,12 @@ from pathlib import Path
 import environ
 import os
 from datetime import timedelta
-import environ
+import logging
 
+logger = logging.getLogger(__name__)
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# order_service/settings.py
-USER_SERVICE_URL = env('USER_SERVICE_URL', default='http://user_service:8000')
-PRODUCT_SERVICE_URL = env('PRODUCT_SERVICE_URL', default='http://product_service:8000')
 
 # Путь до корня проекта
 BASE_DIR = Path(__file__).resolve().parent
@@ -25,10 +23,14 @@ environ.Env.read_env(os.path.join(BASE_DIR.parent.parent, '.env'))
 # Настройки из .env
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
-ALLOWED_HOSTS = env('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', 'order_service'])
+ALLOWED_HOSTS = ['*']
+logger.info(f"ALLOWED_HOSTS set to: {ALLOWED_HOSTS}")
+
+USER_SERVICE_URL = env('USER_SERVICE_URL', default='http://user_service:8000')
+PRODUCT_SERVICE_URL = env('PRODUCT_SERVICE_URL', default='http://product_service:8000')
+
 
 INSTALLED_APPS = [
-    'django.contrib.admin' if DEBUG else ''
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -49,6 +51,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'app.middleware.BypassHostValidationMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -76,6 +79,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'wsgi.application'
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://user_service:8000",
+    "http://order_service:8000",
+]
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -85,12 +94,12 @@ DATABASES = {
         'HOST': env('DB_HOST'),
         'PORT': env('DB_PORT'),
         'OPTIONS': {
-            'options': '-c search_path=user_service'
+            'options': '-c search_path=order_service'
         }
     }
 }
 
-AUTH_USER_MODEL = 'app.User'
+#AUTH_USER_MODEL = 'app.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -146,6 +155,7 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
 LOGGING = {
     'version': 1,
+    'disable_existing_loggers': False,
     'filters': {
         'sensitive_data': {
             '()': 'app.log_filters.SensitiveDataFilter',
@@ -161,12 +171,18 @@ LOGGING = {
         'django': {
             'handlers': ['console'],
             'level': 'INFO',
+            'propagate': False,
         },
         'app': {
             'handlers': ['console'],
             'level': 'DEBUG',
+            'propagate': False,
+        },
+        '': {  # Додаємо root logger для всіх модулів, включаючи settings
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
         },
     },
 }
-
 FRONTEND_URL = env('FRONTEND_URL')

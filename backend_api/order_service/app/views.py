@@ -1,10 +1,11 @@
 # order_service/app/views.py
 from rest_framework import viewsets, permissions
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Order, OrderItem, Payment, Shipping
+from .models import Order, OrderItem
 from .tasks import send_order_status_update_email
-from .serializers import OrderSerializer, PaymentSerializer, ShippingSerializer
+from .serializers import OrderSerializer
 from .permissions import HasRolePermission
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
