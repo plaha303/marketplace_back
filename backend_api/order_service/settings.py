@@ -1,3 +1,4 @@
+# order_service/settings.py
 from pathlib import Path
 import environ
 import os
@@ -8,11 +9,8 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-# Путь до корня проекта
 BASE_DIR = Path(__file__).resolve().parent
 
-# Инициализация environ и загрузка .env из корня проекта
 env = environ.Env(
     DEBUG=(bool, False),
     ALLOWED_HOSTS=(list, ['localhost', '127.0.0.1', 'user_service']),
@@ -20,7 +18,6 @@ env = environ.Env(
 )
 environ.Env.read_env(os.path.join(BASE_DIR.parent.parent, '.env'))
 
-# Настройки из .env
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
 ALLOWED_HOSTS = ['*']
@@ -28,7 +25,8 @@ logger.info(f"ALLOWED_HOSTS set to: {ALLOWED_HOSTS}")
 
 USER_SERVICE_URL = env('USER_SERVICE_URL', default='http://user_service:8000')
 PRODUCT_SERVICE_URL = env('PRODUCT_SERVICE_URL', default='http://product_service:8000')
-
+PAYMENT_SERVICE_URL = env('PAYMENT_SERVICE_URL', default='http://payment_service:8000')
+SHIPPING_SERVICE_URL = env('SHIPPING_SERVICE_URL', default='http://shipping_service:8000')
 
 INSTALLED_APPS = [
     'django.contrib.auth',
@@ -77,49 +75,23 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'wsgi.application'
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://user_service:8000",
-    "http://order_service:8000",
-]
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DB_DATABASE'),
-        'USER': env('DB_USERNAME'),
-        'PASSWORD': env('DB_PASSWORD'),
-        'HOST': env('DB_HOST'),
-        'PORT': env('DB_PORT'),
-        'OPTIONS': {
-            'options': '-c search_path=order_service'
-        }
-    }
-}
-
-#AUTH_USER_MODEL = 'app.User'
-
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
+    'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
-    'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.UserRateThrottle',
-    ],
-    'DEFAULT_THROTTLE_RATES': {
-        'user': '1000/day',
-        'login': '10/hour',
-        'register': '5/hour',
-    }
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=120),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=14),
     'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_COOKIE': 'refresh_token',
@@ -143,15 +115,6 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
-
-#from celery.schedules import crontab
-#CELERY_BEAT_SCHEDULE = {
-#    'send-order-status-update-email': {
-#        'task': 'app.tasks.send_order_status_update_email',
-#        'schedule': crontab(minute=0, hour=0),  # Наприклад, щодня о 00:00
-#        'args': (None, None),  # Потрібно уточнити логіку виклику
-#    },
-#}
 
 LOGGING = {
     'version': 1,
@@ -178,11 +141,14 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': False,
         },
-        '': {  # Додаємо root logger для всіх модулів, включаючи settings
+        '': {
             'handlers': ['console'],
             'level': 'DEBUG',
             'propagate': False,
         },
     },
 }
+
 FRONTEND_URL = env('FRONTEND_URL')
+CORS_ALLOWED_ORIGINS = ['http://localhost:3000', 'http://localhost:5173']
+CORS_ALLOW_CREDENTIALS = True
