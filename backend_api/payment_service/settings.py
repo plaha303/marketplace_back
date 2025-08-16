@@ -124,6 +124,7 @@ FRONTEND_URL = env('FRONTEND_URL')
 CORS_ALLOWED_ORIGINS = ['http://localhost:3000', 'http://localhost:5173']
 CORS_ALLOW_CREDENTIALS = True
 
+
 # Static files settings
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')

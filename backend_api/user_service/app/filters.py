@@ -13,4 +13,4 @@ class UserFilter(filters.FilterSet):
         fields = ['roles', 'is_verified', 'username', 'email', 'id']
 
     def filter_roles(self, queryset, name, value):
-        return queryset.filter(roles__contains=[value])
+        return queryset.filter(roles__overlap=[value])

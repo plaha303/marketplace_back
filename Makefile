@@ -42,8 +42,13 @@ install_order_service: check_venv
 	@echo "📦 Встановлення залежностей для order_service..."
 	$(PIP_BIN) install --no-cache-dir -r backend_api/order_service/requirements.txt
 
+# Встановлення всіх залежностей для payment_service
+install_payment_service: check_venv
+	@echo "📦 Встановлення залежностей для payment_service..."
+	$(PIP_BIN) install --no-cache-dir -r backend_api/payment_service/requirements.txt
+
 # Встановлення всіх залежностей
-install_all: install_user_service install_order_service
+install_all: install_user_service install_order_service install_payment_service
 	@echo "📦 Всі залежності встановлено."
 
 # Повний автоматичний запуск усіх контейнерів
@@ -51,7 +56,7 @@ up: install_all
 	@echo "🚀 Запуск усіх контейнерів..."
 	$(DOCKER_COMPOSE_BIN) -f docker-compose.yml up -d
 	@echo "⏳ Очікування запуску сервісів..."
-	@sleep 10
+	@sleep 30
 	@echo "✅ Всі сервіси запущені!"
 
 # Зупиняє всі контейнери
@@ -61,56 +66,6 @@ down:
 
 # Перезапуск усіх контейнерів
 restart: down up
-
-# Запускає user_service локально
-run_user_service: check_venv install_user_service
-	@echo "🚀 Запуск user_service локально..."
-	$(PYTHON_BIN) backend_api/user_service/manage.py runserver localhost:8000
-
-# Запускає order_service локально
-run_order_service: check_venv install_order_service
-	@echo "🚀 Запуск order_service локально..."
-	$(PYTHON_BIN) backend_api/order_service/manage.py runserver localhost:8001
-
-# Запускає тести для user_service
-test_user_service: check_venv install_user_service
-	@echo "🧪 Запуск тестів Django для user_service..."
-	$(PYTHON_BIN) backend_api/user_service/manage.py test app
-
-# Запускає тести для order_service
-test_order_service: check_venv install_order_service
-	@echo "🧪 Запуск тестів Django для order_service..."
-	$(PYTHON_BIN) backend_api/order_service/manage.py test app
-
-# Запуск всіх тестів
-test_all: test_user_service test_order_service
-	@echo "🧪 Всі тести виконано."
-
-# Запуск Celery Workers і Beat для user_service
-work_user_service: check_venv install_user_service
-	@echo "🚀 Запуск Celery Workers і Beat для user_service локально..."
-	@$(PYTHON_BIN) backend_api/user_service/manage.py run_worker --loglevel=INFO -Q default --hostname=user-service-worker@%h & echo $$! > user_service-worker.pid
-	@$(PYTHON_BIN) backend_api/user_service/manage.py run_beat --loglevel=INFO & echo $$! > user_service-beat.pid
-	@echo "✅ Celery Worker і Beat для user_service запущені у фоновому режимі!"
-
-# Запуск Celery Workers і Beat для order_service
-work_order_service: check_venv install_order_service
-	@echo "🚀 Запуск Celery Workers і Beat для order_service локально..."
-	@$(PYTHON_BIN) backend_api/order_service/manage.py run_worker --loglevel=INFO -Q default --hostname=order-service-worker@%h & echo $$! > order_service-worker.pid
-	@$(PYTHON_BIN) backend_api/order_service/manage.py run_beat --loglevel=INFO & echo $$! > order_service-beat.pid
-	@echo "✅ Celery Worker і Beat для order_service запущені у фоновому режимі!"
-
-# Зупинка Celery для user_service
-nowork_user_service:
-	@echo "🛑 Зупинка Celery для user_service..."
-	@if [ -f user_service-worker.pid ]; then kill `cat user_service-worker.pid` && rm user_service-worker.pid && echo "✅ User_service worker зупинено." || echo "User_service worker не був запущений."; fi
-	@if [ -f user_service-beat.pid ]; then kill `cat user_service-beat.pid` && rm user_service-beat.pid && echo "✅ User_service beat зупинено." || echo "User_service beat не був запущений."; fi
-
-# Зупинка Celery для order_service
-nowork_order_service:
-	@echo "🛑 Зупинка Celery для order_service..."
-	@if [ -f order_service-worker.pid ]; then kill `cat order_service-worker.pid` && rm order_service-worker.pid && echo "✅ Order_service worker зупинено." || echo "Order_service worker не був запущений."; fi
-	@if [ -f order_service-beat.pid ]; then kill `cat order_service-beat.pid` && rm order_service-beat.pid && echo "✅ Order_service beat зупинено." || echo "Order_service beat не був запущений."; fi
 
 # Заповнення тестової бази даних для user_service
 seed_user_service: check_venv install_user_service
@@ -122,6 +77,11 @@ seed_order_service: check_venv install_order_service
 	@echo "🌱 Заповнення тестової бази даних для order_service..."
 	$(PYTHON_BIN) backend_api/order_service/manage.py seed_database --orders 10
 
+# Заповнення тестової бази даних для payment_service
+seed_payment_service: check_venv install_payment_service
+	@echo "🌱 Заповнення тестової бази даних для payment_service..."
+	$(PYTHON_BIN) backend_api/payment_service/manage.py seed_database --payments 10
+
 # Очищення бази даних для user_service
 flush_user_service: check_venv install_user_service
 	@echo "🗑 Очищення бази даних для user_service..."
@@ -132,21 +92,20 @@ flush_order_service: check_venv install_order_service
 	@echo "🗑 Очищення бази даних для order_service..."
 	$(PYTHON_BIN) backend_api/order_service/manage.py flush --noinput
 
+# Очищення бази даних для payment_service
+flush_payment_service: check_venv install_payment_service
+	@echo "🗑 Очищення бази даних для payment_service..."
+	$(PYTHON_BIN) backend_api/payment_service/manage.py flush --noinput
+
+# Запуск Celery для user_service локально
 run_user_service_celery: check_venv install_user_service
 	@echo "🚀 Запуск Celery Worker і Beat для user_service локально..."
 	@$(PYTHON_BIN) backend_api/user_service/manage.py run_worker --loglevel=INFO -Q default --hostname=user-service-worker@%h & echo $$! > user_service-worker.pid
 	@$(PYTHON_BIN) backend_api/user_service/manage.py run_beat --loglevel=INFO & echo $$! > user_service-beat.pid
 	@echo "✅ Celery Worker і Beat для user_service запущені у фоновому режимі!"
 
+# Зупинка Celery для user_service
 nowork_user_service:
 	@echo "🛑 Зупинка Celery для user_service..."
 	@if [ -f user_service-worker.pid ]; then kill `cat user_service-worker.pid` && rm user_service-worker.pid && echo "✅ User_service worker зупинено." || echo "User_service worker не був запущений."; fi
 	@if [ -f user_service-beat.pid ]; then kill `cat user_service-beat.pid` && rm user_service-beat.pid && echo "✅ User_service beat зупинено." || echo "User_service beat не був запущений."; fi
-
-up: install_all
-	@echo "🚀 Запуск усіх контейнерів..."
-	$(DOCKER_COMPOSE_BIN) -f docker-compose.yml up -d
-	@echo "⏳ Очікування запуску сервісів..."
-	@sleep 10
-	@echo "✅ Всі сервіси запущені!"
-

@@ -152,3 +152,4 @@ backend_api/staticfiles/
 moderate/ml_models/model.safetensors
 .pid
 
+backend_api/*/staticfiles/

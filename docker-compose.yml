@@ -46,10 +46,6 @@ services:
       start_period: 10s
 
   user_service:
-    networks:
-      default:
-        aliases:
-          - user_service.local
     build:
       context: ./backend_api/user_service
       dockerfile: Dockerfile
@@ -74,8 +70,9 @@ services:
       SECRET_KEY: ${SECRET_KEY}
       DEBUG: ${DEBUG}
       ALLOWED_HOSTS: "*"
-      ORDER_SERVICE_URL: http://order_service.local:8000
-      USER_SERVICE_URL: http://user_service.local:8000
+      ORDER_SERVICE_URL: http://order_service:8000
+      USER_SERVICE_URL: http://user_service:8000
+      PAYMENT_SERVICE_URL: http://payment_service:8000
     volumes:
       - ./backend_api/user_service:/app
       - ./backend_api/user_service/staticfiles:/app/staticfiles
@@ -86,7 +83,7 @@ services:
              python manage.py collectstatic --noinput &&
              gunicorn --bind 0.0.0.0:8000 wsgi:application"
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/healthcheck" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthcheck"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -139,10 +136,6 @@ services:
       DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=user_service
 
   order_service:
-    networks:
-      default:
-        aliases:
-          - order_service.local
     build:
       context: ./backend_api/order_service
       dockerfile: Dockerfile
@@ -169,17 +162,19 @@ services:
       SECRET_KEY: ${SECRET_KEY}
       DEBUG: ${DEBUG}
       ALLOWED_HOSTS: "*"
-      ORDER_SERVICE_URL: http://order_service.local:8000
-      USER_SERVICE_URL: http://user_service.local:8000
+      ORDER_SERVICE_URL: http://order_service:8000
+      USER_SERVICE_URL: http://user_service:8000
+      PAYMENT_SERVICE_URL: http://payment_service:8000
     volumes:
       - ./backend_api/order_service:/app
     command: >
       sh -c "./wait-for-db.sh marketplace_database 5432 &&
              python manage.py makemigrations app &&
              python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
              gunicorn --bind 0.0.0.0:8000 wsgi:application"
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/healthcheck" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthcheck"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -207,7 +202,7 @@ services:
       - backend_api/.env
     environment:
       DJANGO_SETTINGS_MODULE: settings
-      REDIS_URL: redis://marketplace_redis:6379/1
+      REDIS_URL: redis://marketplace_redis:6379/0
       DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=order_service
 
   order_service_celery_beat:
@@ -232,8 +227,103 @@ services:
       - backend_api/.env
     environment:
       DJANGO_SETTINGS_MODULE: settings
-      REDIS_URL: redis://marketplace_redis:6379/1
+      REDIS_URL: redis://marketplace_redis:6379/0
       DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=order_service
+
+  payment_service:
+    build:
+      context: ./backend_api/payment_service
+      dockerfile: Dockerfile
+    container_name: payment_service
+    restart: unless-stopped
+    ports:
+      - "8002:8000"
+    expose:
+      - "8000"
+    depends_on:
+      marketplace_database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      order_service:
+        condition: service_healthy
+    env_file:
+      - backend_api/.env
+    environment:
+      DJANGO_SETTINGS_MODULE: settings
+      DB_HOST: marketplace_database
+      REDIS_URL: redis://marketplace_redis:6379/0
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      ALLOWED_HOSTS: "*"
+      ORDER_SERVICE_URL: http://order_service:8000
+      USER_SERVICE_URL: http://user_service:8000
+      PAYMENT_SERVICE_URL: http://payment_service:8000
+    volumes:
+      - ./backend_api/payment_service:/app
+    command: >
+      sh -c "./wait-for-db.sh marketplace_database 5432 &&
+             python manage.py makemigrations app &&
+             python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn --bind 0.0.0.0:8000 wsgi:application"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  payment_service_celery:
+    build:
+      context: ./backend_api/payment_service
+      dockerfile: Dockerfile
+    container_name: payment_service_celery
+    restart: unless-stopped
+    volumes:
+      - ./backend_api/payment_service:/app
+    command: >
+      sh -c "./wait-for-db.sh marketplace_database 5432 &&
+             celery -A celery_app worker -l info"
+    depends_on:
+      marketplace_database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      order_service:
+        condition: service_healthy
+    env_file:
+      - backend_api/.env
+    environment:
+      DJANGO_SETTINGS_MODULE: settings
+      REDIS_URL: redis://marketplace_redis:6379/0
+      DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=payment_service
+
+  payment_service_celery_beat:
+    build:
+      context: ./backend_api/payment_service
+      dockerfile: Dockerfile
+    container_name: payment_service_celery_beat
+    restart: unless-stopped
+    volumes:
+      - ./backend_api/payment_service:/app
+    command: >
+      sh -c "./wait-for-db.sh marketplace_database 5432 &&
+             celery -A celery_app beat -l info"
+    depends_on:
+      marketplace_database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      order_service:
+        condition: service_healthy
+    env_file:
+      - backend_api/.env
+    environment:
+      DJANGO_SETTINGS_MODULE: settings
+      REDIS_URL: redis://marketplace_redis:6379/0
+      DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=payment_service
+
 networks:
   default:
     driver: bridge
