@@ -1,3 +1,4 @@
+#payment
 from pathlib import Path
 import environ
 import os
@@ -78,7 +79,7 @@ DATABASES = {
         'PASSWORD': env('DB_PASSWORD'),
         'HOST': 'marketplace_database',
         'PORT': '5432',
-        'OPTIONS': {'options': '-c search_path=order_service'},
+        'OPTIONS': {'options': '-c search_path=payment_service'},
     }
 }
 

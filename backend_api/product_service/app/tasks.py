@@ -50,19 +50,18 @@ def send_moderation_notification(content_type, content_id, is_approved, recipien
         send_mail(
             subject,
             message,
-            settings.DEFAULT_FROM_EMAIL,  # Використовуємо DEFAULT_FROM_EMAIL замість 'from@example.com'
+            settings.DEFAULT_FROM_EMAIL,
             [recipient_email],
             fail_silently=False,
         )
         logger.info(f"Повідомлення про модерацію відправлено: {content_type} {content_id} для {recipient_email}")
     except Exception as e:
         logger.error(f"Помилка при відправці повідомлення для {content_type} {content_id}: {str(e)}")
-        raise  # Повторюємо спробу в разі помилки, якщо налаштовано max_retries
+        raise
 
 @shared_task(queue='moderation', bind=True, max_retries=3, default_retry_delay=60)
 def moderate_content(self, content_type, content_id, content_text):
     try:
-        # Локальна перевірка на "погані" слова (заглушка)
         is_toxic = any(bad_word in content_text.lower() for bad_word in BAD_WORDS)
         with transaction.atomic():
             if content_type == 'product':
@@ -75,7 +74,6 @@ def moderate_content(self, content_type, content_id, content_text):
             obj.save()
 
         if is_toxic:
-            # Отримуємо email отримувача
             recipient_email = None
             if content_type == 'product':
                 response = requests.get(f"{settings.USER_SERVICE_URL}/users/{obj.vendor_id}", timeout=5)

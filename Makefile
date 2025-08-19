@@ -47,8 +47,13 @@ install_payment_service: check_venv
 	@echo "📦 Встановлення залежностей для payment_service..."
 	$(PIP_BIN) install --no-cache-dir -r backend_api/payment_service/requirements.txt
 
+# Встановлення всіх залежностей для product_service
+install_product_service: check_venv
+	@echo "📦 Встановлення залежностей для product_service..."
+	$(PIP_BIN) install --no-cache-dir -r backend_api/product_service/requirements.txt
+
 # Встановлення всіх залежностей
-install_all: install_user_service install_order_service install_payment_service
+install_all: install_user_service install_order_service install_payment_service install_product_service
 	@echo "📦 Всі залежності встановлено."
 
 # Повний автоматичний запуск усіх контейнерів
@@ -67,21 +72,6 @@ down:
 # Перезапуск усіх контейнерів
 restart: down up
 
-# Заповнення тестової бази даних для user_service
-seed_user_service: check_venv install_user_service
-	@echo "🌱 Заповнення тестової бази даних для user_service..."
-	$(PYTHON_BIN) backend_api/user_service/manage.py seed_database --users 10
-
-# Заповнення тестової бази даних для order_service
-seed_order_service: check_venv install_order_service
-	@echo "🌱 Заповнення тестової бази даних для order_service..."
-	$(PYTHON_BIN) backend_api/order_service/manage.py seed_database --orders 10
-
-# Заповнення тестової бази даних для payment_service
-seed_payment_service: check_venv install_payment_service
-	@echo "🌱 Заповнення тестової бази даних для payment_service..."
-	$(PYTHON_BIN) backend_api/payment_service/manage.py seed_database --payments 10
-
 # Очищення бази даних для user_service
 flush_user_service: check_venv install_user_service
 	@echo "🗑 Очищення бази даних для user_service..."
@@ -97,6 +87,11 @@ flush_payment_service: check_venv install_payment_service
 	@echo "🗑 Очищення бази даних для payment_service..."
 	$(PYTHON_BIN) backend_api/payment_service/manage.py flush --noinput
 
+# Очищення бази даних для product_service
+flush_product_service: check_venv install_product_service
+	@echo "🗑 Очищення бази даних для product_service..."
+	$(PYTHON_BIN) backend_api/product_service/manage.py flush --noinput
+
 # Запуск Celery для user_service локально
 run_user_service_celery: check_venv install_user_service
 	@echo "🚀 Запуск Celery Worker і Beat для user_service локально..."
@@ -104,8 +99,47 @@ run_user_service_celery: check_venv install_user_service
 	@$(PYTHON_BIN) backend_api/user_service/manage.py run_beat --loglevel=INFO & echo $$! > user_service-beat.pid
 	@echo "✅ Celery Worker і Beat для user_service запущені у фоновому режимі!"
 
+# Запуск Celery для order_service локально
+run_order_service_celery: check_venv install_order_service
+	@echo "🚀 Запуск Celery Worker і Beat для order_service локально..."
+	@$(PYTHON_BIN) backend_api/order_service/manage.py run_worker --loglevel=INFO -Q default,orders --hostname=order-service-worker@%h & echo $$! > order_service-worker.pid
+	@$(PYTHON_BIN) backend_api/order_service/manage.py run_beat --loglevel=INFO & echo $$! > order_service-beat.pid
+	@echo "✅ Celery Worker і Beat для order_service запущені у фоновому режимі!"
+
+# Запуск Celery для payment_service локально
+run_payment_service_celery: check_venv install_payment_service
+	@echo "🚀 Запуск Celery Worker і Beat для payment_service локально..."
+	@$(PYTHON_BIN) backend_api/payment_service/manage.py run_worker --loglevel=INFO -Q default,payments --hostname=payment-service-worker@%h & echo $$! > payment_service-worker.pid
+	@$(PYTHON_BIN) backend_api/payment_service/manage.py run_beat --loglevel=INFO & echo $$! > payment_service-beat.pid
+	@echo "✅ Celery Worker і Beat для payment_service запущені у фоновому режимі!"
+
+# Запуск Celery для product_service локально
+run_product_service_celery: check_venv install_product_service
+	@echo "🚀 Запуск Celery Worker і Beat для product_service локально..."
+	@$(PYTHON_BIN) backend_api/product_service/manage.py run_worker --loglevel=INFO -Q images,auto_moderation --hostname=product-service-worker@%h & echo $$! > product_service-worker.pid
+	@$(PYTHON_BIN) backend_api/product_service/manage.py run_beat --loglevel=INFO & echo $$! > product_service-beat.pid
+	@echo "✅ Celery Worker і Beat для product_service запущені у фоновому режимі!"
+
 # Зупинка Celery для user_service
 nowork_user_service:
 	@echo "🛑 Зупинка Celery для user_service..."
 	@if [ -f user_service-worker.pid ]; then kill `cat user_service-worker.pid` && rm user_service-worker.pid && echo "✅ User_service worker зупинено." || echo "User_service worker не був запущений."; fi
 	@if [ -f user_service-beat.pid ]; then kill `cat user_service-beat.pid` && rm user_service-beat.pid && echo "✅ User_service beat зупинено." || echo "User_service beat не був запущений."; fi
+
+# Зупинка Celery для order_service
+nowork_order_service:
+	@echo "🛑 Зупинка Celery для order_service..."
+	@if [ -f order_service-worker.pid ]; then kill `cat order_service-worker.pid` && rm order_service-worker.pid && echo "✅ Order_service worker зупинено." || echo "Order_service worker не був запущений."; fi
+	@if [ -f order_service-beat.pid ]; then kill `cat order_service-beat.pid` && rm order_service-beat.pid && echo "✅ Order_service beat зупинено." || echo "Order_service beat не був запущений."; fi
+
+# Зупинка Celery для payment_service
+nowork_payment_service:
+	@echo "🛑 Зупинка Celery для payment_service..."
+	@if [ -f payment_service-worker.pid ]; then kill `cat payment_service-worker.pid` && rm payment_service-worker.pid && echo "✅ Payment_service worker зупинено." || echo "Payment_service worker не був запущений."; fi
+	@if [ -f payment_service-beat.pid ]; then kill `cat payment_service-beat.pid` && rm payment_service-beat.pid && echo "✅ Payment_service beat зупинено." || echo "Payment_service beat не був запущений."; fi
+
+# Зупинка Celery для product_service
+nowork_product_service:
+	@echo "🛑 Зупинка Celery для product_service..."
+	@if [ -f product_service-worker.pid ]; then kill `cat product_service-worker.pid` && rm product_service-worker.pid && echo "✅ Product_service worker зупинено." || echo "Product_service worker не був запущений."; fi
+	@if [ -f product_service-beat.pid ]; then kill `cat product_service-beat.pid` && rm product_service-beat.pid && echo "✅ Product_service beat зупинено." || echo "Product_service beat не був запущений."; fi

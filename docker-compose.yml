@@ -69,10 +69,11 @@ services:
       REDIS_URL: redis://marketplace_redis:6379/0
       SECRET_KEY: ${SECRET_KEY}
       DEBUG: ${DEBUG}
-      ALLOWED_HOSTS: "*"
+      ALLOWED_HOSTS: user_service,localhost,127.0.0.1
       ORDER_SERVICE_URL: http://order_service:8000
       USER_SERVICE_URL: http://user_service:8000
       PAYMENT_SERVICE_URL: http://payment_service:8000
+      PRODUCT_SERVICE_URL: http://product_service:8000
     volumes:
       - ./backend_api/user_service:/app
       - ./backend_api/user_service/staticfiles:/app/staticfiles
@@ -89,52 +90,6 @@ services:
       retries: 5
       start_period: 60s
 
-  user_service_celery:
-    build:
-      context: ./backend_api/user_service
-      dockerfile: Dockerfile
-    container_name: user_service_celery
-    restart: unless-stopped
-    volumes:
-      - ./backend_api/user_service:/app
-    command: >
-      sh -c "./wait-for-db.sh marketplace_database 5432 &&
-             celery -A celery_app worker -l info"
-    depends_on:
-      marketplace_database:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    env_file:
-      - backend_api/.env
-    environment:
-      DJANGO_SETTINGS_MODULE: settings
-      REDIS_URL: redis://marketplace_redis:6379/0
-      DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=user_service
-
-  user_service_celery_beat:
-    build:
-      context: ./backend_api/user_service
-      dockerfile: Dockerfile
-    container_name: user_service_celery_beat
-    restart: unless-stopped
-    volumes:
-      - ./backend_api/user_service:/app
-    command: >
-      sh -c "./wait-for-db.sh marketplace_database 5432 &&
-             celery -A celery_app beat -l info"
-    depends_on:
-      marketplace_database:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    env_file:
-      - backend_api/.env
-    environment:
-      DJANGO_SETTINGS_MODULE: settings
-      REDIS_URL: redis://marketplace_redis:6379/0
-      DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=user_service
-
   order_service:
     build:
       context: ./backend_api/order_service
@@ -150,8 +105,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      user_service:
-        condition: service_healthy
     env_file:
       - backend_api/.env
     environment:
@@ -161,12 +114,14 @@ services:
       REDIS_URL: redis://marketplace_redis:6379/0
       SECRET_KEY: ${SECRET_KEY}
       DEBUG: ${DEBUG}
-      ALLOWED_HOSTS: "*"
+      ALLOWED_HOSTS: order_service,localhost,127.0.0.1
       ORDER_SERVICE_URL: http://order_service:8000
       USER_SERVICE_URL: http://user_service:8000
       PAYMENT_SERVICE_URL: http://payment_service:8000
+      PRODUCT_SERVICE_URL: http://product_service:8000
     volumes:
       - ./backend_api/order_service:/app
+      - ./backend_api/order_service/staticfiles:/app/staticfiles
     command: >
       sh -c "./wait-for-db.sh marketplace_database 5432 &&
              python manage.py makemigrations app &&
@@ -190,13 +145,11 @@ services:
       - ./backend_api/order_service:/app
     command: >
       sh -c "./wait-for-db.sh marketplace_database 5432 &&
-             celery -A celery_app worker -l info"
+             celery -A celery_app worker -l info -Q default,orders"
     depends_on:
       marketplace_database:
         condition: service_healthy
       redis:
-        condition: service_healthy
-      user_service:
         condition: service_healthy
     env_file:
       - backend_api/.env
@@ -204,6 +157,16 @@ services:
       DJANGO_SETTINGS_MODULE: settings
       REDIS_URL: redis://marketplace_redis:6379/0
       DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=order_service
+      ORDER_SERVICE_URL: http://order_service:8000
+      USER_SERVICE_URL: http://user_service:8000
+      PAYMENT_SERVICE_URL: http://payment_service:8000
+      PRODUCT_SERVICE_URL: http://product_service:8000
+    healthcheck:
+      test: ["CMD", "celery", "-A", "celery_app", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   order_service_celery_beat:
     build:
@@ -221,14 +184,22 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      user_service:
-        condition: service_healthy
     env_file:
       - backend_api/.env
     environment:
       DJANGO_SETTINGS_MODULE: settings
       REDIS_URL: redis://marketplace_redis:6379/0
       DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=order_service
+      ORDER_SERVICE_URL: http://order_service:8000
+      USER_SERVICE_URL: http://user_service:8000
+      PAYMENT_SERVICE_URL: http://payment_service:8000
+      PRODUCT_SERVICE_URL: http://product_service:8000
+    healthcheck:
+      test: ["CMD", "ps", "aux", "|", "grep", "celery"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   payment_service:
     build:
@@ -245,22 +216,23 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      order_service:
-        condition: service_healthy
     env_file:
       - backend_api/.env
     environment:
       DJANGO_SETTINGS_MODULE: settings
       DB_HOST: marketplace_database
+      DB_PORT: 5432
       REDIS_URL: redis://marketplace_redis:6379/0
       SECRET_KEY: ${SECRET_KEY}
       DEBUG: ${DEBUG}
-      ALLOWED_HOSTS: "*"
+      ALLOWED_HOSTS: payment_service,localhost,127.0.0.1
       ORDER_SERVICE_URL: http://order_service:8000
       USER_SERVICE_URL: http://user_service:8000
       PAYMENT_SERVICE_URL: http://payment_service:8000
+      PRODUCT_SERVICE_URL: http://product_service:8000
     volumes:
       - ./backend_api/payment_service:/app
+      - ./backend_api/payment_service/staticfiles:/app/staticfiles
     command: >
       sh -c "./wait-for-db.sh marketplace_database 5432 &&
              python manage.py makemigrations app &&
@@ -284,13 +256,11 @@ services:
       - ./backend_api/payment_service:/app
     command: >
       sh -c "./wait-for-db.sh marketplace_database 5432 &&
-             celery -A celery_app worker -l info"
+             celery -A celery_app worker -l info -Q default,payments"
     depends_on:
       marketplace_database:
         condition: service_healthy
       redis:
-        condition: service_healthy
-      order_service:
         condition: service_healthy
     env_file:
       - backend_api/.env
@@ -298,6 +268,16 @@ services:
       DJANGO_SETTINGS_MODULE: settings
       REDIS_URL: redis://marketplace_redis:6379/0
       DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=payment_service
+      ORDER_SERVICE_URL: http://order_service:8000
+      USER_SERVICE_URL: http://user_service:8000
+      PAYMENT_SERVICE_URL: http://payment_service:8000
+      PRODUCT_SERVICE_URL: http://product_service:8000
+    healthcheck:
+      test: ["CMD", "celery", "-A", "celery_app", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   payment_service_celery_beat:
     build:
@@ -315,23 +295,31 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      order_service:
-        condition: service_healthy
     env_file:
       - backend_api/.env
     environment:
       DJANGO_SETTINGS_MODULE: settings
       REDIS_URL: redis://marketplace_redis:6379/0
       DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=payment_service
+      ORDER_SERVICE_URL: http://order_service:8000
+      USER_SERVICE_URL: http://user_service:8000
+      PAYMENT_SERVICE_URL: http://payment_service:8000
+      PRODUCT_SERVICE_URL: http://product_service:8000
+    healthcheck:
+      test: ["CMD", "ps", "aux", "|", "grep", "celery"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
-  shipping_service:
+  product_service:
     build:
-      context: ./backend_api/shipping_service
+      context: ./backend_api/product_service
       dockerfile: Dockerfile
-    container_name: shipping_service
+    container_name: product_service
     restart: unless-stopped
     ports:
-      - "8003:8000"
+      - "8004:8000"
     expose:
       - "8000"
     depends_on:
@@ -339,22 +327,24 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      order_service:
-        condition: service_healthy
     env_file:
       - backend_api/.env
     environment:
       DJANGO_SETTINGS_MODULE: settings
       DB_HOST: marketplace_database
+      DB_PORT: 5432
       REDIS_URL: redis://marketplace_redis:6379/0
       SECRET_KEY: ${SECRET_KEY}
       DEBUG: ${DEBUG}
-      ALLOWED_HOSTS: "*"
+      ALLOWED_HOSTS: product_service,localhost,127.0.0.1
       ORDER_SERVICE_URL: http://order_service:8000
       USER_SERVICE_URL: http://user_service:8000
-      SHIPPING_SERVICE_URL: http://shipping_service:8000
+      PAYMENT_SERVICE_URL: http://payment_service:8000
+      PRODUCT_SERVICE_URL: http://product_service:8000
+      DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=product_service
     volumes:
-      - ./backend_api/shipping_service:/app
+      - ./backend_api/product_service:/app
+      - ./backend_api/product_service/staticfiles:/app/staticfiles
     command: >
       sh -c "./wait-for-db.sh marketplace_database 5432 &&
              python manage.py makemigrations app &&
@@ -368,39 +358,47 @@ services:
       retries: 5
       start_period: 60s
 
-  shipping_service_celery:
+  product_service_celery:
     build:
-      context: ./backend_api/shipping_service
+      context: ./backend_api/product_service
       dockerfile: Dockerfile
-    container_name: shipping_service_celery
+    container_name: product_service_celery
     restart: unless-stopped
     volumes:
-      - ./backend_api/shipping_service:/app
+      - ./backend_api/product_service:/app
     command: >
       sh -c "./wait-for-db.sh marketplace_database 5432 &&
-             celery -A celery_app worker -l info"
+             celery -A celery_app worker -l info -Q images,auto_moderation"
     depends_on:
       marketplace_database:
         condition: service_healthy
       redis:
-        condition: service_healthy
-      order_service:
         condition: service_healthy
     env_file:
       - backend_api/.env
     environment:
       DJANGO_SETTINGS_MODULE: settings
       REDIS_URL: redis://marketplace_redis:6379/0
-      DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=shipping_service
+      DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=product_service
+      ORDER_SERVICE_URL: http://order_service:8000
+      USER_SERVICE_URL: http://user_service:8000
+      PAYMENT_SERVICE_URL: http://payment_service:8000
+      PRODUCT_SERVICE_URL: http://product_service:8000
+    healthcheck:
+      test: ["CMD", "celery", "-A", "celery_app", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
-  shipping_service_celery_beat:
+  product_service_celery_beat:
     build:
-      context: ./backend_api/shipping_service
+      context: ./backend_api/product_service
       dockerfile: Dockerfile
-    container_name: shipping_service_celery_beat
+    container_name: product_service_celery_beat
     restart: unless-stopped
     volumes:
-      - ./backend_api/shipping_service:/app
+      - ./backend_api/product_service:/app
     command: >
       sh -c "./wait-for-db.sh marketplace_database 5432 &&
              celery -A celery_app beat -l info"
@@ -409,14 +407,22 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      order_service:
-        condition: service_healthy
     env_file:
       - backend_api/.env
     environment:
       DJANGO_SETTINGS_MODULE: settings
       REDIS_URL: redis://marketplace_redis:6379/0
-      DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=shipping_service
+      DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@marketplace_database:5432/${DB_DATABASE}?options=-c%20search_path=product_service
+      ORDER_SERVICE_URL: http://order_service:8000
+      USER_SERVICE_URL: http://user_service:8000
+      PAYMENT_SERVICE_URL: http://payment_service:8000
+      PRODUCT_SERVICE_URL: http://product_service:8000
+    healthcheck:
+      test: ["CMD", "ps", "aux", "|", "grep", "celery"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
 networks:
   default:
